@@ -185,8 +185,8 @@ export function Login() {
 shadcn 内置支持主题切换，使用 `next-themes`：
 
 ```bash
-# shadcn init 后自动安装
-bunx shadcn@latest add switch
+# shadcn init 后自动安装（使用 --bun 确保使用 Bun 运行）
+bunx --bun shadcn@latest add switch
 ```
 
 ```typescript
@@ -656,48 +656,6 @@ model EmailCode {
 
 ## 初始化命令
 
-### 前端
-
-```bash
-# 创建 Vite + React + TypeScript 项目
-bun create vite apps/web --template react-ts
-
-# 安装 shadcn/ui
-bunx shadcn@latest init
-
-# 添加必要组件
-bunx shadcn@latest add button input card form toast dropdown-menu avatar label checkbox select switch
-
-# 安装依赖
-bun add react-router @tanstack/react-query zustand react-hook-form @hookform/resolvers zod lucide-react date-fns clsx tailwind-merge class-variance-authority axios
-
-# 安装国际化
-bun add react-i18next i18next i18next-http-backend i18next-browser-languagedetector
-```
-
-### 后端
-
-```bash
-# 创建目录
-mkdir -p apps/server/src/{features,shared,db,redis,config}
-mkdir -p apps/server/src/shared/{lib,types,i18n,logging}
-mkdir -p apps/server/prisma
-
-# 初始化 package.json
-cd apps/server
-bun init -y
-
-# 安装依赖
-bun add hono @hono/node-server @prisma/client ioredis jsonwebtoken bcryptjs resend zod remeda cron-parser i18next
-bun add -D prisma bun-types typescript @types/bcryptjs @types/jsonwebtoken pino pino-pretty
-
-# 初始化 Prisma
-bunx prisma init
-
-# 安装 hono-openapi
-bun add hono-openapi
-```
-
 ### Python 服务 (预留)
 
 ```bash
@@ -775,8 +733,8 @@ bunx prisma studio
 ### 其他常用命令
 
 ```bash
-# 添加 shadcn/ui 组件
-cd apps/web && bunx shadcn@latest add <component-name>
+# 添加 shadcn/ui 组件（使用 --bun 确保使用 Bun 运行）
+cd apps/web && bunx --bun shadcn@latest add <component-name>
 
 # 查看项目依赖
 bun pm ls
