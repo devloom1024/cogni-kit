@@ -11,7 +11,7 @@
 
 ## 项目组织
 
-CogniKit 采用 Monorepo 结构，由以下部分组成：
+CogniKit 采用 **Turborepo** 管理的 Monorepo 结构，由以下部分组成：
 
 | 部分 | 说明 | 端口 |
 |------|------|------|
@@ -722,21 +722,70 @@ uv run uvicorn main:app --reload --host 0.0.0.0 --port 8080
 
 ## 开发命令
 
+### Monorepo 统一命令（推荐）
+
 ```bash
-# 开发模式 (并行启动所有服务)
+# 一键启动所有服务（前端 + 后端，使用 Turborepo）
 bun run dev
 
-# 生产构建
+# 构建所有项目
 bun run build
 
-# 数据库相关命令
-bunx prisma generate    # 生成 Prisma Client
-bunx prisma db push     # 同步 schema 到数据库
-bunx prisma migrate dev # 创建迁移
-bunx prisma studio      # 打开 Prisma Studio (可视化)
+# 类型检查所有项目
+bun run type-check
+
+# Lint 所有代码
+bun run lint
+
+# 清理所有构建产物和依赖
+bun run clean
+```
+
+### 单独启动服务
+
+```bash
+# 仅启动前端 (http://localhost:5173)
+cd apps/web && bun run dev
+
+# 仅启动后端 (http://localhost:3001)
+cd apps/server && bun run dev
 
 # 仅启动 Python 服务
 cd services/python-xxx && uv run uvicorn main:app --reload --host 0.0.0.0 --port 8080
+```
+
+### 数据库相关命令
+
+```bash
+cd apps/server
+
+# 生成 Prisma Client
+bunx prisma generate
+
+# 同步 schema 到数据库（开发环境）
+bunx prisma db push
+
+# 创建迁移文件（生产环境）
+bunx prisma migrate dev
+
+# 打开 Prisma Studio（可视化数据库管理）
+bunx prisma studio
+```
+
+### 其他常用命令
+
+```bash
+# 添加 shadcn/ui 组件
+cd apps/web && bunx shadcn@latest add <component-name>
+
+# 查看项目依赖
+bun pm ls
+
+# 更新所有依赖
+bun update
+
+# 运行 TypeScript 类型检查
+bun run type-check
 ```
 
 ---
@@ -747,4 +796,64 @@ cd services/python-xxx && uv run uvicorn main:app --reload --host 0.0.0.0 --port
 # Docker Compose 部署
 docker-compose up -d
 ```
+
+
+---
+
+## 快速开始
+
+### 1. 安装依赖
+
+```bash
+# 安装所有 Workspace 的依赖
+bun install
+```
+
+### 2. 配置环境变量
+
+```bash
+# 复制环境变量示例文件
+cp .env.example .env
+
+# 编辑 .env 文件，配置数据库连接等
+```
+
+### 3. 初始化数据库
+
+```bash
+cd apps/server
+
+# 运行数据库迁移
+bunx prisma migrate dev --name init
+
+# 生成 Prisma Client
+bunx prisma generate
+```
+
+### 4. 启动开发服务器
+
+```bash
+# 回到根目录，一键启动所有服务
+cd ../..
+bun run dev
+```
+
+访问：
+- **前端**: http://localhost:5173
+- **后端 API**: http://localhost:3001
+- **后端健康检查**: http://localhost:3001/health
+
+---
+
+## Monorepo 特性
+
+本项目使用 **Turborepo** 进行 Monorepo 管理，具备以下特性：
+
+- ✅ **并行执行**：同时启动/构建多个项目
+- ✅ **智能缓存**：只重新构建变更的部分，速度提升 10x+
+- ✅ **依赖感知**：自动按正确顺序构建（shared → apps）
+- ✅ **增量构建**：大幅缩短开发反馈周期
+- ✅ **统一工具链**：全栈统一使用 Bun
+
+详细配置见：`turbo.json`
 

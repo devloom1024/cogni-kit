@@ -1,0 +1,61 @@
+# ==========================================
+# Git Attributes
+# ==========================================
+
+# 自动检测文本文件并规范化行尾
+* text=auto
+
+# 明确指定文本文件
+*.md text
+*.txt text
+*.json text
+*.js text
+*.ts text
+*.tsx text
+*.jsx text
+*.css text
+*.scss text
+*.html text
+*.xml text
+*.yml text
+*.yaml text
+
+# 明确指定二进制文件
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.mp4 binary
+*.webm binary
+*.pdf binary
+
+# Shell 脚本使用 LF
+*.sh text eol=lf
+
+# Windows 批处理文件使用 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Prisma schema 文件
+*.prisma text
+
+# 环境变量文件
+.env* text
+
+# 导出 linguist（GitHub 语言统计）
+*.md linguist-detectable
+*.ts linguist-detectable
+*.tsx linguist-detectable
+
+# 不统计自动生成的文件
+package-lock.json linguist-generated=true
+yarn.lock linguist-generated=true
+bun.lock linguist-generated=true
+pnpm-lock.yaml linguist-generated=true

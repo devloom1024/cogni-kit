@@ -1,5 +1,183 @@
-*.local.json
-.tmp
-tmpclaude*
-nul
-.idea
+# ==========================================
+# 依赖目录
+# ==========================================
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# ==========================================
+# 环境变量（敏感信息）
+# ==========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# 保留示例文件
+!.env.example
+
+# ==========================================
+# 构建产物
+# ==========================================
+dist/
+build/
+out/
+.next/
+.nuxt/
+.output/
+
+# ==========================================
+# Turborepo
+# ==========================================
+.turbo/
+
+# ==========================================
+# 日志文件
+# ==========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+bun-debug.log*
+
+# ==========================================
+# 测试覆盖率
+# ==========================================
+coverage/
+*.lcov
+.nyc_output/
+test-results/
+playwright-report/
+
+# ==========================================
+# IDE / 编辑器
+# ==========================================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# ==========================================
+# TypeScript
+# ==========================================
+*.tsbuildinfo
+.tsbuildinfo
+
+# ==========================================
+# Prisma
+# ==========================================
+# Prisma 生成的 Client（应该在 CI 中生成）
+# 如果团队约定提交生成文件，注释掉下面这行
+# node_modules/.prisma/
+# node_modules/@prisma/
+
+# Prisma 迁移备份
+prisma/migrations/**/migration.sql.bak
+
+# ==========================================
+# Python
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+*.egg-info/
+dist-python/
+build-python/
+
+# uv (Python 包管理器)
+.uv/
+
+# ==========================================
+# 操作系统
+# ==========================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+
+# ==========================================
+# 临时文件
+# ==========================================
+tmp/
+temp/
+*.tmp
+*.bak
+*.cache
+
+# ==========================================
+# Docker
+# ==========================================
+.dockerignore
+docker-compose.override.yml
+
+# ==========================================
+# 其他
+# ==========================================
+# Sentry
+.sentryclirc
+
+# Vercel
+.vercel
+
+# Redis dump
+dump.rdb
+
+# 数据库备份
+*.sql
+*.sqlite
+*.db
+
+# 证书和密钥（安全）
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+
+# 压缩文件
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# 忽略所有 .env 文件，但保留示例
+.env*
