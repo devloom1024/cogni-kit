@@ -1,0 +1,4 @@
+*.local.json
+.tmp
+tmpclaude*
+nul
