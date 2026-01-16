@@ -129,7 +129,7 @@ apps/web/
 前端使用 `react-i18next` 实现国际化：
 
 ```bash
-npm install react-i18next i18next i18next-http-backend i18next-browser-languagedetector
+bun add react-i18next i18next i18next-http-backend i18next-browser-languagedetector
 ```
 
 ```typescript
@@ -186,7 +186,7 @@ shadcn 内置支持主题切换，使用 `next-themes`：
 
 ```bash
 # shadcn init 后自动安装
-npx shadcn@latest add switch
+bunx shadcn@latest add switch
 ```
 
 ```typescript
@@ -660,19 +660,19 @@ model EmailCode {
 
 ```bash
 # 创建 Vite + React + TypeScript 项目
-npm create vite@latest apps/web -- --template react-ts
+bun create vite apps/web --template react-ts
 
 # 安装 shadcn/ui
-npx shadcn@latest init
+bunx shadcn@latest init
 
 # 添加必要组件
-npx shadcn@latest add button input card form toast dropdown-menu avatar label checkbox select switch
+bunx shadcn@latest add button input card form toast dropdown-menu avatar label checkbox select switch
 
 # 安装依赖
-npm install react-router @tanstack/react-query zustand react-hook-form @hookform/resolvers zod lucide-react date-fns clsx tailwind-merge class-variance-authority axios
+bun add react-router @tanstack/react-query zustand react-hook-form @hookform/resolvers zod lucide-react date-fns clsx tailwind-merge class-variance-authority axios
 
 # 安装国际化
-npm install react-i18next i18next i18next-http-backend i18next-browser-languagedetector
+bun add react-i18next i18next i18next-http-backend i18next-browser-languagedetector
 ```
 
 ### 后端
@@ -685,14 +685,14 @@ mkdir -p apps/server/prisma
 
 # 初始化 package.json
 cd apps/server
-npm init -y
+bun init -y
 
 # 安装依赖
 bun add hono @hono/node-server @prisma/client ioredis jsonwebtoken bcryptjs resend zod remeda cron-parser i18next
 bun add -D prisma bun-types typescript @types/bcryptjs @types/jsonwebtoken pino pino-pretty
 
 # 初始化 Prisma
-npx prisma init
+bunx prisma init
 
 # 安装 hono-openapi
 bun add hono-openapi
@@ -724,16 +724,16 @@ uv run uvicorn main:app --reload --host 0.0.0.0 --port 8080
 
 ```bash
 # 开发模式 (并行启动所有服务)
-npm run dev
+bun run dev
 
 # 生产构建
-npm run build
+bun run build
 
 # 数据库相关命令
-npx prisma generate    # 生成 Prisma Client
-npx prisma db push     # 同步 schema 到数据库
-npx prisma migrate dev # 创建迁移
-npx prisma studio      # 打开 Prisma Studio (可视化)
+bunx prisma generate    # 生成 Prisma Client
+bunx prisma db push     # 同步 schema 到数据库
+bunx prisma migrate dev # 创建迁移
+bunx prisma studio      # 打开 Prisma Studio (可视化)
 
 # 仅启动 Python 服务
 cd services/python-xxx && uv run uvicorn main:app --reload --host 0.0.0.0 --port 8080
