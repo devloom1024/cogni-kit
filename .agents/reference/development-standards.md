@@ -81,11 +81,12 @@ src/features/auth/
     *   格式：`log('event_name', { userId: '...', ...data })`。
 
 ### 3.3 数据库操作 (Prisma)
-*   **Schema 命名**:
-    *   表名使用 PascalCase (如 `User`, `LoginLog`)。
-    *   字段名使用 camelCase (如 `firstName`)。
-    *   每个表必须包含 `createdAt` 和 `updatedAt`。
-*   **迁移管理**: 数据库变更**必须**通过 `prisma migrate` 生成迁移文件，**严禁**手动直接修改数据库结构。
+*   详细规范请参考 **[数据库设计规范 (Database Design Standards)](./database-design-standards.md)**。
+*   **核心原则摘要**:
+    *   严格遵守 **Clean Architecture**，仅在 `Data Access` 层或 `Service` 层操作数据库。
+    *   **必须**使用文档注释 (`///`) 为模型和字段添加说明。
+    *   **必须**通过 `prisma migrate` 管理所有数据库变更。
+
 
 ---
 

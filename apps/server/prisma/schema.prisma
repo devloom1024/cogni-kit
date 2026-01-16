@@ -1,3 +1,5 @@
+// apps/server/prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,48 +9,167 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum AuthProvider {
-  email
-  github
-  google
+// ==================== 枚举定义 ====================
+
+/// 用户状态枚举
+enum UserStatus {
+  ACTIVE    // 正常激活
+  INACTIVE  // 未激活/待验证
+  BANNED    // 已封禁
+  DELETED   // 已注销
 }
 
-model User {
-  id            String       @id @default(uuid())
-  email         String       @unique
-  passwordHash  String?
-  name          String?
-  avatarUrl     String?
-  provider      AuthProvider @default(email)
-  emailVerified Boolean      @default(false)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  sessions      Session[]
+/// 第三方登录平台枚举
+enum SocialProvider {
+  github
+  google
+  linuxdo
+}
 
+/// 验证码类型枚举
+enum VerificationCodeType {
+  register         // 注册
+  login           // 登录
+  forgot_password // 找回密码
+  bind_email      // 绑定邮箱
+  bind_phone      // 绑定手机号
+}
+
+// ==================== 核心表 ====================
+
+/// 用户表 - 存储核心用户信息
+model User {
+  id           String     @id @default(uuid())
+  /// 用户名，唯一，系统自动生成，用户可修改
+  username     String     @unique
+  /// 昵称，显示名称
+  nickname     String?
+  /// 密码哈希值 (bcrypt)
+  passwordHash String?    @map("password_hash")
+  /// 邮箱地址，用于登录和通知
+  email        String?    @unique
+  /// 邮箱是否已验证
+  emailVerified Boolean   @default(false) @map("email_verified")
+  /// 手机号 (预留扩展)
+  phone        String?    @unique
+  /// 手机号是否已验证 (预留扩展)
+  phoneVerified Boolean   @default(false) @map("phone_verified")
+  /// 用户头像 URL
+  avatar       String?
+  /// 账号状态
+  status       UserStatus @default(ACTIVE)
+  
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  // 关联关系
+  socialAccounts SocialAccount[]
+  sessions       Session[]
+
+  @@index([email])
+  @@index([username])
+  @@index([phone])
+  @@index([status])
   @@map("users")
 }
 
+/// 第三方登录账号表 - 关联用户与第三方平台
+model SocialAccount {
+  id         String         @id @default(uuid())
+  userId     String         @map("user_id")
+  /// 第三方平台 (github/google/linuxdo)
+  provider   SocialProvider
+  /// 第三方平台的唯一用户 ID
+  providerId String         @map("provider_id")
+  /// 第三方平台返回的用户名
+  providerUsername String?   @map("provider_username")
+  /// 第三方平台返回的邮箱
+  providerEmail    String?   @map("provider_email")
+  /// 第三方平台返回的头像
+  providerAvatar   String?   @map("provider_avatar")
+  /// UnionId (可选，用于跨应用识别同一用户)
+  unionId    String?        @map("union_id")
+  /// OAuth Access Token (加密存储)
+  accessToken String?       @map("access_token")
+  /// OAuth Refresh Token (加密存储)
+  refreshToken String?      @map("refresh_token")
+  /// Token 过期时间
+  expiresAt   DateTime?     @map("expires_at")
+  
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+
+  // 关联
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@index([userId])
+  @@map("social_accounts")
+}
+
+/// 用户会话表 - 存储 Access Token 和 Refresh Token
 model Session {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  token     String   @unique
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  
+  /// Access Token (JWT，用于 API 访问验证)
+  accessToken  String   @unique @map("access_token")
+  
+  /// Access Token 过期时间
+  accessTokenExpiresAt DateTime @map("access_token_expires_at")
+  
+  /// Refresh Token (用于刷新 Access Token)
+  refreshToken String   @unique @map("refresh_token")
+  
+  /// Refresh Token 过期时间
+  refreshTokenExpiresAt DateTime @map("refresh_token_expires_at")
+  
+  /// 登录时的 IP 地址
+  ipAddress    String?  @map("ip_address")
+  
+  /// User Agent (浏览器/设备信息)
+  userAgent    String?  @map("user_agent")
+  
+  /// 最后活跃时间
+  lastActiveAt DateTime? @map("last_active_at")
+  
+  /// 是否已撤销 (用于主动登出)
+  revoked      Boolean  @default(false)
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // 关联
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([accessToken])
+  @@index([refreshToken])
+  @@index([accessTokenExpiresAt])
+  @@index([revoked])
   @@map("sessions")
 }
 
-model EmailCode {
-  id        String    @id @default(uuid())
-  email     String
+/// 验证码表 - 存储邮箱/手机验证码
+model VerificationCode {
+  id        String               @id @default(uuid())
+  /// 接收者 (邮箱或手机号)
+  target    String
+  /// 验证码
   code      String
-  type      String
-  expiresAt DateTime  @map("expires_at")
-  usedAt    DateTime? @map("used_at")
-  createdAt DateTime  @default(now()) @map("created_at")
+  /// 验证码类型
+  type      VerificationCodeType
+  /// 过期时间
+  expiresAt DateTime             @map("expires_at")
+  /// 使用时间 (null 表示未使用)
+  usedAt    DateTime?            @map("used_at")
+  /// 创建时的 IP 地址 (防刷)
+  ipAddress String?              @map("ip_address")
+  
+  createdAt DateTime             @default(now()) @map("created_at")
+  updatedAt DateTime             @updatedAt @map("updated_at")
 
-  @@index([email, type])
-  @@map("email_codes")
+  @@index([target, type])
+  @@index([expiresAt])
+  @@map("verification_codes")
 }
