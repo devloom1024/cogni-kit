@@ -12,6 +12,7 @@
     "dev": "bun run sync-env && turbo dev",
     "build": "bun run sync-env && turbo build",
     "type-check": "turbo type-check",
+    "lint": "turbo lint",
     "clean": "turbo clean",
     "sync-env": "bun run scripts/sync-env.ts",
     "check-env": "bun run scripts/check-env.ts"
