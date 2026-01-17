@@ -8,16 +8,15 @@
     "build": "bun build src/main.ts --outdir=dist --target=bun",
     "start": "NODE_ENV=production bun dist/main.js",
     "type-check": "tsc --noEmit",
-    "db:migrate": "prisma migrate dev",
-    "db:generate": "prisma generate",
-    "db:studio": "prisma studio"
+    "db:migrate": "bunx --bun prisma migrate dev",
+    "db:generate": "bunx --bun prisma generate",
+    "db:studio": "bunx --bun prisma studio"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "bcryptjs": "^3.0.3",
-    "dotenv": "^17.2.3",
     "hono": "^4.11.4",
     "i18next": "^25.7.4",
     "ioredis": "^5.9.2",
