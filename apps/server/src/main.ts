@@ -4,6 +4,7 @@ import { logger as honoLogger } from 'hono/logger'
 import { env } from './config/env.js'
 import { errorHandler } from './middleware/error-handler.js'
 import { auth } from './features/auth/routes.js'
+import { oauth } from './features/oauth/routes.js'
 import { user } from './features/user/routes.js'
 import { logger } from './shared/logger.js'
 
@@ -26,6 +27,7 @@ app.get('/health', (c) => {
 })
 
 app.route('/auth', auth)
+app.route('/auth', oauth)
 app.route('/users', user)
 
 const port = Number(env.PORT)
