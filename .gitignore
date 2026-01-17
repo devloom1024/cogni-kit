@@ -181,3 +181,15 @@ dump.rdb
 
 # 忽略所有 .env 文件，但保留示例
 .env*
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# 自动生成的子项目环境变量
+apps/web/.env
+apps/server/.env
+
+# 保留示例文件
+!.env.example

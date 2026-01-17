@@ -1,14 +1,21 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { logger } from 'hono/logger'
+import { logger as honoLogger } from 'hono/logger'
+import { env } from './config/env.js'
+import { errorHandler } from './middleware/error-handler.js'
+import { auth } from './features/auth/routes.js'
+import { user } from './features/user/routes.js'
+import { logger } from './shared/logger.js'
 
 const app = new Hono()
 
-app.use('*', logger())
+app.use('*', honoLogger())
 app.use('*', cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: env.FRONTEND_URL,
   credentials: true,
 }))
+
+app.use('*', errorHandler)
 
 app.get('/', (c) => {
   return c.json({ message: 'CogniKit API is running' })
@@ -18,9 +25,12 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-const port = Number(process.env.PORT) || 3001
+app.route('/auth', auth)
+app.route('/users', user)
 
-console.log(`🚀 Server running on http://localhost:${port}`)
+const port = Number(env.PORT)
+
+logger.info(`🚀 Server running on http://localhost:${port}`)
 
 export default {
   port,

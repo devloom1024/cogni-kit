@@ -1,0 +1,31 @@
+{
+  "auth": {
+    "invalid_code": "Invalid or expired verification code",
+    "code_already_used": "Verification code has been used",
+    "invalid_credentials": "Invalid account or password",
+    "user_not_found": "User not found",
+    "email_exists": "Email already registered",
+    "username_exists": "Username already taken",
+    "unauthorized": "Unauthorized access",
+    "token_expired": "Login expired",
+    "invalid_token": "Invalid token",
+    "session_revoked": "Session has been revoked",
+    "account_banned": "Account has been banned",
+    "account_inactive": "Account not activated",
+    "account_deleted": "Account has been deleted",
+    "code_sent": "Verification code sent to {{email}}"
+  },
+  "rate_limit": {
+    "exceeded": "Too many attempts, please try again later",
+    "too_many_requests": "Too many requests"
+  },
+  "email": {
+    "service_error": "Email service error, please try again later"
+  },
+  "validation": {
+    "error": "Validation failed"
+  },
+  "internal": {
+    "error": "Internal server error"
+  }
+}

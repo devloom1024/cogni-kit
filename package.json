@@ -9,11 +9,12 @@
     "services/*"
   ],
   "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "lint": "turbo lint",
+    "dev": "bun run sync-env && turbo dev",
+    "build": "bun run sync-env && turbo build",
     "type-check": "turbo type-check",
-    "clean": "turbo clean && rm -rf node_modules .turbo"
+    "clean": "turbo clean",
+    "sync-env": "bun run scripts/sync-env.ts",
+    "check-env": "bun run scripts/check-env.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
