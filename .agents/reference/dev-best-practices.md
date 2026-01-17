@@ -1,4 +1,4 @@
-# CogniKit 最佳实践 (Best Practices)
+# CogniKit 开发最佳实践 (Best Practices)
 
 本文档提供了针对 CogniKit 技术栈的深入技术建议和模式。遵循这些实践可以提升代码质量、性能、安全性和健壮性。
 

@@ -9,6 +9,7 @@
     "start": "NODE_ENV=production bun dist/main.js",
     "type-check": "tsc --noEmit",
     "db:migrate": "bunx --bun prisma migrate dev",
+    "db:push": "bunx --bun prisma db push",
     "db:generate": "bunx --bun prisma generate",
     "db:studio": "bunx --bun prisma studio"
   },
