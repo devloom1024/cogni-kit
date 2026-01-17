@@ -1,0 +1,34 @@
+{
+    "common": {
+        "loading": "加载中...",
+        "submit": "提交",
+        "required": "必填项"
+    },
+    "auth": {
+        "login": {
+            "title": "欢迎回来",
+            "subtitle": "登录您的账户",
+            "submit": "登录",
+            "forgot_password": "忘记密码？",
+            "no_account": "还没有账户？",
+            "register": "注册"
+        },
+        "register": {
+            "title": "创建账户",
+            "subtitle": "输入邮箱创建您的账户",
+            "submit": "注册",
+            "has_account": "已有账户？",
+            "login": "登录"
+        },
+        "fields": {
+            "email": "邮箱",
+            "password": "密码",
+            "repeat_password": "确认密码",
+            "code": "验证码",
+            "send_code": "获取验证码"
+        },
+        "oauth": {
+            "continue_with": "或使用以下方式登录"
+        }
+    }
+}

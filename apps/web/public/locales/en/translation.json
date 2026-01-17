@@ -1,0 +1,34 @@
+{
+    "common": {
+        "loading": "Loading...",
+        "submit": "Submit",
+        "required": "Required field"
+    },
+    "auth": {
+        "login": {
+            "title": "Welcome back",
+            "subtitle": "Login to your account",
+            "submit": "Login",
+            "forgot_password": "Forgot password?",
+            "no_account": "Don't have an account?",
+            "register": "Sign up"
+        },
+        "register": {
+            "title": "Create an account",
+            "subtitle": "Enter your email below to create your account",
+            "submit": "Sign Up",
+            "has_account": "Already have an account?",
+            "login": "Login"
+        },
+        "fields": {
+            "email": "Email",
+            "password": "Password",
+            "repeat_password": "Confirm Password",
+            "code": "Verification Code",
+            "send_code": "Get Code"
+        },
+        "oauth": {
+            "continue_with": "Or continue with"
+        }
+    }
+}

@@ -3,32 +3,38 @@
 /**
  * 用户状态枚举
  */
-export enum UserStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  BANNED = 'BANNED',
-  DELETED = 'DELETED',
-}
+export const UserStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  BANNED: 'BANNED',
+  DELETED: 'DELETED',
+} as const
+
+export type UserStatus = typeof UserStatus[keyof typeof UserStatus]
 
 /**
  * 第三方登录平台枚举
  */
-export enum SocialProvider {
-  github = 'github',
-  google = 'google',
-  linuxdo = 'linuxdo',
-}
+export const SocialProvider = {
+  github: 'github',
+  google: 'google',
+  linuxdo: 'linuxdo',
+} as const
+
+export type SocialProvider = typeof SocialProvider[keyof typeof SocialProvider]
 
 /**
  * 验证码类型枚举
  */
-export enum VerificationCodeType {
-  register = 'register',
-  login = 'login',
-  forgot_password = 'forgot_password',
-  bind_email = 'bind_email',
-  bind_phone = 'bind_phone',
-}
+export const VerificationCodeType = {
+  register: 'register',
+  login: 'login',
+  forgot_password: 'forgot_password',
+  bind_email: 'bind_email',
+  bind_phone: 'bind_phone',
+} as const
+
+export type VerificationCodeType = typeof VerificationCodeType[keyof typeof VerificationCodeType]
 
 // ==================== 数据模型类型 ====================
 
