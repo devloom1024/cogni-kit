@@ -13,14 +13,14 @@ declare module 'hono' {
 
 export async function authMiddleware(c: Context, next: Next) {
   const authHeader = c.req.header('Authorization')
-  
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return c.json({ code: 'auth.unauthorized', message: 'Missing or invalid authorization header' }, 401)
   }
 
   const token = authHeader.substring(7)
 
-  const payload = verifyAccessToken(token)
+  verifyAccessToken(token)
 
   const session = await prisma.session.findUnique({
     where: { accessToken: token },

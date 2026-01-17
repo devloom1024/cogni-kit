@@ -1,4 +1,5 @@
 import type { Context, Next } from 'hono'
+import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import type { ApiError } from 'shared'
 import { ZodError } from 'zod'
 import { logger } from '../shared/logger.js'
@@ -20,7 +21,7 @@ export async function errorHandler(c: Context, next: Next) {
           })),
         },
       }
-      return c.json(apiError, 400 as any)
+      return c.json(apiError, 400)
     }
 
     if (error instanceof Error) {
@@ -41,7 +42,7 @@ export async function errorHandler(c: Context, next: Next) {
           code: mapped.code,
           message: error.message,
         }
-        return c.json(apiError, mapped.status as any)
+        return c.json(apiError, mapped.status as ContentfulStatusCode)
       }
     }
 

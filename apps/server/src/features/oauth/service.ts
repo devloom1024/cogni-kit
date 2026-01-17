@@ -1,3 +1,4 @@
+import { Prisma, User } from '@prisma/client'
 import { prisma } from '../../shared/db.js'
 import { generateAccessToken } from '../../shared/lib/jwt.js'
 import { generateUsername, generateRefreshToken } from '../../shared/lib/random.js'
@@ -66,14 +67,14 @@ export const oauthService = {
     }
 
     // 2. 未绑定，检查 email 是否已存在
-    let user = profile.providerEmail
+    const user = profile.providerEmail
       ? await prisma.user.findUnique({ where: { email: profile.providerEmail } })
       : null
 
     if (user) {
       // 关联到现有用户
       const result = await prisma.$transaction(async (tx) => {
-        const newSocialAccount = await tx.socialAccount.create({
+        await tx.socialAccount.create({
           data: {
             userId: user!.id,
             provider,
@@ -107,7 +108,7 @@ export const oauthService = {
     // 3. 全新用户，创建账号
     const result = await prisma.$transaction(async (tx) => {
       const username = generateUsername()
-      
+
       const newUser = await tx.user.create({
         data: {
           username,
@@ -150,7 +151,7 @@ export const oauthService = {
   },
 }
 
-async function createSession(tx: any, userId: string): Promise<TokenPair> {
+async function createSession(tx: Prisma.TransactionClient, userId: string): Promise<TokenPair> {
   const accessToken = generateAccessToken(userId)
   const refreshToken = generateRefreshToken()
   const accessTokenExpiresAt = new Date(Date.now() + parseExpiry(TOKEN_CONFIG.ACCESS_TOKEN_EXPIRES_IN))
@@ -174,7 +175,7 @@ async function createSession(tx: any, userId: string): Promise<TokenPair> {
   }
 }
 
-function formatUser(user: any) {
+function formatUser(user: User) {
   return {
     id: user.id,
     username: user.username,

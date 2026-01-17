@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import { prisma } from '../../shared/db.js'
 import { redis } from '../../shared/redis.js'
 import { hashPassword, comparePassword } from '../../shared/lib/password.js'
@@ -5,11 +6,11 @@ import { generateAccessToken } from '../../shared/lib/jwt.js'
 import { generateVerificationCode, generateUsername, generateRefreshToken } from '../../shared/lib/random.js'
 import { sendVerificationCode } from '../../shared/email.js'
 import { logger } from '../../shared/logger.js'
-import { t } from '../../shared/i18n/index.js'
-import { 
-  UserStatus, 
-  VerificationCodeType, 
-  TOKEN_CONFIG, 
+
+import {
+  UserStatus,
+  VerificationCodeType,
+  TOKEN_CONFIG,
   VERIFICATION_CODE_CONFIG,
   type SendCodeRequest,
   type RegisterRequest,
@@ -28,7 +29,7 @@ export const authService = {
 
     const rateLimitKey = `${RATE_LIMIT_PREFIX}${email}`
     const sendCount = await redis.incr(rateLimitKey)
-    
+
     if (sendCount === 1) {
       await redis.expire(rateLimitKey, VERIFICATION_CODE_CONFIG.RATE_LIMIT_WINDOW_MINUTES * 60)
     }
@@ -298,7 +299,7 @@ export const authService = {
   },
 }
 
-async function createSession(tx: any, userId: string): Promise<TokenPair> {
+async function createSession(tx: Prisma.TransactionClient, userId: string): Promise<TokenPair> {
   const accessToken = generateAccessToken(userId)
   const refreshToken = generateRefreshToken()
   const accessTokenExpiresAt = new Date(Date.now() + parseExpiry(TOKEN_CONFIG.ACCESS_TOKEN_EXPIRES_IN))
