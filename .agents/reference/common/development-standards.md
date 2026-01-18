@@ -110,11 +110,56 @@ src/features/auth/
 
 ## 4. 共享协作规范 (packages/shared)
 
-### 4.1 DTO (Data Transfer Object)
+### 4.1 Schema 优先架构 (Schema-First Architecture)
+
+**核心原则**: Zod Schema 是唯一真实数据源 (Single Source of Truth)
+
+*   **类型定义规范**:
+    *   所有数据类型（请求/响应 DTO、数据模型）**必须**先定义 Zod Schema，再通过 `z.infer<typeof schema>` 推导 TypeScript 类型。
+    *   **禁止**手写 TypeScript 接口后再编写对应的 Zod Schema（会导致双重维护和不同步）。
+    *   **例外**: 纯枚举定义（如 `UserStatus`）和不需要运行时验证的内部类型可保留在 `types/`。
+
+*   **目录职责**:
+    *   `packages/shared/src/schemas/`: 存放所有 Zod Schema 定义和通过 `z.infer` 推导的类型
+    *   `packages/shared/src/types/`: 仅保留纯枚举定义（`as const` 模式）和不需要验证的内部类型
+
+*   **正确示例**:
+    ```typescript
+    // ✅ packages/shared/src/schemas/user.ts
+    import { z } from '@hono/zod-openapi'
+    
+    export const UserSchema = z.object({
+      id: z.string(),
+      username: z.string(),
+      email: z.string().email().nullable(),
+    }).openapi('User')
+    
+    export type User = z.infer<typeof UserSchema>  // 类型由 Schema 推导
+    ```
+
+*   **错误示例**:
+    ```typescript
+    // ❌ 不要在 types/ 中手写接口
+    export interface User {
+      id: string
+      username: string
+      email: string | null
+    }
+    
+    // ❌ 然后在 schemas/ 中再写一遍
+    export const UserSchema = z.object({ ... })
+    ```
+
+*   **优势**:
+    *   **类型安全**: 验证规则与类型定义永不失同步
+    *   **单一维护**: 修改 Schema 自动更新类型
+    *   **运行时保障**: 编译时类型检查 + 运行时数据验证双重保障
+
+### 4.2 DTO (Data Transfer Object)
 *   **规范**: 必须使用 `@hono/zod-openapi` 定义 Schema 并添加元数据。
 *   **详细指南**: 请参考 **[后端 API 开发工作流](./backend-api-workflow.md#step-1-在-shared-中定义-schema)**。
 
-### 4.2 国际化 (i18n)
+### 4.3 国际化 (i18n)
 *   **共享翻译架构**:
     *   `packages/shared/src/i18n/` 存放共享的 validation 翻译。
     *   前后端在初始化 i18next 时，合并 shared 翻译与本地翻译。

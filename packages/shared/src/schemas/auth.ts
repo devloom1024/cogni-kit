@@ -55,11 +55,26 @@ export const oauthUrlResponseSchema = z.object({
   url: z.string().openapi({ description: 'OAuth authorization URL', example: 'https://github.com/login/oauth/authorize?client_id=...' }),
 }).openapi('OAuthUrlResponse')
 
+export const authResponseSchema = z.object({
+  user: UserSchema,
+  tokens: TokenPairSchema,
+}).openapi('AuthResponse')
+
 export const oauthResponseSchema = z.object({
   user: UserSchema,
   tokens: TokenPairSchema,
   isNewUser: z.boolean().openapi({ description: 'Whether the user is newly registered', example: false }),
 }).openapi('OAuthResponse')
+
+export const sendCodeResponseSchema = z.object({
+  success: z.boolean().openapi({ example: true }),
+  message: z.string().openapi({ example: 'Verification code sent' }),
+}).openapi('SendCodeResponse')
+
+export const successResponseSchema = z.object({
+  success: z.boolean().openapi({ example: true }),
+  message: z.string().optional().openapi({ example: 'Operation completed successfully' }),
+}).openapi('SuccessResponse')
 
 export type SendCodeRequest = z.infer<typeof sendCodeSchema>
 export type RegisterRequest = z.infer<typeof registerSchema>
@@ -68,9 +83,11 @@ export type RefreshTokenRequest = z.infer<typeof refreshTokenSchema>
 export type ForgotPasswordRequest = z.infer<typeof forgotPasswordSchema>
 export type OAuthCallbackRequest = z.infer<typeof oauthCallbackSchema>
 export type OAuthUrlResponse = z.infer<typeof oauthUrlResponseSchema>
+export type AuthResponse = z.infer<typeof authResponseSchema>
 export type OAuthResponse = z.infer<typeof oauthResponseSchema>
+export type SendCodeResponse = z.infer<typeof sendCodeResponseSchema>
+export type SuccessResponse = z.infer<typeof successResponseSchema>
 
-// Aliases for consistency with OpenAPI workflow (PascalCase for Schemas)
 export const SendCodeRequestSchema = sendCodeSchema
 export const RegisterRequestSchema = registerSchema
 export const LoginRequestSchema = loginSchema
@@ -78,8 +95,7 @@ export const RefreshTokenRequestSchema = refreshTokenSchema
 export const ForgotPasswordRequestSchema = forgotPasswordSchema
 export const OAuthCallbackRequestSchema = oauthCallbackSchema
 export const OAuthUrlResponseSchema = oauthUrlResponseSchema
+export const AuthResponseSchema = authResponseSchema
 export const OAuthResponseSchema = oauthResponseSchema
-// Checking previous file content... previous file had `LoginRequestSchema`.
-// Original file (step 237) had `loginSchema`.
-// I should stick to `loginSchema` to avoid breaking existing imports in the application code.
-// Metadata names ('LoginRequest') are used for Swagger components.
+export const SendCodeResponseSchema = sendCodeResponseSchema
+export const SuccessResponseSchema = successResponseSchema

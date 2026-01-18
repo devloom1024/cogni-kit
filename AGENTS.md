@@ -67,18 +67,28 @@ import { type User } from 'shared'
 
 ### Zod 验证（packages/shared/src/schemas/）
 
-```typescript
-import { z } from 'zod'
+**重要**: 项目采用 **Schema 优先架构**，所有数据类型由 Zod Schema 作为单一数据源。
 
+```typescript
+import { z } from '@hono/zod-openapi'
+
+// 定义 Schema
 export const loginSchema = z.object({
   account: z.string().min(1, 'Account is required'),
   password: z.string().min(1, 'Password is required'),
-})
+}).openapi('LoginRequest')
+
+// 通过 z.infer 推导类型（禁止手写接口）
 export type LoginRequest = z.infer<typeof loginSchema>
 
 // 路由中使用：
 const data = loginSchema.parse(await c.req.json())  // 验证失败时抛出 ZodError
 ```
+
+**类型导入规范**:
+- ✅ 数据模型类型（User, TokenPair, AuthResponse 等）从 `shared` 导出（它们在 `schemas/` 中通过 `z.infer` 推导）
+- ✅ 枚举定义（UserStatus, SocialProvider 等）从 `shared` 导出（它们在 `types/` 中定义）
+- ❌ 禁止在 `types/` 中手写数据模型接口后再在 `schemas/` 中重复定义 Schema
 
 ### 错误处理（后端）
 
@@ -129,8 +139,8 @@ apps/web/src/
 └── hooks/              # 自定义 Hooks
 
 packages/shared/src/
-├── types/              # TypeScript 接口/枚举
-├── schemas/            # Zod 验证 Schema
+├── types/              # 纯枚举定义（as const 模式）和内部类型
+├── schemas/            # Zod Schema 定义 + z.infer 推导的类型（数据模型的单一数据源）
 ├── constants/          # 共享常量
 └── utils/              # 共享工具函数
 ```

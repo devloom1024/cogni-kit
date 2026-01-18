@@ -1,4 +1,6 @@
 ---
+allowed-tools: Bash(bun:*)
+argument-hint: [feature-name]
 description: 创建详细的实施计划
 ---
 
@@ -9,9 +11,9 @@ description: 创建详细的实施计划
 
 ## 前置条件
 **阅读所有参考文档**：
-- `.agents/reference/common/*.md` (通用标准)
-- `.agents/reference/design/*.md` (API 和数据库设计标准)
-- `.agents/reference/implementation/*.md` (后端/前端实现标准)
+- `@.agents/reference/common/*.md` (通用标准)
+- `@.agents/reference/design/*.md` (API 和数据库设计标准)
+- `@.agents/reference/implementation/*.md` (后端/前端实现标准)
 
 ## 流程
 
@@ -24,10 +26,10 @@ description: 创建详细的实施计划
     - **动作**：创建此文件并请求用户批准。
 
 ### 第二阶段：数据库设计
-1.  **分析 Schema**：阅读 `apps/server/prisma/schema.prisma`。
+1.  **分析 Schema**：阅读 `@apps/server/prisma/schema.prisma`。
 2.  **设计变更**：
     - 遵循 `database-design-standards.md`。
-    - **动作**：直接修改 `apps/server/prisma/schema.prisma` 添加新的模型/字段。
+    - **动作**：直接修改 `@apps/server/prisma/schema.prisma` 添加新的模型/字段。
     - **验证**：确保 schema 有效 (运行 `bun run --filter server db:validate` 如果可用，或进行视觉检查)。
 
 ### 第三阶段：API 设计 (OpenAPI)

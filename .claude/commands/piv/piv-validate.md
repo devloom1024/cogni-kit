@@ -1,4 +1,5 @@
 ---
+allowed-tools: Bash(bun:*)
 description: 运行全量验证套件
 ---
 

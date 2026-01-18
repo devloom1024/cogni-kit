@@ -20,4 +20,5 @@ export const updateUserSchema = z.object({
   avatar: z.string().url('Invalid avatar URL').optional().openapi({ example: 'https://example.com/avatar.png' }),
 }).openapi('UpdateUserRequest')
 
+export type User = z.infer<typeof UserSchema>
 export type UpdateUserRequest = z.infer<typeof updateUserSchema>

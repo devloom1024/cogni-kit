@@ -1,4 +1,5 @@
 ---
+allowed-tools: Bash(git ls-files:*), Bash(git status:*), Bash(git log:*), Bash(find:*)
 description: 初始化 Agent 并加载代码库理解
 ---
 
@@ -21,15 +22,15 @@ description: 初始化 Agent 并加载代码库理解
 ### 2. 阅读核心文档
 
 **关键**：必须优先阅读以下基础文档：
-- `README.md` (项目概览)
-- `.agents/reference/common/*.md` (开发标准与最佳实践)
+- `@README.md` (项目概览)
+- `@.agents/reference/common/*.md` (开发标准与最佳实践)
 
 ### 3. 识别关键文件 (Monorepo 上下文)
 
 基于结构，识别并阅读：
-- **根目录**: `package.json`, `turbo.json`
-- **后端 (apps/server)**: `package.json`, `src/index.ts` (或主入口), `prisma/schema.prisma`
-- **前端 (apps/web)**: `package.json`, `vite.config.ts`
+- **根目录**: `@package.json`, `@turbo.json`
+- **后端 (apps/server)**: `@apps/server/package.json`, `@apps/server/src/index.ts` (或主入口), `@apps/server/prisma/schema.prisma`
+- **前端 (apps/web)**: `@apps/web/package.json`, `@apps/web/vite.config.ts`
 
 ### 4. 理解当前状态
 
@@ -48,7 +49,7 @@ description: 初始化 Agent 并加载代码库理解
 - 主要技术栈 (Bun, Hono, React, Prisma)
 
 ### 核心标准 (来自 Reference 文档)
-- 从 `.agents/reference/common/` 识别出的关键开发标准
+- 从 `@.agents/reference/common/` 识别出的关键开发标准
 
 ### 当前状态
 - 当前活跃分支

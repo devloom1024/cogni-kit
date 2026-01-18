@@ -9,6 +9,7 @@
             "title": "Welcome back",
             "subtitle": "Login to your account",
             "submit": "Login",
+            "success": "Login successful",
             "forgot_password": "Forgot password?",
             "no_account": "Don't have an account?",
             "register": "Sign up"
@@ -20,10 +21,18 @@
             "has_account": "Already have an account?",
             "login": "Login"
         },
+        "forgot_password": {
+            "title": "Reset Password",
+            "subtitle": "Enter your email address to reset your password",
+            "submit": "Reset Password",
+            "back_to_login": "Back to Login"
+        },
         "fields": {
             "email": "Email",
             "password": "Password",
             "repeat_password": "Confirm Password",
+            "new_password": "New Password",
+            "repeat_new_password": "Confirm New Password",
             "code": "Verification Code",
             "send_code": "Get Code"
         },

@@ -1,0 +1,2 @@
+- [claude-code-docs-llm.txt](https://code.claude.com/docs/llms.txt)
+- [shadcn-docs-llm.txt](https://ui.shadcn.com/llms.txt)

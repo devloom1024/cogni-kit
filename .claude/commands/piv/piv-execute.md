@@ -1,5 +1,7 @@
 ---
-description: 执行实施计划
+allowed-tools: Bash(bun:*)
+argument-hint: [plan-file]
+description: 执行已批准的实施计划
 ---
 
 # 执行计划 (Execute Plan)
@@ -10,7 +12,7 @@ description: 执行实施计划
 ## 上下文加载
 1.  **阅读计划**：阅读特定的 `.agents/plan/${plan_file}.md`。
 2.  **阅读设计**：阅读 `.agents/design/${feature_name}/prd.md` 和 `.agents/design/${feature_name}/openapi.yml`。
-3.  **阅读标准**：阅读 `.agents/reference/common/*.md` 和 `.agents/reference/implementation/*.md`。
+3.  **阅读标准**：阅读 `@.agents/reference/common/*.md` 和 `@.agents/reference/implementation/*.md`。
 
 ## 执行规则
 - **严格遵守**：后端实现必须严格遵循 `openapi.yml` 契约。

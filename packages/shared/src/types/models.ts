@@ -37,32 +37,8 @@ export const VerificationCodeType = {
 export type VerificationCodeType = typeof VerificationCodeType[keyof typeof VerificationCodeType]
 
 // ==================== 数据模型类型 ====================
-
-/**
- * 用户数据模型
- */
-export interface User {
-  id: string
-  username: string
-  nickname: string | null
-  email: string | null
-  emailVerified: boolean
-  phone: string | null
-  phoneVerified: boolean
-  avatar: string | null
-  status: UserStatus
-  createdAt: string // ISO 8601 字符串
-  updatedAt: string // ISO 8601 字符串
-}
-
-/**
- * Token 对 (访问令牌 + 刷新令牌)
- */
-export interface TokenPair {
-  accessToken: string
-  refreshToken: string
-  expiresAt: string // ISO 8601 字符串
-}
+// 注意: User 和 TokenPair 类型已迁移至 schemas/ 并通过 z.infer 推导
+// 请从 'shared' 导入这些类型，它们现在由 Zod Schema 作为单一数据源
 
 /**
  * 第三方账号信息
