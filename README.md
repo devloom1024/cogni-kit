@@ -67,9 +67,8 @@ bun run dev
   - [前端架构 (apps/web)](docs/architecture/frontend.md) - 目录结构、主题、路由
   - [后端架构 (apps/server)](docs/architecture/backend.md) - Clean架构、日志、错误处理
 
-- **开发指南**
-  - [环境变量管理](docs/guide/env-management.md) - 配置同步与前缀规则
-  - [国际化 (I18n) 指南](docs/guide/i18n.md) - 前后端多语言实现细节
+- **功能指南**
+  - [OAuth 2.0 配置指南](docs/guide/oauth-configuration.md) - GitHub/Google OAuth 登录配置
 
 ## 📦 常用命令
 
