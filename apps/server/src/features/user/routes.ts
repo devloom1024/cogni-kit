@@ -1,6 +1,6 @@
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { OpenAPIHono, createRoute } from '@hono/zod-openapi'
 import { authMiddleware } from '../../middleware/auth.js'
-import { UserStatus, UserSchema } from 'shared'
+import { UserSchema } from 'shared'
 
 const user = new OpenAPIHono()
 

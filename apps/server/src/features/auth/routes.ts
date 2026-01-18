@@ -10,7 +10,6 @@ import {
   ForgotPasswordRequestSchema,
   TokenPairSchema,
   UserSchema,
-  ApiError,
   ErrorSchema
 } from 'shared'
 
@@ -51,18 +50,9 @@ const sendCodeRoute = createRoute({
 })
 
 auth.openapi(sendCodeRoute, async (c) => {
-  // Manual rate limit check is replaced by middleware, 
-  // but rateLimit middleware returns standard response?
-  // We need to apply middleware to this route.
-  // rateLimit middleware in Hono is usually applied via app.use() or as a middleware in the handler.
-  // OpenAPIHono supports middleware in existing ways, but let's check strict compatibility.
-  // For now, I'll apply it via a wrapper or assume global rate limiter if configured, 
-  // but the original code had explicit rateLimit middleware on this route.
-  // 'rateLimit' from middleware/rate-limit.js returns a Hono middleware.
-
   const data = c.req.valid('json')
   await authService.sendCode(data)
-  return c.json({ success: true, message: 'Verification code sent' })
+  return c.json({ success: true, message: 'Verification code sent' }, 200)
 })
 
 // --- Register ---
@@ -136,13 +126,18 @@ const loginRoute = createRoute({
       },
       description: 'Login successful'
     },
-    401: {
+    400: {
       content: { 'application/json': { schema: ErrorSchema } },
       description: 'Invalid credentials'
+    },
+    403: {
+      content: { 'application/json': { schema: ErrorSchema } },
+      description: 'Account banned or inactive'
     }
   }
 })
 
+// @ts-expect-error - Hono OpenAPI types don't support error responses handled by errorHandler middleware  
 auth.openapi(loginRoute, async (c) => {
   const data = c.req.valid('json')
   const result = await authService.login(data)

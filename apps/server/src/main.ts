@@ -1,4 +1,3 @@
-import { serve } from '@hono/node-server'
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { swaggerUI } from '@hono/swagger-ui'
 import { cors } from 'hono/cors'
@@ -65,7 +64,7 @@ app.doc('/doc', {
     version: '1.0.0',
     title: 'CogniKit API',
   },
-  // @ts-ignore: components is valid at runtime but missing in type definition
+  // @ts-expect-error: components is valid at runtime but missing in type definition
   components: {
     securitySchemes: {
       bearerAuth: {

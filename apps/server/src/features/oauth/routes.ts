@@ -45,6 +45,7 @@ const getAuthUrlRoute = createRoute({
   }
 })
 
+// @ts-expect-error - Hono OpenAPI types don't support error responses handled by errorHandler middleware
 oauth.openapi(getAuthUrlRoute, async (c) => {
   const provider = c.req.valid('param').provider
   const { redirectUri } = c.req.valid('query')
@@ -115,6 +116,7 @@ const handleCallbackRoute = createRoute({
   }
 })
 
+// @ts-expect-error - Hono OpenAPI types don't support error responses handled by errorHandler middleware
 oauth.openapi(handleCallbackRoute, async (c) => {
   const provider = c.req.valid('param').provider
   const { code, redirectUri } = c.req.valid('json')
