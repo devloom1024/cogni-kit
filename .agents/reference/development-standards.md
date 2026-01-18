@@ -123,13 +123,18 @@ export type LoginRequest = z.infer<typeof loginSchema>;
 ```
 
 ### 4.2 国际化 (i18n)
+*   **共享翻译架构**:
+    *   `packages/shared/src/i18n/` 存放共享的 validation 翻译。
+    *   前后端在初始化 i18next 时，合并 shared 翻译与本地翻译。
+    *   **禁止**在前后端重复定义相同的翻译键。
 *   **Shared Schema**: Zod Schema 中的 `message` 必须是 **Translation Key**，禁止硬编码自然语言。
     *   正例: `.min(5, 'validation.username_min')`
     *   反例: `.min(5, 'Username must be at least 5 characters')`
-*   **Key 命名**: 使用层级结构 (如 `auth.login.title`)，避免扁平化。
+*   **Key 命名**: 使用层级结构 (如 `validation.password.min`)，避免扁平化。
 *   **后端错误**:
-    *   后端必须捕获所有 Zod 校验错误，并根据请求头 (`Accept-Language`) 将 Translation Key 翻译为最终文本返回（作为保底）。
-    *   业务逻辑错误应抛出自定义 `AppError`，包含 `ErrorCode`，由全局异常处理器统一转换为多语言响应。
+    *   后端必须捕获所有 Zod 校验错误，并根据 `Accept-Language` 请求头将 Translation Key 翻译为最终文本返回（作为保底）。
+    *   业务逻辑错误应抛出自定义 `AppError`，包含 `ErrorCode` 和翻译键。
+    *   由 `app.onError()` 全局异常处理器统一转换为多语言响应。
 
 ---
 
@@ -146,6 +151,7 @@ export type LoginRequest = z.infer<typeof loginSchema>;
 **示例**: `feat(auth): implement google oauth login`
 
 ### 5.2 环境变量
+*   详细操作请参考 **[环境变量管理指南](../../docs/guide/env-management.md)**。
 *   **严禁**提交 `.env` 文件。
 *   维护 `.env.example` 文件，包含所有 Key 和示例值。
 *   使用 `zod` 在应用启动时验证环境变量有效性。
