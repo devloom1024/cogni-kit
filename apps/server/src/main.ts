@@ -1,8 +1,10 @@
+import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger as honoLogger } from 'hono/logger'
 import { env } from './config/env.js'
 import { errorHandler } from './middleware/error-handler.js'
+import { i18nMiddleware } from './middleware/i18n.js'
 import { auth } from './features/auth/routes.js'
 import { oauth } from './features/oauth/routes.js'
 import { user } from './features/user/routes.js'
@@ -11,12 +13,18 @@ import { logger } from './shared/logger.js'
 const app = new Hono()
 
 app.use('*', honoLogger())
-app.use('*', cors({
-  origin: env.FRONTEND_URL,
-  credentials: true,
-}))
+app.use(
+  '*',
+  cors({
+    origin: env.FRONTEND_URL,
+    credentials: true,
+  })
+)
 
-app.use('*', errorHandler)
+// Register i18n middleware
+app.use('*', i18nMiddleware)
+// Register error handler using Hono's onError
+app.onError(errorHandler)
 
 app.get('/', (c) => {
   return c.json({ message: 'CogniKit API is running' })

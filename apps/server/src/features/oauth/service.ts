@@ -9,7 +9,9 @@ import {
   TOKEN_CONFIG,
   type AuthResponse,
   type TokenPair,
+  ErrorCode,
 } from 'shared'
+import { AppError } from '../../shared/error.js'
 
 export interface OAuthUserProfile {
   providerId: string
@@ -49,7 +51,7 @@ export const oauthService = {
     if (socialAccount) {
       // 已绑定，直接登录
       if (socialAccount.user.status !== UserStatus.ACTIVE) {
-        throw new Error('Account is not active')
+        throw new AppError(ErrorCode.ACCOUNT_INACTIVE, 'auth.account_inactive', 403)
       }
 
       const tokens = await createSession(prisma, socialAccount.userId)

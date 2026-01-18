@@ -16,11 +16,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { SocialAuth } from "@/features/auth/components/SocialAuth"
 import { useLogin } from "@/features/auth/queries"
-import { useForm } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { loginSchema, type LoginRequest } from "shared"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
+import { FormError } from "@/components/form-error"
 
 export function LoginPage({
     className,
@@ -29,8 +30,12 @@ export function LoginPage({
     const { t } = useTranslation()
     const { mutate: login, isPending } = useLogin()
 
-    const { register, handleSubmit, formState: { errors } } = useForm<LoginRequest>({
-        resolver: zodResolver(loginSchema)
+    const form = useForm<LoginRequest>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+            account: "",
+            password: "",
+        },
     })
 
     const onSubmit = (data: LoginRequest) => {
@@ -47,7 +52,7 @@ export function LoginPage({
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSubmit(onSubmit)}>
+                    <form onSubmit={form.handleSubmit(onSubmit)}>
                         <FieldGroup>
                             <Field>
                                 <SocialAuth />
@@ -57,34 +62,48 @@ export function LoginPage({
                                 {t('auth.oauth.continue_with')}
                             </FieldSeparator>
 
-                            <Field>
-                                <FieldLabel htmlFor="account">{t('auth.fields.email')}</FieldLabel>
-                                <Input
-                                    id="account"
-                                    type="text" // Supports username or email
-                                    placeholder="m@example.com"
-                                    {...register('account')}
-                                />
-                                {errors.account && <span className="text-sm text-red-500">{errors.account.message}</span>}
-                            </Field>
+                            <Controller
+                                control={form.control}
+                                name="account"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="account">{t('auth.fields.email')}</FieldLabel>
+                                        <Input
+                                            id="account"
+                                            type="text" // Supports username or email
+                                            placeholder="m@example.com"
+                                            {...field}
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FormError error={fieldState.error} />
+                                    </Field>
+                                )}
+                            />
 
-                            <Field>
-                                <div className="flex items-center">
-                                    <FieldLabel htmlFor="password">{t('auth.fields.password')}</FieldLabel>
-                                    <Link
-                                        to="/forgot-password"
-                                        className="ml-auto text-sm underline-offset-4 hover:underline"
-                                    >
-                                        {t('auth.login.forgot_password')}
-                                    </Link>
-                                </div>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    {...register('password')}
-                                />
-                                {errors.password && <span className="text-sm text-red-500">{errors.password.message}</span>}
-                            </Field>
+                            <Controller
+                                control={form.control}
+                                name="password"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <div className="flex items-center">
+                                            <FieldLabel htmlFor="password">{t('auth.fields.password')}</FieldLabel>
+                                            <Link
+                                                to="/forgot-password"
+                                                className="ml-auto text-sm underline-offset-4 hover:underline"
+                                            >
+                                                {t('auth.login.forgot_password')}
+                                            </Link>
+                                        </div>
+                                        <Input
+                                            id="password"
+                                            type="password"
+                                            {...field}
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FormError error={fieldState.error} />
+                                    </Field>
+                                )}
+                            />
 
                             <Field>
                                 <Button type="submit" disabled={isPending}>

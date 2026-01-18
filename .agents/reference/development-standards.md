@@ -35,6 +35,19 @@
     *   **严禁**使用 `style` 属性编写行内样式。
     *   使用 `cn()` (clsx + tailwind-merge) 工具函数处理条件样式和样式合并。
     *   **颜色与主题**: 必须使用 CSS 变量（如 `bg-primary`, `text-muted-foreground`）而非硬编码颜色（如 `bg-blue-500`），以支持 Dark Mode。
+39: 
+40: ### 2.2 表单开发规范 (Form Implementation)
+41: *   **库选型**: 统一使用 `react-hook-form` + `zod` + `shadcn/ui`。
+42: *   **实现模式**:
+43:     *   必须使用 **Controller + Field** 模式（即 Controlled Components），而非 `register`（Uncontrolled）。
+44:     *   这能确保与 UI 组件库的最佳兼容性及更强的类型控制。
+45: *   **错误显示**:
+46:     *   **严禁**直接渲染 `<span>{error.message}</span>`。
+47:     *   **必须**使用包装组件（如 `FormError`）来显示错误信息。
+48:     *   **原因**: Shared Schema 返回的是翻译键值（Translation Key），必须在前端通过 `t()` 函数转换后才能展示给用户。
+49: *   **组件修改**:
+50:     *   **严禁**直接修改 `src/components/ui` 目录下的第三方组件代码。
+51:     *   如果需要扩展功能（如自动翻译错误），请创建 Wrapper 组件（如 `src/components/form-error.tsx`）。
 
 ### 2.2 状态管理
 *   **服务端状态 (Server State)**: **必须**使用 **TanStack Query (React Query)**。
@@ -102,16 +115,21 @@ src/features/auth/
 import { z } from 'zod';
 
 export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8)
+  email: z.string().email('validation.email.invalid'), // 使用 Translation Key
+  password: z.string().min(8, 'validation.password.min')
 });
 
 export type LoginRequest = z.infer<typeof loginSchema>;
 ```
 
 ### 4.2 国际化 (i18n)
+*   **Shared Schema**: Zod Schema 中的 `message` 必须是 **Translation Key**，禁止硬编码自然语言。
+    *   正例: `.min(5, 'validation.username_min')`
+    *   反例: `.min(5, 'Username must be at least 5 characters')`
 *   **Key 命名**: 使用层级结构 (如 `auth.login.title`)，避免扁平化。
-*   **后端错误**: 后端返回给前端的错误信息应包含 `error_code` 或 i18n key，而非直接返回文本。
+*   **后端错误**:
+    *   后端必须捕获所有 Zod 校验错误，并根据请求头 (`Accept-Language`) 将 Translation Key 翻译为最终文本返回（作为保底）。
+    *   业务逻辑错误应抛出自定义 `AppError`，包含 `ErrorCode`，由全局异常处理器统一转换为多语言响应。
 
 ---
 

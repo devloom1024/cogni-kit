@@ -14,12 +14,13 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useRegister, useSendCode } from "@/features/auth/queries"
-import { useForm } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { registerSchema, type RegisterRequest, VerificationCodeType } from "shared"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { useState, useEffect } from "react"
+import { FormError } from "@/components/form-error"
 
 export function RegisterPage({
     className,
@@ -31,11 +32,14 @@ export function RegisterPage({
 
     const [countdown, setCountdown] = useState(0)
 
-    // Use a looser schema for format validation before actual submission if needed, 
-    // or just use registerSchema but we need to handle "send code" separate from "register".
-    // For sending code, we only need email.
-    const { register, handleSubmit, getValues, trigger, formState: { errors } } = useForm<RegisterRequest>({
-        resolver: zodResolver(registerSchema)
+    const form = useForm<RegisterRequest>({
+        resolver: zodResolver(registerSchema),
+        defaultValues: {
+            email: "",
+            code: "",
+            password: "",
+            repeatPassword: ""
+        }
     })
 
     useEffect(() => {
@@ -46,8 +50,8 @@ export function RegisterPage({
     }, [countdown])
 
     const onSendCode = async () => {
-        const email = getValues('email')
-        const isValid = await trigger('email')
+        const email = form.getValues('email')
+        const isValid = await form.trigger('email')
         if (isValid && email) {
             sendCode({ target: email, type: VerificationCodeType.register }, {
                 onSuccess: () => setCountdown(60)
@@ -69,59 +73,87 @@ export function RegisterPage({
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSubmit(onSubmit)}>
+                    <form onSubmit={form.handleSubmit(onSubmit)}>
                         <FieldGroup>
-                            <Field>
-                                <FieldLabel htmlFor="email">{t('auth.fields.email')}</FieldLabel>
-                                <div className="flex gap-2">
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        placeholder="m@example.com"
-                                        {...register('email')}
-                                        className="flex-1"
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={onSendCode}
-                                        disabled={countdown > 0 || isSending}
-                                    >
-                                        {countdown > 0 ? `${countdown}s` : t('auth.fields.send_code')}
-                                    </Button>
-                                </div>
-                                {errors.email && <span className="text-sm text-red-500">{errors.email.message}</span>}
-                            </Field>
+                            <Controller
+                                control={form.control}
+                                name="email"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="email">{t('auth.fields.email')}</FieldLabel>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                id="email"
+                                                type="email"
+                                                placeholder="m@example.com"
+                                                {...field}
+                                                aria-invalid={fieldState.invalid}
+                                                className="flex-1"
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={onSendCode}
+                                                disabled={countdown > 0 || isSending}
+                                            >
+                                                {countdown > 0 ? `${countdown}s` : t('auth.fields.send_code')}
+                                            </Button>
+                                        </div>
+                                        <FormError error={fieldState.error} />
+                                    </Field>
+                                )}
+                            />
 
-                            <Field>
-                                <FieldLabel htmlFor="code">{t('auth.fields.code')}</FieldLabel>
-                                <Input
-                                    id="code"
-                                    type="text"
-                                    {...register('code')}
-                                />
-                                {errors.code && <span className="text-sm text-red-500">{errors.code.message}</span>}
-                            </Field>
+                            <Controller
+                                control={form.control}
+                                name="code"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="code">{t('auth.fields.code')}</FieldLabel>
+                                        <Input
+                                            id="code"
+                                            type="text"
+                                            {...field}
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FormError error={fieldState.error} />
+                                    </Field>
+                                )}
+                            />
 
-                            <Field>
-                                <FieldLabel htmlFor="password">{t('auth.fields.password')}</FieldLabel>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    {...register('password')}
-                                />
-                                {errors.password && <span className="text-sm text-red-500">{errors.password.message}</span>}
-                            </Field>
+                            <Controller
+                                control={form.control}
+                                name="password"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="password">{t('auth.fields.password')}</FieldLabel>
+                                        <Input
+                                            id="password"
+                                            type="password"
+                                            {...field}
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FormError error={fieldState.error} />
+                                    </Field>
+                                )}
+                            />
 
-                            <Field>
-                                <FieldLabel htmlFor="repeatPassword">{t('auth.fields.repeat_password')}</FieldLabel>
-                                <Input
-                                    id="repeatPassword"
-                                    type="password"
-                                    {...register('repeatPassword')}
-                                />
-                                {errors.repeatPassword && <span className="text-sm text-red-500">{errors.repeatPassword.message}</span>}
-                            </Field>
+                            <Controller
+                                control={form.control}
+                                name="repeatPassword"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="repeatPassword">{t('auth.fields.repeat_password')}</FieldLabel>
+                                        <Input
+                                            id="repeatPassword"
+                                            type="password"
+                                            {...field}
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FormError error={fieldState.error} />
+                                    </Field>
+                                )}
+                            />
 
                             <Field>
                                 <Button type="submit" disabled={isRegistering}>

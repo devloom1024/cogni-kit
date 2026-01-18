@@ -22,9 +22,6 @@
   "email": {
     "service_error": "邮件发送失败，请稍后重试"
   },
-  "validation": {
-    "error": "输入数据校验失败"
-  },
   "internal": {
     "error": "服务器内部错误"
   }

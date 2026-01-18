@@ -227,7 +227,7 @@ paths:
                     $ref: '#/components/schemas/User'
                   tokens:
                     $ref: '#/components/schemas/TokenPair'
-        '401':
+        '400':
           description: Invalid credentials
           content:
             application/json:

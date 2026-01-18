@@ -1,0 +1,29 @@
+{
+    "validation": {
+        "error": "输入数据校验失败",
+        "password": {
+            "min": "密码长度至少为 8 位",
+            "max": "密码长度最多为 128 位",
+            "uppercase": "密码必须包含至少一个大写字母",
+            "lowercase": "密码必须包含至少一个小写字母",
+            "number": "密码必须包含至少一个数字",
+            "mismatch": "两次输入的密码不一致",
+            "required": "请输入密码"
+        },
+        "email": {
+            "invalid": "无效的邮箱地址"
+        },
+        "code": {
+            "length": "验证码必须为 6 位数字"
+        },
+        "account": {
+            "required": "请输入账号"
+        },
+        "refresh_token": {
+            "required": "缺少刷新令牌"
+        },
+        "auth_code": {
+            "required": "缺少授权码"
+        }
+    }
+}

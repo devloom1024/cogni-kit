@@ -22,9 +22,6 @@
   "email": {
     "service_error": "Email service error, please try again later"
   },
-  "validation": {
-    "error": "Validation failed"
-  },
   "internal": {
     "error": "Internal server error"
   }

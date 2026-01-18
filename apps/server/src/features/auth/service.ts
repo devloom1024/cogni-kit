@@ -19,7 +19,9 @@ import {
   type ForgotPasswordRequest,
   type AuthResponse,
   type TokenPair,
+  ErrorCode,
 } from 'shared'
+import { AppError } from '../../shared/error.js'
 
 const RATE_LIMIT_PREFIX = 'code_send_limit:'
 
@@ -35,20 +37,20 @@ export const authService = {
     }
 
     if (sendCount > VERIFICATION_CODE_CONFIG.RATE_LIMIT_PER_EMAIL) {
-      throw new Error('Too many requests')
+      throw new AppError(ErrorCode.TOO_MANY_REQUESTS, 'rate_limit.too_many_requests', 429)
     }
 
     if (type === VerificationCodeType.register) {
       const existingUser = await prisma.user.findUnique({ where: { email } })
       if (existingUser) {
-        throw new Error('Email already exists')
+        throw new AppError(ErrorCode.EMAIL_EXISTS, 'auth.email_exists', 409)
       }
     }
 
     if (type === VerificationCodeType.forgot_password) {
       const existingUser = await prisma.user.findUnique({ where: { email } })
       if (!existingUser) {
-        throw new Error('User not found')
+        throw new AppError(ErrorCode.USER_NOT_FOUND, 'auth.user_not_found', 404)
       }
     }
 
@@ -84,12 +86,12 @@ export const authService = {
     })
 
     if (!verificationCode) {
-      throw new Error('Invalid or expired verification code')
+      throw new AppError(ErrorCode.INVALID_CODE, 'auth.invalid_code', 400)
     }
 
     const existingUser = await prisma.user.findUnique({ where: { email } })
     if (existingUser) {
-      throw new Error('Email already exists')
+      throw new AppError(ErrorCode.EMAIL_EXISTS, 'auth.email_exists', 409)
     }
 
     const passwordHash = await hashPassword(password)
@@ -149,24 +151,24 @@ export const authService = {
     })
 
     if (!user || !user.passwordHash) {
-      throw new Error('Invalid credentials')
+      throw new AppError(ErrorCode.INVALID_CREDENTIALS, 'auth.invalid_credentials', 400)
     }
 
     const isPasswordValid = await comparePassword(password, user.passwordHash)
     if (!isPasswordValid) {
-      throw new Error('Invalid credentials')
+      throw new AppError(ErrorCode.INVALID_CREDENTIALS, 'auth.invalid_credentials', 400)
     }
 
     if (user.status === UserStatus.BANNED) {
-      throw new Error('Account has been banned')
+      throw new AppError(ErrorCode.ACCOUNT_BANNED, 'auth.account_banned', 403)
     }
 
     if (user.status === UserStatus.INACTIVE) {
-      throw new Error('Account not activated')
+      throw new AppError(ErrorCode.ACCOUNT_INACTIVE, 'auth.account_inactive', 403)
     }
 
     if (user.status === UserStatus.DELETED) {
-      throw new Error('Account has been deleted')
+      throw new AppError(ErrorCode.ACCOUNT_DELETED, 'auth.account_deleted', 403)
     }
 
     const tokens = await createSession(prisma, user.id)
@@ -200,15 +202,15 @@ export const authService = {
     })
 
     if (!session || session.revoked) {
-      throw new Error('Invalid or expired refresh token')
+      throw new AppError(ErrorCode.INVALID_TOKEN, 'auth.invalid_token', 401)
     }
 
     if (session.refreshTokenExpiresAt < new Date()) {
-      throw new Error('Invalid or expired refresh token')
+      throw new AppError(ErrorCode.INVALID_TOKEN, 'auth.token_expired', 401)
     }
 
     if (session.user.status !== UserStatus.ACTIVE) {
-      throw new Error('Account is not active')
+      throw new AppError(ErrorCode.ACCOUNT_INACTIVE, 'auth.account_inactive', 403)
     }
 
     const newAccessToken = generateAccessToken(session.userId)
@@ -268,12 +270,12 @@ export const authService = {
     })
 
     if (!verificationCode) {
-      throw new Error('Invalid or expired verification code')
+      throw new AppError(ErrorCode.INVALID_CODE, 'auth.invalid_code', 400)
     }
 
     const user = await prisma.user.findUnique({ where: { email } })
     if (!user) {
-      throw new Error('User not found')
+      throw new AppError(ErrorCode.USER_NOT_FOUND, 'auth.user_not_found', 404)
     }
 
     const passwordHash = await hashPassword(newPassword)

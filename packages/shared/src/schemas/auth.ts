@@ -3,48 +3,48 @@ import { VerificationCodeType } from '../types/models.js'
 
 export const passwordSchema = z
   .string()
-  .min(8, 'Password must be at least 8 characters')
-  .max(128, 'Password is too long')
-  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-  .regex(/[0-9]/, 'Password must contain at least one number')
+  .min(8, 'validation.password.min')
+  .max(128, 'validation.password.max')
+  .regex(/[A-Z]/, 'validation.password.uppercase')
+  .regex(/[a-z]/, 'validation.password.lowercase')
+  .regex(/[0-9]/, 'validation.password.number')
 
 export const sendCodeSchema = z.object({
-  target: z.string().email('Invalid email address'),
+  target: z.string().email('validation.email.invalid'),
   type: z.nativeEnum(VerificationCodeType),
 })
 
 export const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('validation.email.invalid'),
   password: passwordSchema,
   repeatPassword: z.string(),
-  code: z.string().length(6, 'Code must be 6 digits'),
+  code: z.string().length(6, 'validation.code.length'),
 }).refine(data => data.password === data.repeatPassword, {
-  message: "Passwords don't match",
+  message: "validation.password.mismatch",
   path: ['repeatPassword'],
 })
 
 export const loginSchema = z.object({
-  account: z.string().min(1, 'Account is required'),
-  password: z.string().min(1, 'Password is required'),
+  account: z.string().min(1, 'validation.account.required'),
+  password: z.string().min(1, 'validation.password.required'),
 })
 
 export const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token is required'),
+  refreshToken: z.string().min(1, 'validation.refresh_token.required'),
 })
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  code: z.string().length(6, 'Code must be 6 digits'),
+  email: z.string().email('validation.email.invalid'),
+  code: z.string().length(6, 'validation.code.length'),
   newPassword: passwordSchema,
   repeatNewPassword: z.string(),
 }).refine(data => data.newPassword === data.repeatNewPassword, {
-  message: "Passwords don't match",
+  message: "validation.password.mismatch",
   path: ['repeatNewPassword'],
 })
 
 export const oauthCallbackSchema = z.object({
-  code: z.string().min(1, 'Authorization code is required'),
+  code: z.string().min(1, 'validation.auth_code.required'),
   redirectUri: z.string().url().optional(),
 })
 
