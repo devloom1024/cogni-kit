@@ -1,0 +1,219 @@
+openapi: 3.0.0
+info:
+  title: 金融数据服务 (Python)
+  version: 1.0.0
+  description: 封装 AkShare 库的内部微服务，提供金融数据支持。
+
+paths:
+  # ==================== 股票数据 (Stock Data) ====================
+  /stock/search:
+    get:
+      summary: 搜索股票 (A股/港股/美股)
+      description: |
+        调用 `stock_zh_a_spot_em`, `stock_hk_spot_em` 等接口获取列表并进行过滤。
+        实际实现中可能需要缓存全量列表并在内存中进行模糊搜索。
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 搜索关键词 (代码/名称)
+      responses:
+        "200":
+          description: 匹配的股票列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StockInfo"
+
+  /stock/{symbol}/spot:
+    get:
+      summary: 获取实时行情
+      description: |
+        调用 `stock_bid_ask_em` (个股五档) 或从 `stock_zh_a_spot_em` 中筛选。
+        A股推荐使用 `stock_bid_ask_em(symbol)` 获取更详细数据。
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 实时行情数据
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RealtimeQuote"
+
+  /stock/{symbol}/kline:
+    get:
+      summary: 获取历史 K 线
+      description: 调用 `stock_zh_a_hist` (A股), `stock_hk_hist` (港股), `stock_us_hist` (美股)。
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+            default: daily
+            description: 周期 (日/周/月)
+        - name: adjust
+          in: query
+          schema:
+            type: string
+            enum: ["", qfq, hfq]
+            default: qfq
+            description: 复权方式 (空=不复权, qfq=前复权, hfq=后复权)
+      responses:
+        "200":
+          description: K 线数据列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/KLinePoint"
+
+  # ==================== 基金数据 (Fund Data) ====================
+  /fund/search:
+    get:
+      summary: 搜索基金
+      description: 调用 `fund_name_em` 获取基金列表并搜索。
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 匹配的基金列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FundInfo"
+
+  /fund/{symbol}/holdings:
+    get:
+      summary: 获取基金持仓
+      description: 调用 `fund_portfolio_hold_em` 获取十大重仓股。
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            description: 指定年份 (如 "2024")
+      responses:
+        "200":
+          description: 十大重仓股列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FundHolding"
+
+components:
+  schemas:
+    StockInfo:
+      type: object
+      properties:
+        symbol:
+          type: string
+          description: 股票代码 (如 600519)
+        name:
+          type: string
+          description: 股票名称
+        market:
+          type: string
+          description: 市场标识 (CN/HK/US)
+
+    FundInfo:
+      type: object
+      properties:
+        symbol:
+          type: string
+          description: 基金代码
+        name:
+          type: string
+          description: 基金名称
+        type:
+          type: string
+          description: 基金类型 (如 股票型, 混合型)
+
+    RealtimeQuote:
+      type: object
+      properties:
+        price:
+          type: number
+          description: 最新价
+        open:
+          type: number
+          description: 今开
+        high:
+          type: number
+          description: 最高
+        low:
+          type: number
+          description: 最低
+        volume:
+          type: number
+          description: 成交量
+        amount:
+          type: number
+          description: 成交额
+        change_percent:
+          type: number
+          description: 涨跌幅 (%)
+
+    KLinePoint:
+      type: object
+      properties:
+        date:
+          type: string
+          description: 日期 (YYYY-MM-DD)
+        open:
+          type: number
+          description: 开盘价
+        close:
+          type: number
+          description: 收盘价
+        high:
+          type: number
+          description: 最高价
+        low:
+          type: number
+          description: 最低价
+        volume:
+          type: number
+          description: 成交量
+
+    FundHolding:
+      type: object
+      properties:
+        symbol:
+          type: string
+          description: 持仓股票代码
+        name:
+          type: string
+          description: 持仓股票名称
+        percentage:
+          type: number
+          description: 持仓占比 (%)

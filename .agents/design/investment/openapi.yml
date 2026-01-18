@@ -1,0 +1,462 @@
+openapi: 3.0.0
+info:
+  title: 投资模块 API
+  version: 1.0.0
+  description: 用于管理投资标的、自选列表和市场行情的 API。
+
+paths:
+  # ==================== 资产管理 (Asset Management) ====================
+  /investment/assets/search:
+    get:
+      summary: 搜索标的
+      description: 通过代码、名称或拼音搜索标的。返回匹配的标的列表及其类型、市场信息。
+      tags: [Investment]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 搜索关键词 (例如 "600519", "茅台", "MT")
+      responses:
+        "200":
+          description: 匹配的标的列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssetSearchResult"
+
+  /investment/assets/{id}:
+    get:
+      summary: 获取标的详情 (元数据 + 静态信息)
+      description: 获取标的静态元数据，包括所属行业、主营业务描述和持仓明细（仅基金/ETF）。
+      tags: [Investment]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 标的唯一 ID
+      responses:
+        "200":
+          description: 标的详情
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetDetail"
+        "404":
+          description: 未找到标的
+
+  /investment/assets/{id}/quote:
+    get:
+      summary: 获取实时行情 (价格/净值)
+      description: 获取标的最新市场数据（价格、成交量、涨跌幅等）。对于基金，返回最新净值。
+      tags: [Investment]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 标的唯一 ID
+      responses:
+        "200":
+          description: 实时行情
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RealtimeQuote"
+
+  /investment/assets/{id}/kline:
+    get:
+      summary: 获取 K 线数据
+      description: 获取用于绘制图表的历史 K 线数据。
+      tags: [Investment]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 标的唯一 ID
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [day, week, month]
+          description: K 线周期 (日/周/月)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 250
+          description: 返回的数据点数量
+      responses:
+        "200":
+          description: K 线数据
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/KLinePoint"
+
+  # ==================== 自选列表管理 (Watchlist Management) ====================
+  /investment/watchlist/groups:
+    get:
+      summary: 获取所有自选分组
+      description: 获取当前用户的所有自选分组，包含分组内的标的项。
+      tags: [Watchlist]
+      responses:
+        "200":
+          description: 分组列表（含标的项）
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WatchlistGroup"
+    post:
+      summary: 创建新自选分组
+      tags: [Watchlist]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  description: 新分组名称
+      responses:
+        "201":
+          description: 分组已创建
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistGroup"
+
+  /investment/watchlist/groups/{id}:
+    patch:
+      summary: 更新自选分组
+      tags: [Watchlist]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 新组名
+                sortOrder:
+                  type: integer
+                  description: 新排序权重
+      responses:
+        "200":
+          description: 分组已更新
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistGroup"
+    delete:
+      summary: 删除自选分组
+      tags: [Watchlist]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: 分组已删除
+
+  /investment/watchlist/items:
+    post:
+      summary: 添加标的到自选分组
+      tags: [Watchlist]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assetId, groupId]
+              properties:
+                assetId:
+                  type: string
+                  description: 标的 ID
+                groupId:
+                  type: string
+                  description: 目标分组 ID
+      responses:
+        "201":
+          description: 已添加
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistItem"
+
+  /investment/watchlist/items/{id}:
+    patch:
+      summary: 更新自选项
+      tags: [Watchlist]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                groupId:
+                  type: string
+                  description: 移动到其他分组 ID
+                sortOrder:
+                  type: integer
+                  description: 组内排序权重
+      responses:
+        "200":
+          description: 自选项已更新
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistItem"
+    delete:
+      summary: 从自选移除
+      tags: [Watchlist]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: 已移除
+
+components:
+  schemas:
+    # 枚举
+    AssetType:
+      type: string
+      enum: [STOCK, ETF, FUND]
+      description: 资产类型 (STOCK=股票, ETF=场内基金, FUND=场外基金)
+    AssetMarket:
+      type: string
+      enum: [CN, HK, US]
+      description: 所属市场 (CN=A股, HK=港股, US=美股)
+
+    # 模型
+    AssetSearchResult:
+      type: object
+      description: 搜索结果摘要信息
+      properties:
+        id:
+          type: string
+          description: 内部唯一 ID
+        symbol:
+          type: string
+          description: 标的代码 (如 "600519")
+        name:
+          type: string
+          description: 标的名称
+        type:
+          $ref: "#/components/schemas/AssetType"
+        market:
+          $ref: "#/components/schemas/AssetMarket"
+
+    AssetDetail:
+      type: object
+      description: 标的详细静态信息
+      properties:
+        id:
+          type: string
+        symbol:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/AssetType"
+        market:
+          $ref: "#/components/schemas/AssetMarket"
+        industry:
+          type: string
+          description: 所属行业 (如 "半导体")
+        businessSummary:
+          type: string
+          description: 主营业务或基金投资策略简述
+        manager:
+          type: string
+          description: 基金经理姓名 (仅基金/ETF)
+        establishmentDate:
+          type: string
+          format: date-time
+          description: 上市日期或成立日期
+        scale:
+          type: number
+          description: 资产规模 (单位：亿)
+        riskLevel:
+          type: string
+          description: 风险等级 (如 "R3")
+        holdings:
+          type: array
+          description: 十大重仓股 (仅基金/ETF)
+          items:
+            $ref: "#/components/schemas/AssetHolding"
+
+    AssetHolding:
+      type: object
+      description: 单个持仓明细
+      properties:
+        symbol:
+          type: string
+          description: 持仓标的代码
+        name:
+          type: string
+          description: 持仓标的名称
+        percentage:
+          type: number
+          description: 持仓占比 (例如 15.5 代表 15.5%)
+        reportDate:
+          type: string
+          format: date-time
+          description: 数据报告期
+
+    RealtimeQuote:
+      type: object
+      description: 实时行情快照
+      properties:
+        price:
+          type: number
+          description: 最新价或最新净值
+        change:
+          type: number
+          description: 涨跌额
+        changePercent:
+          type: number
+          description: 涨跌幅 (例如 1.5 代表 +1.5%)
+        open:
+          type: number
+          description: 今开
+        prevClose:
+          type: number
+          description: 昨收
+        high:
+          type: number
+          description: 最高
+        low:
+          type: number
+          description: 最低
+        volume:
+          type: number
+          description: 成交量 (股/份)
+        amount:
+          type: number
+          description: 成交额
+        turnoverRate:
+          type: number
+          description: 换手率 (%)
+        marketCap:
+          type: number
+          description: 总市值
+        pe:
+          type: number
+          description: 市盈率 (TTM)
+        pb:
+          type: number
+          description: 市净率
+        timestamp:
+          type: string
+          format: date-time
+          description: 数据更新时间
+
+    KLinePoint:
+      type: object
+      description: 单个 K 线数据点
+      properties:
+        timestamp:
+          type: number
+          description: 时间戳 (毫秒)
+        open:
+          type: number
+          description: 开盘价
+        high:
+          type: number
+          description: 最高价
+        low:
+          type: number
+          description: 最低价
+        close:
+          type: number
+          description: 收盘价
+        volume:
+          type: number
+          description: 成交量
+        ma5:
+          type: number
+          description: 5日均线
+        ma10:
+          type: number
+          description: 10日均线
+        ma20:
+          type: number
+          description: 20日均线
+
+    WatchlistGroup:
+      type: object
+      description: 用户自选分组
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        sortOrder:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WatchlistItem"
+
+    WatchlistItem:
+      type: object
+      description: 自选列表中的单个监控项
+      properties:
+        id:
+          type: string
+          description: 自选关系 ID
+        assetId:
+          type: string
+        groupId:
+          type: string
+        sortOrder:
+          type: integer
+        symbol:
+          type: string
+          description: 标的代码 (扁平化显示)
+        name:
+          type: string
+          description: 标的名称 (扁平化显示)
+        type:
+          $ref: "#/components/schemas/AssetType"
+        market:
+          $ref: "#/components/schemas/AssetMarket"

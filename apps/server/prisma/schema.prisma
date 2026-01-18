@@ -64,6 +64,7 @@ model User {
   // 关联关系
   socialAccounts SocialAccount[]
   sessions       Session[]
+  watchlistGroups WatchlistGroup[]
 
   @@index([email])
   @@index([username])
@@ -171,4 +172,120 @@ model VerificationCode {
   @@index([target, type])
   @@index([expiresAt])
   @@map("verification_codes")
+}
+
+// ==================== 投资模块枚举 ====================
+
+enum AssetType {
+  STOCK
+  ETF
+  FUND
+}
+
+enum AssetMarket {
+  CN // A股/场内
+  HK // 港股
+  US // 美股
+}
+
+// ==================== 投资模块核心表 ====================
+
+/// 资产基础信息表 - 存储静态元数据
+model Asset {
+  id          String      @id @default(uuid())
+  /// 标的代码 (如 600519, AAPL)
+  symbol      String
+  /// 标的名称
+  name        String
+  /// 资产类型
+  type        AssetType
+  /// 所属市场
+  market      AssetMarket
+  
+  /// 所属行业 (股票/ETF)
+  industry    String?
+  /// 主营业务描述 (股票)
+  businessSummary String? @map("business_summary") @db.Text
+  
+  /// 基金经理 (基金)
+  manager     String?
+  /// 成立日期
+  establishmentDate DateTime? @map("establishment_date")
+  /// 资产规模 (单位: 亿)
+  scale       Decimal?    @db.Decimal(20, 4)
+  /// 风险等级
+  riskLevel   String?     @map("risk_level")
+
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  // 关联关系
+  holdings      AssetHolding[]
+  watchlistItems WatchlistItem[]
+
+  @@unique([market, symbol]) // 同一市场下代码唯一
+  @@index([type])
+  @@index([name]) // 支持名称搜索
+  @@map("assets")
+}
+
+/// 基金/ETF 持仓明细表 (十大重仓)
+model AssetHolding {
+  id          String   @id @default(uuid())
+  assetId     String   @map("asset_id")
+  
+  /// 持仓标的代码
+  symbol      String
+  /// 持仓标的名称
+  name        String
+  /// 持仓占比 (百分比, 如 15.5 表示 15.5%)
+  percentage  Decimal  @db.Decimal(10, 4)
+  
+  /// 数据报告期 (如 2023-12-31)
+  reportDate  DateTime? @map("report_date")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@map("asset_holdings")
+}
+
+/// 自选分组表
+model WatchlistGroup {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String
+  /// 排序权重
+  sortOrder   Int      @default(0) @map("sort_order")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // 关联
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       WatchlistItem[]
+
+  @@index([userId])
+  @@map("watchlist_groups")
+}
+
+/// 自选明细表
+model WatchlistItem {
+  id          String   @id @default(uuid())
+  groupId     String   @map("group_id")
+  assetId     String   @map("asset_id")
+  /// 排序权重
+  sortOrder   Int      @default(0) @map("sort_order")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  group       WatchlistGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  asset       Asset          @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, assetId]) // 同一分组下主要添加一次
+  @@map("watchlist_items")
 }
