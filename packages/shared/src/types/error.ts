@@ -1,13 +1,7 @@
 // ==================== 错误类型 ====================
 
-/**
- * API 错误响应
- */
-export interface ApiError {
-  code: string // 业务错误码
-  message: string // 错误信息
-  details?: Record<string, unknown> // 额外信息
-}
+// ==================== 错误类型 ====================
+// ApiError is now defined in schemas/error.ts via z.infer
 
 // ==================== 错误码枚举 ====================
 

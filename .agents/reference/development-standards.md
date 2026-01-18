@@ -100,27 +100,19 @@ src/features/auth/
     *   **必须**使用文档注释 (`///`) 为模型和字段添加说明。
     *   **必须**通过 `prisma migrate` 管理所有数据库变更。
 
+### 3.4 OpenAPI 与文档 (Shared Schema First)
+*   **核心原则**: **代码即文档 (Code is Documentation)**。
+*   **详细工作流**: 请参考 **[后端 API 开发工作流 (Backend API Development Workflow)](./backend-api-workflow.md)**。
+    *   包含从 Schema 定义、路由实现到前端集成的完整步骤。
+    *   严禁手动维护 YAML 文件。
 
 ---
 
 ## 4. 共享协作规范 (packages/shared)
 
 ### 4.1 DTO (Data Transfer Object)
-*   所有的 API 请求参数和响应结构**必须**使用 **Zod** 定义 Schema，并导出 TypeScript 类型。
-*   **位置**: `packages/shared/src/schemas/`。
-
-**示例**:
-```typescript
-// packages/shared/src/schemas/auth.ts
-import { z } from 'zod';
-
-export const loginSchema = z.object({
-  email: z.string().email('validation.email.invalid'), // 使用 Translation Key
-  password: z.string().min(8, 'validation.password.min')
-});
-
-export type LoginRequest = z.infer<typeof loginSchema>;
-```
+*   **规范**: 必须使用 `@hono/zod-openapi` 定义 Schema 并添加元数据。
+*   **详细指南**: 请参考 **[后端 API 开发工作流](./backend-api-workflow.md#step-1-在-shared-中定义-schema)**。
 
 ### 4.2 国际化 (i18n)
 *   **共享翻译架构**:

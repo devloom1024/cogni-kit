@@ -1,5 +1,6 @@
 import { serve } from '@hono/node-server'
-import { Hono } from 'hono'
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { swaggerUI } from '@hono/swagger-ui'
 import { cors } from 'hono/cors'
 import { logger as honoLogger } from 'hono/logger'
 import { env } from './config/env.js'
@@ -10,7 +11,7 @@ import { oauth } from './features/oauth/routes.js'
 import { user } from './features/user/routes.js'
 import { logger } from './shared/logger.js'
 
-const app = new Hono()
+const app = new OpenAPIHono()
 
 app.use('*', honoLogger())
 app.use(
@@ -30,13 +31,54 @@ app.get('/', (c) => {
   return c.json({ message: 'CogniKit API is running' })
 })
 
-app.get('/health', (c) => {
+const healthRoute = createRoute({
+  method: 'get',
+  path: '/health',
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            status: z.string().openapi({ example: 'ok' }),
+            timestamp: z.string().openapi({ example: '2024-01-01T00:00:00.000Z' }),
+          }),
+        },
+      },
+      description: 'Health check endpoint',
+    },
+  },
+})
+
+app.openapi(healthRoute, (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
 app.route('/auth', auth)
 app.route('/auth', oauth)
 app.route('/users', user)
+
+// OpenAPI documentation
+// OpenAPI documentation
+app.doc('/doc', {
+  openapi: '3.0.0',
+  info: {
+    version: '1.0.0',
+    title: 'CogniKit API',
+  },
+  // @ts-ignore: components is valid at runtime but missing in type definition
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+    },
+  },
+})
+
+// Swagger UI
+app.get('/swagger', swaggerUI({ url: '/doc' }))
 
 const port = Number(env.PORT)
 
