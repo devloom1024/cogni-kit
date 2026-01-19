@@ -4,9 +4,21 @@ info:
   version: 1.0.0
   description: 用于管理投资标的、自选列表和市场行情的 API。
 
+servers:
+  - url: http://localhost:3000
+    description: 本地开发服务器
+  - url: https://api.cognikit.com/investment
+    description: 生产环境服务器
+
+tags:
+  - name: Investment
+    description: 投资标的管理 - 标的搜索、详情、行情、K线等
+  - name: Watchlist
+    description: 自选列表管理 - 用户的自选分组和标的
+
 paths:
   # ==================== 资产管理 (Asset Management) ====================
-  /investment/assets/search:
+  /api/v1/investment/assets/search:
     get:
       summary: 搜索标的
       description: 通过代码、名称或拼音搜索标的。返回匹配的标的列表及其类型、市场信息。
@@ -17,9 +29,12 @@ paths:
           required: true
           schema:
             type: string
+            minLength: 1
+            maxLength: 50
           description: 搜索关键词 (例如 "600519", "茅台", "MT")
         - name: page
           in: query
+          required: false
           schema:
             type: integer
             default: 1
@@ -27,6 +42,7 @@ paths:
           description: 页码 (从 1 开始)
         - name: limit
           in: query
+          required: false
           schema:
             type: integer
             default: 20
@@ -39,14 +55,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AssetSearchResponse"
+              examples:
+                success:
+                  summary: 搜索结果示例
+                  value:
+                    data:
+                      - id: "asset_001"
+                        symbol: "600519"
+                        name: "贵州茅台"
+                        type: "STOCK"
+                        market: "CN"
+                      - id: "asset_002"
+                        symbol: "00700"
+                        name: "腾讯控股"
+                        type: "STOCK"
+                        market: "HK"
+                    meta:
+                      total: 2
+                      page: 1
+                      limit: 20
+                      totalPages: 1
         "400":
           description: 请求参数错误
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/Error"
 
-  /investment/assets/{id}:
+  /api/v1/investment/assets/{id}:
     get:
       summary: 获取标的详情 (元数据 + 静态信息)
       description: 获取标的静态元数据，包括所属行业、主营业务描述和持仓明细（仅基金/ETF）。
@@ -70,9 +106,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/Error"
 
-  /investment/assets/{id}/quote:
+  /api/v1/investment/assets/{id}/quote:
     get:
       summary: 获取实时行情 (价格/净值)
       description: 获取标的最新市场数据（价格、成交量、涨跌幅等）。对于基金，返回最新净值。
@@ -92,10 +128,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/RealtimeQuote"
 
-  /investment/assets/quotes/batch:
+  /api/v1/investment/assets/quotes/batch:
     post:
       summary: 批量获取实时行情
-      description: 批量获取多个标的的实时行情，用于自选列表页优化性能。
+      description: |
+        批量获取多个标的的实时行情，用于自选列表页优化性能。
+
+        **限制**: 一次最多查询 50 个标的。
+        **注意**: 如果部分标的不存在，仍返回 200，但对应标的的数据为 null。
       tags: [Investment]
       requestBody:
         required: true
@@ -109,8 +149,9 @@ paths:
                   type: array
                   items:
                     type: string
-                  description: 标的 ID 数组
+                  minItems: 1
                   maxItems: 50
+                  description: 标的 ID 数组，最多 50 个
       responses:
         "200":
           description: 批量行情结果
@@ -125,10 +166,19 @@ paths:
                       $ref: "#/components/schemas/RealtimeQuote"
                     description: key 为 assetId，value 为行情数据
 
-  /investment/assets/{id}/kline:
+  /api/v1/investment/assets/{id}/kline:
     get:
       summary: 获取 K 线数据和技术指标
-      description: 获取用于绘制图表的历史 K 线数据，支持动态技术指标计算。
+      description: |
+        获取用于绘制图表的历史 K 线数据，支持动态技术指标计算。
+
+        **支持的指标**:
+        - `ma(n)`: n日移动平均线
+        - `ema(n)`: n日指数移动平均
+        - `macd(fast,slow,signal)`: MACD指标
+        - `rsi(n)`: RSI指标
+        - `boll(n,std)`: 布林带
+        - `kdj(n,m1,m2)`: KDJ指标
       tags: [Investment]
       parameters:
         - name: id
@@ -143,16 +193,19 @@ paths:
           schema:
             type: string
             enum: [day, week, month]
-          description: K 线周期 (日/周/月)
+          description: K 线周期 (day=日线, week=周线, month=月线)
         - name: limit
           in: query
+          required: false
           schema:
             type: integer
             default: 250
+            minimum: 1
             maximum: 1000
-          description: 返回的数据点数量
+          description: 返回的数据点数量，默认 250 条
         - name: indicators
           in: query
+          required: false
           schema:
             type: string
           description: |
@@ -173,11 +226,13 @@ paths:
                 $ref: "#/components/schemas/KLineResponse"
 
   # ==================== 自选列表管理 (Watchlist Management) ====================
-  /investment/watchlist/groups:
+  /api/v1/investment/watchlist/groups:
     get:
       summary: 获取所有自选分组
       description: 获取当前用户的所有自选分组，包含分组内的标的项。
       tags: [Watchlist]
+      security:
+        - bearerAuth: []
       responses:
         "200":
           description: 分组列表（含标的项）
@@ -188,14 +243,23 @@ paths:
                 items:
                   $ref: "#/components/schemas/WatchlistGroup"
         "401":
-          description: 未授权
+          description: 未授权（未登录或 Token 无效）
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: 无权限访问
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     post:
       summary: 创建新自选分组
+      description: 创建一个新的自选分组，用于分类管理自选标的。
       tags: [Watchlist]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -206,8 +270,9 @@ paths:
               properties:
                 name:
                   type: string
-                  description: 新分组名称
+                  minLength: 1
                   maxLength: 50
+                  description: 新分组名称，1-50 个字符
       responses:
         "201":
           description: 分组已创建
@@ -215,17 +280,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WatchlistGroup"
+        "400":
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
-  /investment/watchlist/groups/{id}:
+  /api/v1/investment/watchlist/groups/{id}:
     patch:
       summary: 更新自选分组
+      description: 更新自选分组的名称或排序权重。
       tags: [Watchlist]
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+          description: 分组 ID
       requestBody:
         required: true
         content:
@@ -235,10 +316,12 @@ paths:
               properties:
                 name:
                   type: string
+                  minLength: 1
+                  maxLength: 50
                   description: 新组名
                 sortOrder:
                   type: integer
-                  description: 新排序权重
+                  description: 新排序权重 (数值越小越靠前)
       responses:
         "200":
           description: 分组已更新
@@ -251,16 +334,26 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     delete:
       summary: 删除自选分组
+      description: 删除自选分组，同时删除分组内的所有自选项。
       tags: [Watchlist]
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+          description: 分组 ID
       responses:
         "204":
           description: 分组已删除
@@ -269,12 +362,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
-  /investment/watchlist/items:
+  /api/v1/investment/watchlist/items:
     post:
       summary: 添加标的到自选分组
+      description: 将指定标的添加到自选分组中。
       tags: [Watchlist]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -296,23 +398,39 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WatchlistItem"
+        "400":
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "409":
           description: 标的已存在于该分组
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
-  /investment/watchlist/items/{id}:
+  /api/v1/investment/watchlist/items/{id}:
     patch:
       summary: 更新自选项 (移动分组/调整排序)
+      description: 将自选项移动到其他分组，或调整在同一分组内的排序权重。
       tags: [Watchlist]
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+          description: 自选项 ID
       requestBody:
         required: true
         content:
@@ -322,10 +440,10 @@ paths:
               properties:
                 groupId:
                   type: string
-                  description: 移动到其他分组 ID
+                  description: 移动到其他分组 ID (可选)
                 sortOrder:
                   type: integer
-                  description: 组内排序权重
+                  description: 组内排序权重 (可选，数值越小越靠前)
       responses:
         "200":
           description: 自选项已更新
@@ -333,20 +451,55 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WatchlistItem"
+        "404":
+          description: 自选项不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     delete:
       summary: 从自选移除
+      description: 从自选列表中移除指定标的。
       tags: [Watchlist]
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+          description: 自选项 ID
       responses:
         "204":
           description: 已移除
+        "404":
+          description: 自选项不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "JWT Token 认证，通过 Authorization: Bearer <token> 传递"
+
   schemas:
     # ==================== 枚举 ====================
     AssetType:
@@ -361,7 +514,11 @@ components:
     AssetMarket:
       type: string
       enum: [CN, HK, US]
-      description: 所属市场 (CN=A股, HK=港股, US=美股)
+      description: |
+        所属市场:
+        - CN: A 股 (中国)
+        - HK: 港股 (中国香港)
+        - US: 美股 (美国)
 
     TradingStatus:
       type: string
@@ -369,33 +526,36 @@ components:
       description: |
         交易状态:
         - TRADING: 交易中
-        - CLOSED: 休市
+        - CLOSED: 休市/已收盘
         - SUSPENDED: 停牌
 
     # ==================== 通用响应 ====================
-    ErrorResponse:
+    Error:
       type: object
       required: [code, message]
+      description: 错误响应
       properties:
         code:
           type: string
-          description: 业务错误码
+          description: 业务错误码 (固定枚举值，用于前端逻辑判断)
         message:
           type: string
-          description: 错误描述
+          description: 错误描述 (开发者可读的调试信息)
         details:
           type: object
-          description: 额外错误详情
+          nullable: true
+          description: 额外的错误详情 (如表单字段验证错误)
 
     PaginationMeta:
       type: object
+      description: 分页元信息
       properties:
         total:
           type: integer
           description: 总记录数
         page:
           type: integer
-          description: 当前页码
+          description: 当前页码 (从 1 开始)
         limit:
           type: integer
           description: 每页数量
@@ -428,6 +588,7 @@ components:
       properties:
         data:
           type: array
+          description: 搜索结果列表
           items:
             $ref: "#/components/schemas/AssetSearchResult"
         meta:
@@ -439,35 +600,45 @@ components:
       properties:
         id:
           type: string
+          description: 标的唯一 ID
         symbol:
           type: string
+          description: 标的代码
         name:
           type: string
+          description: 标的名称
         type:
           $ref: "#/components/schemas/AssetType"
         market:
           $ref: "#/components/schemas/AssetMarket"
         industry:
           type: string
+          nullable: true
           description: 所属行业 (如 "半导体")
         businessSummary:
           type: string
+          nullable: true
           description: 主营业务或基金投资策略简述
         manager:
           type: string
+          nullable: true
           description: 基金经理姓名 (仅基金/ETF)
         establishmentDate:
           type: string
           format: date
+          nullable: true
           description: 上市日期或成立日期
         scale:
           type: number
+          nullable: true
           description: 资产规模 (单位：亿)
         riskLevel:
           type: string
+          nullable: true
           description: 风险等级 (如 "R3")
         holdings:
           type: array
+          nullable: true
           description: 十大重仓股 (仅基金/ETF)
           items:
             $ref: "#/components/schemas/AssetHolding"
@@ -523,22 +694,26 @@ components:
           description: 成交额
         turnoverRate:
           type: number
+          nullable: true
           description: 换手率 (%)
         marketCap:
           type: number
+          nullable: true
           description: 总市值 (亿元)
         pe:
           type: number
+          nullable: true
           description: 市盈率 (TTM)
         pb:
           type: number
+          nullable: true
           description: 市净率
         tradingStatus:
           $ref: "#/components/schemas/TradingStatus"
         timestamp:
           type: string
           format: date-time
-          description: 数据更新时间
+          description: 数据更新时间 (UTC)
 
     # ==================== K 线模型 ====================
     KLineResponse:
@@ -554,6 +729,7 @@ components:
             $ref: "#/components/schemas/KLinePoint"
         indicators:
           type: object
+          nullable: true
           additionalProperties: true
           description: |
             动态技术指标，key 为指标表达式。
@@ -561,11 +737,14 @@ components:
             多值指标 (MACD/BOLL/KDJ) 返回对象。
         meta:
           type: object
+          nullable: true
           properties:
             symbol:
               type: string
+              description: 标的代码
             period:
               type: string
+              description: K 线周期
 
     KLinePoint:
       type: object
@@ -580,7 +759,7 @@ components:
       properties:
         timestamp:
           type: number
-          description: 时间戳 (毫秒)
+          description: 时间戳 (毫秒，Unix Timestamp)
         open:
           type: number
           description: 开盘价
@@ -604,20 +783,26 @@ components:
       properties:
         id:
           type: string
+          description: 分组唯一 ID
         name:
           type: string
+          description: 分组名称
         sortOrder:
           type: integer
+          description: 排序权重 (数值越小越靠前)
         items:
           type: array
+          description: 分组内的自选项列表
           items:
             $ref: "#/components/schemas/WatchlistItem"
         createdAt:
           type: string
           format: date-time
+          description: 分组创建时间 (UTC)
         updatedAt:
           type: string
           format: date-time
+          description: 分组更新时间 (UTC)
 
     WatchlistItem:
       type: object
@@ -628,10 +813,13 @@ components:
           description: 自选关系 ID
         assetId:
           type: string
+          description: 标的 ID
         groupId:
           type: string
+          description: 所属分组 ID
         sortOrder:
           type: integer
+          description: 组内排序权重
         symbol:
           type: string
           description: 标的代码 (扁平化显示)
@@ -645,6 +833,8 @@ components:
         createdAt:
           type: string
           format: date-time
+          description: 添加时间 (UTC)
         updatedAt:
           type: string
           format: date-time
+          description: 更新时间 (UTC)

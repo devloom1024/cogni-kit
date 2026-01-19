@@ -14,15 +14,15 @@ export const OAUTH_PROVIDERS = ['github', 'google', 'linuxdo'] as const
 export type OAuthProvider = typeof OAUTH_PROVIDERS[number]
 
 export const API_PATHS = {
-  SEND_CODE: '/auth/send-code',
-  REGISTER: '/auth/register',
-  LOGIN: '/auth/login',
-  LOGOUT: '/auth/logout',
-  REFRESH_TOKEN: '/auth/refresh-token',
-  FORGOT_PASSWORD: '/auth/forgot-password',
-  
-  OAUTH_URL: (provider: string) => `/auth/${provider}/url`,
-  OAUTH_CALLBACK: (provider: string) => `/auth/${provider}/callback`,
-  
-  USER_ME: '/users/me',
+  SEND_CODE: '/api/v1/auth/send-code',
+  REGISTER: '/api/v1/auth/register',
+  LOGIN: '/api/v1/auth/login',
+  LOGOUT: '/api/v1/auth/logout',
+  REFRESH_TOKEN: '/api/v1/auth/refresh-token',
+  FORGOT_PASSWORD: '/api/v1/auth/forgot-password',
+
+  OAUTH_URL: (provider: OAuthProvider) => `/api/v1/auth/${provider}/url`,
+  OAUTH_CALLBACK: (provider: OAuthProvider) => `/api/v1/auth/${provider}/callback`,
+
+  USER_ME: '/api/v1/users/me',
 } as const

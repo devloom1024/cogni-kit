@@ -52,9 +52,9 @@ app.openapi(healthRoute, (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-app.route('/auth', auth)
-app.route('/auth', oauth)
-app.route('/users', user)
+app.route('/api/v1/auth', auth)
+app.route('/api/v1/auth', oauth)
+app.route('/api/v1/users', user)
 
 // OpenAPI documentation
 // OpenAPI documentation

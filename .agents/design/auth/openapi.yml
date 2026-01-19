@@ -1,11 +1,22 @@
 openapi: 3.0.0
 info:
-  title: CogniKit Auth API
-  description: Authentication and User Management API for CogniKit
+  title: 认证 API
   version: 1.0.0
+  description: 提供用户注册、登录、个人信息管理等功能
+
 servers:
   - url: http://localhost:3001
-    description: Local Development Server
+    description: 本地开发服务器
+  - url: https://api.cognikit.com/auth
+    description: 生产环境服务器
+
+tags:
+  - name: Auth
+    description: 用户认证 - 注册、登录、登出、Token 刷新、密码重置
+  - name: OAuth
+    description: 第三方 OAuth 认证 - GitHub、Google、LinuxDo 等
+  - name: User
+    description: 用户管理 - 用户信息、Profile 等
 
 components:
   securitySchemes:
@@ -13,52 +24,81 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: "JWT Token 认证，通过 Authorization: Bearer <token> 传递"
 
   schemas:
-    # --- Common Responses ---
+    # --- 通用响应 ---
     Error:
       type: object
       required:
         - code
         - message
+      description: 错误响应
       properties:
         code:
           type: string
-          description: Business error code (e.g., "auth.user_not_found")
+          description: 业务错误码 (如 "auth.user_not_found", "auth.invalid_token")
         message:
           type: string
-          description: Developer-friendly error message
+          description: 错误描述 (开发者可读的调试信息)
         details:
           type: object
-          description: Additional error details (optional)
-    
-    # --- Data Models ---
+          nullable: true
+          description: 额外的错误详情 (如表单字段验证错误)
+
+    # --- 数据模型 ---
     User:
       type: object
+      description: 用户信息
       properties:
         id:
           type: string
           format: uuid
+          description: 用户唯一标识
         username:
           type: string
+          minLength: 3
+          maxLength: 20
+          description: 用户名 (3-20 个字符，仅支持字母、数字、下划线)
         nickname:
           type: string
           nullable: true
+          description: 用户昵称 (可选)
         email:
           type: string
           format: email
           nullable: true
+          description: 邮箱地址
         emailVerified:
           type: boolean
+          description: 邮箱是否已验证
         avatar:
           type: string
           nullable: true
+          description: 头像 URL
         status:
           type: string
           enum: [ACTIVE, INACTIVE, BANNED, DELETED]
+          description: |
+            用户状态:
+            - ACTIVE: 正常激活状态
+            - INACTIVE: 未激活（注册后未验证邮箱）
+            - BANNED: 已封禁
+            - DELETED: 已删除 (软删除)
         createdAt:
           type: string
           format: date-time
+          description: 账号创建时间 (UTC)
+
+    UserStatus:
+      type: string
+      enum: [ACTIVE, INACTIVE, BANNED, DELETED]
+      description: |
+        用户状态:
+        - ACTIVE: 正常激活状态
+        - INACTIVE: 未激活（注册后未验证邮箱）
+        - BANNED: 已封禁
+        - DELETED: 已删除 (软删除)
 
     TokenPair:
       type: object
@@ -66,19 +106,20 @@ components:
         - accessToken
         - refreshToken
         - expiresAt
+      description: Token 令牌对
       properties:
         accessToken:
           type: string
-          description: JWT Access Token (short-lived)
+          description: JWT Access Token (短期有效，约 1 小时)
         refreshToken:
           type: string
-          description: Refresh Token (long-lived)
+          description: Refresh Token (长期有效，用于刷新 Access Token)
         expiresAt:
           type: string
           format: date-time
-          description: Access Token expiration time
+          description: Access Token 过期时间 (UTC)
 
-    # --- Request Bodies ---
+    # --- 请求体 ---
     RegisterRequest:
       type: object
       required:
@@ -86,55 +127,73 @@ components:
         - password
         - repeatPassword
         - code
+      description: 用户注册请求
       properties:
         email:
           type: string
           format: email
+          description: 注册邮箱地址
         password:
           type: string
           minLength: 8
+          maxLength: 64
+          description: 密码 (8-64 位，建议包含字母、数字、特殊字符)
         repeatPassword:
           type: string
           minLength: 8
+          maxLength: 64
+          description: 确认密码 (需与 password 一致)
         code:
           type: string
           minLength: 6
           maxLength: 6
-          description: Email verification code
+          description: 邮箱验证码 (6 位数字)
 
     LoginRequest:
       type: object
       required:
         - account
         - password
+      description: 用户登录请求
       properties:
         account:
           type: string
-          description: Email or Username
+          description: 账号 (邮箱或用户名)
         password:
           type: string
+          description: 密码
 
     SendCodeRequest:
       type: object
       required:
         - target
         - type
+      description: 发送验证码请求
       properties:
         target:
           type: string
           format: email
-          description: Email address (or phone in future)
+          description: 目标邮箱地址
         type:
           type: string
           enum: [register, login, forgot_password, bind_email, bind_phone]
+          description: |
+            验证码类型:
+            - register: 注册验证码
+            - login: 登录验证码
+            - forgot_password: 忘记密码验证码
+            - bind_email: 绑定邮箱验证码
+            - bind_phone: 绑定手机验证码
 
     RefreshTokenRequest:
       type: object
       required:
         - refreshToken
+      description: 刷新 Token 请求
       properties:
         refreshToken:
           type: string
+          description: Refresh Token
 
     ForgotPasswordRequest:
       type: object
@@ -143,36 +202,65 @@ components:
         - code
         - newPassword
         - repeatNewPassword
+      description: 忘记密码请求
       properties:
         email:
           type: string
           format: email
+          description: 注册邮箱地址
         code:
           type: string
+          minLength: 6
+          maxLength: 6
+          description: 邮箱验证码 (6 位数字)
         newPassword:
           type: string
           minLength: 8
+          maxLength: 64
+          description: 新密码
         repeatNewPassword:
           type: string
           minLength: 8
+          maxLength: 64
+          description: 确认新密码
 
     OAuthCallbackRequest:
       type: object
       required:
         - code
+      description: OAuth 回调请求
       properties:
         code:
           type: string
-          description: Authorization code from provider
+          description: 授权码 (Authorization Code)
         redirectUri:
           type: string
-          description: The redirect URI used in the initial request (sometimes required for verification)
+          format: uri
+          description: 回调地址 (OAuth 初始化时的 redirect_uri，部分提供商需要验证)
+
+    OAuthProvider:
+      type: string
+      enum: [github, google, linuxdo]
+      description: |
+        OAuth 提供商:
+        - github: GitHub
+        - google: Google
+        - linuxdo: LinuxDo
 
 paths:
   # ==================== Auth ====================
-  /auth/register:
+  /api/v1/auth/register:
     post:
-      summary: Register with Email
+      summary: 用户注册
+      description: |
+        通过邮箱注册新用户。
+
+        **流程**:
+        1. 调用 /api/v1/auth/send-code 发送注册验证码
+        2. 提交邮箱、密码、验证码完成注册
+        3. 注册成功后自动登录，返回 Token
+
+        **注意**: 连续失败 5 次将触发账号锁定 30 分钟。
       tags: [Auth]
       requestBody:
         required: true
@@ -180,9 +268,17 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              success:
+                summary: 注册成功示例
+                value:
+                  email: "user@example.com"
+                  password: "SecurePass123"
+                  repeatPassword: "SecurePass123"
+                  code: "123456"
       responses:
         '201':
-          description: Registration successful
+          description: 注册成功
           content:
             application/json:
               schema:
@@ -192,22 +288,55 @@ paths:
                     $ref: '#/components/schemas/User'
                   tokens:
                     $ref: '#/components/schemas/TokenPair'
+              examples:
+                success:
+                  summary: 注册成功响应
+                  value:
+                    user:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      username: "zhangsan"
+                      email: "user@example.com"
+                      emailVerified: false
+                      status: "INACTIVE"
+                      createdAt: "2024-01-19T12:00:00Z"
+                    tokens:
+                      accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      refreshToken: "550e8400-e29b-41d4-a716-446655440000"
+                      expiresAt: "2024-01-19T13:00:00Z"
         '400':
-          description: Invalid input or passwords do not match
+          description: 请求参数错误或验证码错误
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                validation_error:
+                  summary: 验证码错误
+                  value:
+                    code: "auth.invalid_code"
+                    message: "验证码错误或已过期"
         '409':
-          description: Email already exists
+          description: 邮箱已存在
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                conflict:
+                  summary: 邮箱已注册
+                  value:
+                    code: "auth.email_exists"
+                    message: "该邮箱已被注册"
 
-  /auth/login:
+  /api/v1/auth/login:
     post:
-      summary: Login with Account (Email/Username) and Password
+      summary: 用户登录
+      description: |
+        支持邮箱或用户名 + 密码登录。
+
+        **注意**:
+        - 连续失败 5 次将触发账号锁定 30 分钟
+        - 未激活用户需要先验证邮箱
       tags: [Auth]
       requestBody:
         required: true
@@ -215,9 +344,20 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/LoginRequest'
+            examples:
+              by_email:
+                summary: 邮箱登录
+                value:
+                  account: "user@example.com"
+                  password: "SecurePass123"
+              by_username:
+                summary: 用户名登录
+                value:
+                  account: "zhangsan"
+                  password: "SecurePass123"
       responses:
         '200':
-          description: Login successful
+          description: 登录成功
           content:
             application/json:
               schema:
@@ -227,16 +367,64 @@ paths:
                     $ref: '#/components/schemas/User'
                   tokens:
                     $ref: '#/components/schemas/TokenPair'
+              examples:
+                success:
+                  summary: 登录成功响应
+                  value:
+                    user:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      username: "zhangsan"
+                      email: "user@example.com"
+                      emailVerified: true
+                      status: "ACTIVE"
+                      createdAt: "2024-01-19T12:00:00Z"
+                    tokens:
+                      accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      refreshToken: "550e8400-e29b-41d4-a716-446655440000"
+                      expiresAt: "2024-01-19T13:00:00Z"
         '400':
-          description: Invalid credentials
+          description: 账号或密码错误
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                invalid_credentials:
+                  summary: 密码错误
+                  value:
+                    code: "auth.invalid_credentials"
+                    message: "账号或密码错误"
+        '403':
+          description: 账号未激活或被封禁
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                inactive:
+                  summary: 账号未激活
+                  value:
+                    code: "auth.account_inactive"
+                    message: "请先验证邮箱后再登录"
+                banned:
+                  summary: 账号已封禁
+                  value:
+                    code: "auth.account_banned"
+                    message: "账号已被封禁，请联系客服"
 
-  /auth/send-code:
+  /api/v1/auth/send-code:
     post:
-      summary: Send verification code (Email)
+      summary: 发送验证码 (邮箱)
+      description: |
+        向指定邮箱发送验证码。
+
+        **验证码类型**:
+        - register: 注册验证码 (每分钟最多 1 次)
+        - login: 登录验证码 (每分钟最多 1 次)
+        - forgot_password: 忘记密码验证码 (每分钟最多 1 次)
+        - bind_email: 绑定邮箱验证码 (每分钟最多 3 次)
+
+        **注意**: 验证码有效期为 15 分钟。
       tags: [Auth]
       requestBody:
         required: true
@@ -244,9 +432,122 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SendCodeRequest'
+            examples:
+              register_code:
+                summary: 发送注册验证码
+                value:
+                  target: "user@example.com"
+                  type: "register"
       responses:
         '200':
-          description: Code sent successfully
+          description: 验证码发送成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: 是否成功发送
+                  message:
+                    type: string
+                    description: 状态信息
+                  expiresIn:
+                    type: integer
+                    description: 验证码有效期 (秒)
+              examples:
+                success:
+                  summary: 发送成功
+                  value:
+                    success: true
+                    message: "验证码已发送至 user@example.com"
+                    expiresIn: 900
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 请求过于频繁
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                too_many_requests:
+                  summary: 发送过于频繁
+                  value:
+                    code: "auth.rate_limit_exceeded"
+                    message: "请稍后再试"
+
+  /api/v1/auth/refresh-token:
+    post:
+      summary: 刷新 Access Token
+      description: 使用 Refresh Token 获取新的 Access Token 和 Refresh Token。
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token 刷新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '401':
+          description: Refresh Token 无效或已过期
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalid_token:
+                  summary: Token 无效
+                  value:
+                    code: "auth.invalid_refresh_token"
+                    message: "Refresh Token 无效或已过期，请重新登录"
+
+  /api/v1/auth/logout:
+    post:
+      summary: 退出登录
+      description: 撤销当前 Token，使 Access Token 和 Refresh Token 失效。
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: 退出登录成功 (无内容返回)
+        '401':
+          description: 未授权 (Token 无效或已过期)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/forgot-password:
+    post:
+      summary: 通过邮箱验证码重置密码
+      description: |
+        忘记密码 - 通过邮箱验证码重置密码。
+
+        **流程**:
+        1. 调用 /api/v1/auth/send-code 发送忘记密码验证码
+        2. 提交邮箱、新密码、验证码完成重置
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: 密码重置成功
           content:
             application/json:
               schema:
@@ -257,89 +558,49 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Code sent to email"
-        '429':
-          description: Too many requests
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /auth/refresh-token:
-    post:
-      summary: Refresh Access Token
-      tags: [Auth]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RefreshTokenRequest'
-      responses:
-        '200':
-          description: Token refreshed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokenPair'
-        '401':
-          description: Invalid or expired refresh token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /auth/logout:
-    post:
-      summary: Logout (Revoke Token)
-      tags: [Auth]
-      security:
-        - bearerAuth: []
-      responses:
-        '204':
-          description: Logout successful (No Content)
-        '401':
-          description: Unauthorized
-
-  /auth/forgot-password:
-    post:
-      summary: Reset password via email code
-      tags: [Auth]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ForgotPasswordRequest'
-      responses:
-        '200':
-          description: Password reset successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
+                    example: "密码重置成功，请使用新密码登录"
         '400':
-          description: Invalid code or passwords do not match
+          description: 验证码错误或密码不匹配
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalid_code:
+                  summary: 验证码错误
+                  value:
+                    code: "auth.invalid_code"
+                    message: "验证码错误或已过期"
 
   # ==================== OAuth ====================
-  /auth/{provider}/url:
+  /api/v1/auth/{provider}/url:
     get:
-      summary: Get OAuth authorization URL
+      summary: 获取 OAuth 授权 URL
+      description: |
+        获取第三方 OAuth 授权 URL，将用户重定向到提供商进行授权。
+
+        **流程**:
+        1. 调用此接口获取授权 URL
+        2. 将用户重定向到返回的 URL
+        3. 用户授权后，提供商会回调 /api/v1/auth/{provider}/callback
       tags: [OAuth]
       parameters:
         - in: path
           name: provider
           schema:
-            type: string
-            enum: [github, google, linuxdo]
+            $ref: '#/components/schemas/OAuthProvider'
           required: true
+          description: OAuth 提供商
+        - in: query
+          name: redirectUri
+          required: false
+          schema:
+            type: string
+            format: uri
+          description: 授权成功后的回调地址 (可选，默认使用注册时配置的回调地址)
       responses:
         '200':
-          description: Authorization URL retrieved
+          description: 授权 URL 获取成功
           content:
             application/json:
               schema:
@@ -347,19 +608,35 @@ paths:
                 properties:
                   url:
                     type: string
-                    description: The full URL to redirect the user to
+                    format: uri
+                    description: 完整的授权 URL，将用户重定向到此地址进行授权
+              examples:
+                github:
+                  summary: GitHub 授权 URL
+                  value:
+                    url: "https://github.com/login/oauth/authorize?client_id=xxx&redirect_uri=xxx&scope=read:user"
+        '400':
+          description: 不支持的 OAuth 提供商
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /auth/{provider}/callback:
+  /api/v1/auth/{provider}/callback:
     post:
-      summary: OAuth Callback (Exchange code for token)
+      summary: OAuth 回调 (交换 Token)
+      description: |
+        OAuth 授权码回调接口，交换授权码为 Token。
+
+        **注意**: 前端应在收到授权码后尽快调用此接口，授权码有效期通常为 10 分钟。
       tags: [OAuth]
       parameters:
         - in: path
           name: provider
           schema:
-            type: string
-            enum: [github, google, linuxdo]
+            $ref: '#/components/schemas/OAuthProvider'
           required: true
+          description: OAuth 提供商
       requestBody:
         required: true
         content:
@@ -368,7 +645,7 @@ paths:
               $ref: '#/components/schemas/OAuthCallbackRequest'
       responses:
         '200':
-          description: OAuth login successful
+          description: OAuth 登录成功
           content:
             application/json:
               schema:
@@ -380,21 +657,81 @@ paths:
                     $ref: '#/components/schemas/TokenPair'
                   isNewUser:
                     type: boolean
-                    description: True if this is a newly registered user
+                    description: 是否为新注册用户
+              examples:
+                existing_user:
+                  summary: 老用户登录
+                  value:
+                    user:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      username: "zhangsan"
+                      email: "user@example.com"
+                      emailVerified: true
+                      status: "ACTIVE"
+                      createdAt: "2024-01-19T12:00:00Z"
+                    tokens:
+                      accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      refreshToken: "550e8400-e29b-41d4-a716-446655440000"
+                      expiresAt: "2024-01-19T13:00:00Z"
+                    isNewUser: false
+                new_user:
+                  summary: 新用户注册
+                  value:
+                    user:
+                      id: "660e8400-e29b-41d4-a716-446655440001"
+                      username: "github_user"
+                      email: "user@github.com"
+                      emailVerified: true
+                      status: "ACTIVE"
+                      createdAt: "2024-01-19T12:30:00Z"
+                    tokens:
+                      accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      refreshToken: "660e8400-e29b-41d4-a716-446655440001"
+                      expiresAt: "2024-01-19T13:30:00Z"
+                    isNewUser: true
+        '400':
+          description: 授权码无效或已过期
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   # ==================== User ====================
-  /users/me:
+  /api/v1/users/me:
     get:
-      summary: Get current user profile
+      summary: 获取当前用户信息
+      description: 获取已登录用户的个人信息。
       tags: [User]
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Current user profile
+          description: 当前用户信息
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+              examples:
+                success:
+                  summary: 用户信息
+                  value:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    username: "zhangsan"
+                    nickname: "张三"
+                    email: "user@example.com"
+                    emailVerified: true
+                    avatar: "https://example.com/avatar.png"
+                    status: "ACTIVE"
+                    createdAt: "2024-01-19T12:00:00Z"
         '401':
-          description: Unauthorized
+          description: 未授权 (未登录或 Token 无效)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unauthorized:
+                  summary: Token 无效
+                  value:
+                    code: "auth.unauthorized"
+                    message: "Token 已过期或无效，请重新登录"

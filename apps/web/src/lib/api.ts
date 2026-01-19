@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useUserStore } from '@/stores/useUserStore'
+import { API_PATHS } from 'shared'
 
 const api = axios.create({
     baseURL: '/api',
@@ -39,7 +40,7 @@ api.interceptors.response.use(
 
                 // Try to refresh token
                 // Use a new axios instance to avoid infinite loops
-                const response = await axios.post('/api/auth/refresh-token', {
+                const response = await axios.post(API_PATHS.REFRESH_TOKEN, {
                     refreshToken: tokens.refreshToken,
                 })
 

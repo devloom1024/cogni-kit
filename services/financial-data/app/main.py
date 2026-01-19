@@ -92,7 +92,7 @@ async def general_error_handler(request: Request, exc: Exception):
 
 
 # 健康检查端点
-@app.get("/health", response_model=HealthResponse, tags=["Health"])
+@app.get("/api/v1/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
     """服务健康检查"""
     return HealthResponse(
@@ -105,5 +105,5 @@ async def health_check():
 from app.modules.akshare.router import router as akshare_router
 from app.modules.indicators.router import router as indicators_router
 
-app.include_router(akshare_router, prefix="/akshare", tags=["AkShare"])
-app.include_router(indicators_router, prefix="/indicators", tags=["Indicators"])
+app.include_router(akshare_router, prefix="/api/v1/akshare", tags=["AkShare"])
+app.include_router(indicators_router, prefix="/api/v1/indicators", tags=["Indicators"])

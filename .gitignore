@@ -198,3 +198,4 @@ apps/server/.env
 nul
 tmpclaude-*
 *.local.json
+*.iml

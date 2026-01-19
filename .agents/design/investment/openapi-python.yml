@@ -10,23 +10,30 @@ info:
     - **/indicators**: 技术指标计算
     - **/quant**: 量化分析 (未来)
 
+servers:
+  - url: http://localhost:8001
+    description: 本地开发服务器
+  - url: https://api.cognikit.com/financial
+    description: 生产环境服务器
+
 tags:
   - name: AkShare
-    description: 行情数据模块 - 封装 AkShare 库
+    description: 行情数据模块 - 封装 AkShare 库，提供股票、基金、K线等数据
   - name: Indicators
-    description: 技术指标模块 - 封装 TA-Lib/pandas-ta
+    description: 技术指标模块 - 封装 TA-Lib/pandas-ta，支持 MA、MACD、RSI 等指标计算
   - name: Health
-    description: 健康检查
+    description: 健康检查 - 服务状态监控
 
 paths:
   # ==================== 健康检查 ====================
-  /health:
+  /api/v1/health:
     get:
       summary: 服务健康检查
+      description: 检查服务各模块的健康状态，返回当前已加载的模块列表
       tags: [Health]
       responses:
         "200":
-          description: 服务状态
+          description: 服务状态正常
           content:
             application/json:
               schema:
@@ -34,17 +41,23 @@ paths:
                 properties:
                   status:
                     type: string
+                    description: 服务状态
                     example: "ok"
                   modules:
                     type: array
+                    description: 已加载的模块列表
                     items:
                       type: string
                     example: ["akshare", "indicators"]
 
   # ==================== AkShare 模块: 股票数据 ====================
-  /akshare/stock/list:
+  /api/v1/akshare/stock/list:
     get:
       summary: 获取全量股票列表 (用于同步)
+      description: |
+        **用途**: 供定时任务同步使用，每日凌晨调用。
+        **数据量**: 约 5000 条（A股 + 港股 + 美股）。
+        **注意**: 此接口返回全量数据，不支持分页。前端请使用 /api/v1/investment/assets/search 进行搜索。
       tags: [AkShare]
       parameters:
         - name: market
@@ -53,7 +66,7 @@ paths:
           schema:
             type: string
             enum: [CN, HK, US]
-          description: 市场过滤 (不传则返回所有市场)
+          description: 市场过滤 (可选，不传则返回所有市场)
       responses:
         "200":
           description: 全量股票列表
@@ -63,10 +76,24 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/StockInfo"
+              examples:
+                success:
+                  summary: 股票列表示例
+                  value:
+                    - symbol: "600519"
+                      name: "贵州茅台"
+                      market: "CN"
+                    - symbol: "00700"
+                      name: "腾讯控股"
+                      market: "HK"
+                    - symbol: "AAPL"
+                      name: "苹果公司"
+                      market: "US"
 
-  /akshare/stock/search:
+  /api/v1/akshare/stock/search:
     get:
       summary: 搜索股票 (A股/港股/美股)
+      description: 通过代码或名称搜索股票，支持模糊匹配
       tags: [AkShare]
       parameters:
         - name: q
@@ -74,7 +101,9 @@ paths:
           required: true
           schema:
             type: string
-          description: 搜索关键词 (代码/名称)
+            minLength: 1
+            maxLength: 20
+          description: 搜索关键词 (股票代码或名称，如 "600519" 或 "茅台")
       responses:
         "200":
           description: 匹配的股票列表
@@ -85,9 +114,10 @@ paths:
                 items:
                   $ref: "#/components/schemas/StockInfo"
 
-  /akshare/stock/{symbol}/spot:
+  /api/v1/akshare/stock/{symbol}/spot:
     get:
       summary: 获取实时行情
+      description: 获取指定股票的实时行情数据，包括价格、成交量、涨跌幅等
       tags: [AkShare]
       parameters:
         - name: symbol
@@ -95,12 +125,14 @@ paths:
           required: true
           schema:
             type: string
+          description: 股票代码 (如 "600519" 或 "00700")
         - name: market
           in: query
           required: false
           schema:
             type: string
             enum: [CN, HK, US]
+          description: 市场类型，用于解析股票代码前缀
       responses:
         "200":
           description: 实时行情数据
@@ -109,10 +141,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/RealtimeQuote"
 
-  /akshare/stock/{symbol}/kline:
+  /api/v1/akshare/stock/{symbol}/kline:
     get:
       summary: 获取 K 线数据
-      description: 返回纯 OHLCV 数据，技术指标请使用 /indicators/calculate
+      description: |
+        获取股票的 K 线数据 (OHLCV)。
+
+        **注意**: 此接口仅返回原始 K 线数据，不包含技术指标计算。
+        如需计算技术指标，请使用 /api/v1/indicators/calculate 或 /api/v1/investment/assets/{id}/kline 接口。
       tags: [AkShare]
       parameters:
         - name: symbol
@@ -120,30 +156,43 @@ paths:
           required: true
           schema:
             type: string
+          description: 股票代码
         - name: market
           in: query
           required: false
           schema:
             type: string
             enum: [CN, HK, US]
+          description: 市场类型
         - name: period
           in: query
+          required: false
           schema:
             type: string
             enum: [day, week, month]
             default: day
+          description: K 线周期 (day=日线, week=周线, month=月线)
         - name: adjust
           in: query
+          required: false
           schema:
             type: string
             enum: ["", qfq, hfq]
             default: qfq
+          description: |
+            复权类型:
+            - 空字符串: 不复权
+            - qfq: 前复权
+            - hfq: 后复权
         - name: limit
           in: query
+          required: false
           schema:
             type: integer
             default: 250
+            minimum: 1
             maximum: 1000
+          description: 返回的数据点数量，默认 250 条
       responses:
         "200":
           description: K 线数据
@@ -155,9 +204,12 @@ paths:
                   $ref: "#/components/schemas/KLinePoint"
 
   # ==================== AkShare 模块: 基金数据 ====================
-  /akshare/fund/list:
+  /api/v1/akshare/fund/list:
     get:
       summary: 获取全量基金列表 (用于同步)
+      description: |
+        **用途**: 供定时任务同步使用。
+        **数据量**: 约 2000+ 只基金。
       tags: [AkShare]
       parameters:
         - name: type
@@ -166,6 +218,7 @@ paths:
           schema:
             type: string
             enum: [ETF, FUND]
+          description: 基金类型筛选 (ETF=场内基金, FUND=场外基金)
       responses:
         "200":
           description: 全量基金列表
@@ -176,9 +229,10 @@ paths:
                 items:
                   $ref: "#/components/schemas/FundInfo"
 
-  /akshare/fund/search:
+  /api/v1/akshare/fund/search:
     get:
       summary: 搜索基金
+      description: 通过代码或名称搜索基金
       tags: [AkShare]
       parameters:
         - name: q
@@ -186,6 +240,7 @@ paths:
           required: true
           schema:
             type: string
+          description: 搜索关键词 (基金代码或名称)
       responses:
         "200":
           description: 匹配的基金列表
@@ -196,9 +251,10 @@ paths:
                 items:
                   $ref: "#/components/schemas/FundInfo"
 
-  /akshare/fund/{symbol}/nav:
+  /api/v1/akshare/fund/{symbol}/nav:
     get:
       summary: 获取场外基金最新净值
+      description: 获取场外基金的最新单位净值和日增长率
       tags: [AkShare]
       parameters:
         - name: symbol
@@ -206,6 +262,7 @@ paths:
           required: true
           schema:
             type: string
+          description: 基金代码 (如 "161039")
       responses:
         "200":
           description: 基金净值数据
@@ -214,9 +271,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/FundNav"
 
-  /akshare/fund/{symbol}/info:
+  /api/v1/akshare/fund/{symbol}/info:
     get:
       summary: 获取基金基本信息
+      description: 获取基金的基本信息，包括基金经理、规模、成立日期等
       tags: [AkShare]
       parameters:
         - name: symbol
@@ -224,6 +282,7 @@ paths:
           required: true
           schema:
             type: string
+          description: 基金代码
       responses:
         "200":
           description: 基金基本信息
@@ -232,9 +291,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/FundDetail"
 
-  /akshare/fund/{symbol}/holdings:
+  /api/v1/akshare/fund/{symbol}/holdings:
     get:
       summary: 获取基金持仓
+      description: 获取基金的十大重仓股列表
       tags: [AkShare]
       parameters:
         - name: symbol
@@ -242,11 +302,14 @@ paths:
           required: true
           schema:
             type: string
+          description: 基金代码
         - name: year
           in: query
           required: false
           schema:
             type: string
+            pattern: "^[0-9]{4}$"
+          description: 数据年份 (如 "2024")，不传则返回最新数据
       responses:
         "200":
           description: 十大重仓股列表
@@ -258,19 +321,23 @@ paths:
                   $ref: "#/components/schemas/FundHolding"
 
   # ==================== 技术指标模块 ====================
-  /indicators/calculate:
+  /api/v1/indicators/calculate:
     post:
       summary: 计算技术指标
       description: |
         根据传入的 K 线数据计算技术指标。
 
         **支持的指标**:
-        - `ma(n)`: 移动平均线
-        - `ema(n)`: 指数移动平均
-        - `macd(fast,slow,signal)`: MACD 指标
-        - `rsi(n)`: RSI 指标
-        - `boll(n,std)`: 布林带
-        - `kdj(n,m1,m2)`: KDJ 指标
+        - `ma(n)`: 简单移动平均线
+        - `ema(n)`: 指数移动平均线
+        - `macd(fast,slow,signal)`: MACD 指标 (快线、慢线、信号线)
+        - `rsi(n)`: 相对强弱指标
+        - `boll(n,std)`: 布林带 (周期, 标准差倍数)
+        - `kdj(n,m1,m2)`: KDJ 随机指标
+
+        **返回值说明**:
+        - 单值指标 (MA/EMA/RSI) 返回数字数组
+        - 多值指标 (MACD/BOLL/KDJ) 返回对象，包含多个数组
       tags: [Indicators]
       requestBody:
         required: true
@@ -280,19 +347,20 @@ paths:
               $ref: "#/components/schemas/IndicatorRequest"
       responses:
         "200":
-          description: 计算结果
+          description: 指标计算结果
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/IndicatorResponse"
 
-  /indicators/supported:
+  /api/v1/indicators/supported:
     get:
       summary: 获取支持的指标列表
+      description: 返回所有支持的技术指标及其语法说明
       tags: [Indicators]
       responses:
         "200":
-          description: 支持的指标
+          description: 支持的指标列表
           content:
             application/json:
               schema:
@@ -305,138 +373,205 @@ components:
     # ==================== AkShare 模型 ====================
     StockInfo:
       type: object
+      description: 股票基础信息
       properties:
         symbol:
           type: string
-          description: 股票代码
+          description: 股票代码 (如 "600519", "00700", "AAPL")
         name:
           type: string
-          description: 股票名称
+          description: 股票名称 (如 "贵州茅台", "腾讯控股")
         market:
           type: string
           enum: [CN, HK, US]
+          description: |
+            所属市场:
+            - CN: A 股 (中国)
+            - HK: 港股 (中国香港)
+            - US: 美股 (美国)
 
     FundInfo:
       type: object
+      description: 基金基础信息
       properties:
         symbol:
           type: string
+          description: 基金代码
         name:
           type: string
+          description: 基金名称
         type:
           type: string
           enum: [ETF, FUND]
+          description: |
+            基金类型:
+            - ETF: 场内交易型基金
+            - FUND: 场外基金
 
     FundDetail:
       type: object
+      description: 基金详细信息
       properties:
         symbol:
           type: string
+          description: 基金代码
         name:
           type: string
+          description: 基金名称
         type:
           type: string
           enum: [ETF, FUND]
+          description: 基金类型
         manager:
           type: string
+          nullable: true
+          description: 基金经理姓名
         scale:
           type: number
+          nullable: true
+          description: 基金规模 (单位：亿元)
         establishmentDate:
           type: string
           format: date
+          nullable: true
+          description: 基金成立日期
         riskLevel:
           type: string
+          nullable: true
+          description: 风险等级 (如 "R3", "R4")
 
     FundNav:
       type: object
+      description: 基金净值信息
       properties:
         symbol:
           type: string
+          description: 基金代码
         nav:
           type: number
+          description: 单位净值
         accNav:
           type: number
+          description: 累计净值
         dailyReturn:
           type: number
+          description: 日增长率 (%)
         navDate:
           type: string
           format: date
+          description: 净值日期
 
     RealtimeQuote:
       type: object
+      description: 实时行情快照
       properties:
         price:
           type: number
+          description: 最新价
         open:
           type: number
+          description: 今日开盘价
         prevClose:
           type: number
+          description: 昨日收盘价
         high:
           type: number
+          description: 今日最高价
         low:
           type: number
+          description: 今日最低价
         volume:
           type: number
+          description: 成交量 (股)
         amount:
           type: number
+          description: 成交额 (元)
         change:
           type: number
+          description: 涨跌额 (元)
         changePercent:
           type: number
+          description: 涨跌幅 (%)
         turnoverRate:
           type: number
+          nullable: true
+          description: 换手率 (%)
         marketCap:
           type: number
+          nullable: true
+          description: 总市值 (亿元)
         pe:
           type: number
+          nullable: true
+          description: 市盈率 (TTM)
         pb:
           type: number
+          nullable: true
+          description: 市净率
         tradingStatus:
           type: string
           enum: [TRADING, CLOSED, SUSPENDED]
+          description: |
+            交易状态:
+            - TRADING: 交易中
+            - CLOSED: 休市/已收盘
+            - SUSPENDED: 停牌
         timestamp:
           type: string
           format: date-time
+          description: 数据更新时间 (UTC)
 
     KLinePoint:
       type: object
+      description: 单个 K 线数据点 (OHLCV)
       required: [timestamp, open, high, low, close, volume]
       properties:
         timestamp:
           type: number
-          description: 时间戳 (毫秒)
+          description: 时间戳 (毫秒，Unix Timestamp)
         open:
           type: number
+          description: 开盘价
         high:
           type: number
+          description: 最高价
         low:
           type: number
+          description: 最低价
         close:
           type: number
+          description: 收盘价
         volume:
           type: number
+          description: 成交量 (股)
 
     FundHolding:
       type: object
+      description: 基金持仓明细
       properties:
         symbol:
           type: string
+          description: 持仓股票代码
         name:
           type: string
+          description: 持仓股票名称
         percentage:
           type: number
+          description: 持仓占比 (%)
         reportDate:
           type: string
           format: date
+          description: 数据报告期
 
     # ==================== 技术指标模型 ====================
     IndicatorRequest:
       type: object
       required: [data, indicators]
+      description: 技术指标计算请求
       properties:
         data:
           type: array
-          description: K 线数据
+          description: K 线数据 (OHLCV 格式)
           items:
             $ref: "#/components/schemas/KLinePoint"
         indicators:
@@ -448,32 +583,39 @@ components:
 
     IndicatorResponse:
       type: object
-      additionalProperties: true
       description: |
-        动态指标结果，key 为指标表达式。
-        单值指标返回数组，多值指标返回对象。
+        技术指标计算结果。
+
+        - **key**: 指标表达式 (如 "ma(5)")
+        - **value**: 计算结果 (单值指标返回数组，多值指标返回对象)
       example:
-        ma(5): [null, null, null, null, 10.12, 10.25]
+        ma(5): [null, null, null, null, 10.12, 10.25, 10.38]
         macd(12,26,9):
-          dif: [0.15, 0.18]
-          dea: [0.10, 0.12]
-          histogram: [0.05, 0.06]
+          dif: [0.15, 0.18, 0.22, 0.25]
+          dea: [0.10, 0.12, 0.14, 0.16]
+          histogram: [0.05, 0.06, 0.08, 0.09]
+      additionalProperties:
+        type: object
+        description: 动态指标结果
 
     IndicatorMeta:
       type: object
+      description: 技术指标元信息
       properties:
         name:
           type: string
-          description: 指标名称
+          description: 指标名称 (如 "Moving Average")
         syntax:
           type: string
-          description: 语法格式
+          description: 语法格式 (如 "ma(period)")
         description:
           type: string
+          description: 指标说明
+        parameters:
+          type: array
+          description: 参数说明
+          items:
+            type: string
         example:
           type: string
-      example:
-        name: "ma"
-        syntax: "ma(period)"
-        description: "移动平均线"
-        example: "ma(20)"
+          description: 使用示例
