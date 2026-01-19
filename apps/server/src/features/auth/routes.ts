@@ -13,7 +13,8 @@ import {
   ErrorSchema,
   SendCodeResponseSchema,
   AuthResponseSchema,
-  SuccessResponseSchema
+  SuccessResponseSchema,
+  SuccessCode,
 } from 'shared'
 
 const auth = new OpenAPIHono()
@@ -52,7 +53,12 @@ const sendCodeRoute = createRoute({
 auth.openapi(sendCodeRoute, async (c) => {
   const data = c.req.valid('json')
   await authService.sendCode(data)
-  return c.json({ success: true, message: 'Verification code sent', expiresIn: 900 }, 200)
+  const t = c.get('t')
+  return c.json({
+    success: true,
+    message: t(SuccessCode.CODE_SENT),
+    expiresIn: 900
+  }, 200)
 })
 
 // --- Register ---
@@ -223,7 +229,11 @@ const forgotPasswordRoute = createRoute({
 auth.openapi(forgotPasswordRoute, async (c) => {
   const data = c.req.valid('json')
   await authService.resetPassword(data)
-  return c.json({ success: true, message: 'Password reset successfully' })
+  const t = c.get('t')
+  return c.json({
+    success: true,
+    message: t(SuccessCode.PASSWORD_RESET_SUCCESS)
+  })
 })
 
 // Apply middlewares

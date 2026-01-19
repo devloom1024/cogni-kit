@@ -1,6 +1,4 @@
 // ==================== 错误类型 ====================
-
-// ==================== 错误类型 ====================
 // ApiError is now defined in schemas/error.ts via z.infer
 
 // ==================== 错误码枚举 ====================
@@ -30,6 +28,10 @@ export const ErrorCode = {
   ACCOUNT_INACTIVE: 'auth.account_inactive',
   ACCOUNT_DELETED: 'auth.account_deleted',
 
+  // ========== OAuth 相关 ==========
+  OAUTH_INVALID_PROVIDER: 'oauth.invalid_provider',
+  OAUTH_NOT_CONFIGURED: 'oauth.not_configured',
+
   // ========== 限流 ==========
   RATE_LIMIT_EXCEEDED: 'rate_limit.exceeded',
   TOO_MANY_REQUESTS: 'rate_limit.too_many_requests',
@@ -41,3 +43,29 @@ export const ErrorCode = {
 } as const
 
 export type ErrorCode = typeof ErrorCode[keyof typeof ErrorCode]
+
+// ==================== 成功消息码枚举 ====================
+
+/**
+ * 统一成功消息码
+ */
+export const SuccessCode = {
+  // ========== 认证相关 ==========
+  CODE_SENT: 'auth.code_sent',
+  REGISTER_SUCCESS: 'auth.register_success',
+  LOGIN_SUCCESS: 'auth.login_success',
+  LOGOUT_SUCCESS: 'auth.logout_success',
+  PASSWORD_RESET_SUCCESS: 'auth.password_reset_success',
+  TOKEN_REFRESHED: 'auth.token_refreshed',
+
+  // ========== OAuth 相关 ==========
+  OAUTH_SUCCESS: 'oauth.success',
+
+  // ========== 通用 ==========
+  OPERATION_SUCCESS: 'common.operation_success',
+  UPDATE_SUCCESS: 'common.update_success',
+  DELETE_SUCCESS: 'common.delete_success',
+  CREATE_SUCCESS: 'common.create_success',
+} as const
+
+export type SuccessCode = typeof SuccessCode[keyof typeof SuccessCode]

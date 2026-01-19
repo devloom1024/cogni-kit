@@ -13,7 +13,18 @@
     "account_banned": "Account has been banned",
     "account_inactive": "Account not activated",
     "account_deleted": "Account has been deleted",
-    "code_sent": "Verification code sent to {{email}}"
+    "code_sent": "Verification code sent",
+    "register_success": "Registration successful",
+    "login_success": "Login successful",
+    "logout_success": "Logout successful",
+    "password_reset_success": "Password reset successful",
+    "token_refreshed": "Token refreshed successfully"
+  },
+  "oauth": {
+    "success": "OAuth login successful",
+    "invalid_provider": "Invalid OAuth provider",
+    "not_configured": "OAuth provider not configured",
+    "account_not_active": "Account not activated"
   },
   "rate_limit": {
     "exceeded": "Too many attempts, please try again later",
@@ -24,5 +35,11 @@
   },
   "internal": {
     "error": "Internal server error"
+  },
+  "common": {
+    "operation_success": "Operation successful",
+    "update_success": "Update successful",
+    "delete_success": "Delete successful",
+    "create_success": "Create successful"
   }
 }

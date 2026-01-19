@@ -51,7 +51,7 @@ export const oauthService = {
     if (socialAccount) {
       // 已绑定，直接登录
       if (socialAccount.user.status !== UserStatus.ACTIVE) {
-        throw new AppError(ErrorCode.ACCOUNT_INACTIVE, 'auth.account_inactive', 403)
+        throw new AppError(ErrorCode.ACCOUNT_INACTIVE, 403)
       }
 
       const tokens = await createSession(prisma, socialAccount.userId)

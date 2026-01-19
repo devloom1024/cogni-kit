@@ -6,8 +6,10 @@ import {
   OAuthCallbackRequestSchema,
   OAuthUrlResponseSchema,
   OAuthResponseSchema,
-  ErrorSchema
+  ErrorSchema,
+  ErrorCode,
 } from 'shared'
+import { AppError } from '../../shared/error.js'
 
 const oauth = new OpenAPIHono()
 
@@ -50,28 +52,21 @@ oauth.openapi(getAuthUrlRoute, async (c) => {
   const provider = c.req.valid('param').provider
   const { redirectUri } = c.req.valid('query')
 
-  try {
-    let url: string
+  let url: string
 
-    switch (provider) {
-      case SocialProvider.github:
-        url = githubOAuth.getAuthUrl(redirectUri)
-        break
-      case SocialProvider.google:
-        url = googleOAuth.getAuthUrl(redirectUri)
-        break
-      default:
-        // Should be caught by validation but switch adds safety
-        return c.json({ code: 'oauth.invalid_provider', message: 'Invalid OAuth provider' }, 400)
-    }
-
-    return c.json({ url })
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('not configured')) {
-      return c.json({ code: 'oauth.not_configured', message: error.message }, 503)
-    }
-    throw error
+  switch (provider) {
+    case SocialProvider.github:
+      url = githubOAuth.getAuthUrl(redirectUri)
+      break
+    case SocialProvider.google:
+      url = googleOAuth.getAuthUrl(redirectUri)
+      break
+    default:
+      // Should be caught by validation but switch adds safety
+      throw new AppError(ErrorCode.OAUTH_INVALID_PROVIDER, 400, { provider })
   }
+
+  return c.json({ url })
 })
 
 // --- Handle Callback ---
@@ -121,35 +116,22 @@ oauth.openapi(handleCallbackRoute, async (c) => {
   const provider = c.req.valid('param').provider
   const { code, redirectUri } = c.req.valid('json')
 
-  try {
-    let result
+  let result
 
-    switch (provider) {
-      case SocialProvider.github:
-        result = await githubOAuth.handleCallback(code, redirectUri)
-        break
-      case SocialProvider.google:
-        result = await googleOAuth.handleCallback(code, redirectUri)
-        break
-      default:
-        return c.json({ code: 'oauth.invalid_provider', message: 'Invalid OAuth provider' }, 400)
-    }
-
-    // Adapt the result to match OAuthResponseSchema (User + TokenPair + isNewUser)
-    // The service returns exactly this structure, so it should be fine.
-    return c.json(result)
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('not configured')) {
-        return c.json({ code: 'oauth.not_configured', message: error.message }, 503)
-      }
-      if (error.message.includes('not active')) {
-        return c.json({ code: 'oauth.account_not_active', message: error.message }, 403)
-      }
-      // Handle other known errors if necessary
-    }
-    throw error
+  switch (provider) {
+    case SocialProvider.github:
+      result = await githubOAuth.handleCallback(code, redirectUri)
+      break
+    case SocialProvider.google:
+      result = await googleOAuth.handleCallback(code, redirectUri)
+      break
+    default:
+      throw new AppError(ErrorCode.OAUTH_INVALID_PROVIDER, 400, { provider })
   }
+
+  // Adapt the result to match OAuthResponseSchema (User + TokenPair + isNewUser)
+  // The service returns exactly this structure, so it should be fine.
+  return c.json(result)
 })
 
 export { oauth }
