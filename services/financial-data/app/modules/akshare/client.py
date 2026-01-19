@@ -3,6 +3,7 @@ import akshare as ak
 import pandas as pd
 from datetime import datetime
 from typing import List
+import asyncio
 import structlog
 
 from app.core.exceptions import DataSourceError
@@ -34,7 +35,7 @@ class AkShareClient:
             
             # A股
             if market is None or market == "CN":
-                df_cn = ak.stock_zh_a_spot_em()
+                df_cn = await asyncio.to_thread(ak.stock_zh_a_spot_em)
                 for _, row in df_cn.iterrows():
                     stocks.append(StockInfo(
                         symbol=row['代码'],
@@ -42,15 +43,27 @@ class AkShareClient:
                         market="CN"
                     ))
             
-            # 港股 (示例，实际需要调用对应接口)
+            # 港股
             if market is None or market == "HK":
-                # TODO: 实现港股列表获取
-                pass
+                df_hk = await asyncio.to_thread(ak.stock_hk_spot_em)
+                # 东方财富港股代码通常是 5 位
+                for _, row in df_hk.iterrows():
+                    stocks.append(StockInfo(
+                        symbol=str(row['代码']),
+                        name=str(row['名称']),
+                        market="HK"
+                    ))
             
-            # 美股 (示例，实际需要调用对应接口)
+            # 美股
             if market is None or market == "US":
-                # TODO: 实现美股列表获取
-                pass
+                df_us = await asyncio.to_thread(ak.stock_us_spot_em)
+                for _, row in df_us.iterrows():
+                    stocks.append(StockInfo(
+                        # 美股代码在 '代码' 列 (e.g., 105.GOOG) 或需要解析
+                        symbol=str(row['代码']).split('.')[-1] if '.' in str(row['代码']) else str(row['代码']),
+                        name=str(row['名称']),
+                        market="US"
+                    ))
             
             logger.info("stock_list_fetched", count=len(stocks), market=market)
             return stocks
@@ -94,34 +107,69 @@ class AkShareClient:
             实时行情数据
         """
         try:
-            # A股实时行情
-            df = ak.stock_zh_a_spot_em()
-            row = df[df['代码'] == symbol]
+            # A股
+            if market == "CN" or (market is None and (symbol.isdigit() and len(symbol) == 6)):
+                 df = await asyncio.to_thread(ak.stock_zh_a_spot_em)
+                 row = df[df['代码'] == symbol]
+            # 港股
+            elif market == "HK" or (market is None and (symbol.isdigit() and len(symbol) == 5)):
+                 df = await asyncio.to_thread(ak.stock_hk_spot_em)
+                 row = df[df['代码'] == symbol]
+            # 美股
+            elif market == "US" or market is None: # Fallback to US if not digit 
+                 df = await asyncio.to_thread(ak.stock_us_spot_em)
+                 # US symbols in df['代码'] might have prefixes like "105."
+                 # We need to match loose symbol
+                 # Let's try to match suffix
+                 row = df[df['代码'].astype(str).str.endswith(f".{symbol}")]
+                 if row.empty:
+                     # Try exact match
+                     row = df[df['代码'] == symbol]
+            else:
+                 raise DataSourceError(f"未知市场或代码格式: {symbol}")
             
             if row.empty:
                 raise DataSourceError(f"未找到股票: {symbol}")
             
             row = row.iloc[0]
             
+            # Mapping based on market columns
+            # Default/CN columns
+            data = {
+                'price': float(row.get('最新价', 0)),
+                'open': float(row.get('今开', row.get('开盘价', 0))),
+                'prev_close': float(row.get('昨收', row.get('昨收价', 0))),
+                'high': float(row.get('最高', row.get('最高价', 0))),
+                'low': float(row.get('最低', row.get('最低价', 0))),
+                'volume': float(row.get('成交量', 0)),
+                'amount': float(row.get('成交额', 0)),
+                'change': float(row.get('涨跌额', 0)),
+                'change_percent': float(row.get('涨跌幅', 0)),
+                'turnover_rate': float(row.get('换手率', 0)),
+                'market_cap': float(row.get('总市值', 0)),
+                'pe': float(row.get('市盈率-动态', row.get('市盈率', 0))),
+                'pb': float(row.get('市净率', 0)),
+            }
+            
             quote = RealtimeQuote(
-                price=float(row['最新价']),
-                open=float(row['今开']),
-                prev_close=float(row['昨收']),
-                high=float(row['最高']),
-                low=float(row['最低']),
-                volume=float(row['成交量']),
-                amount=float(row['成交额']),
-                change=float(row['涨跌额']),
-                change_percent=float(row['涨跌幅']),
-                turnover_rate=float(row.get('换手率', 0)),
-                market_cap=float(row.get('总市值', 0)),
-                pe=float(row.get('市盈率-动态', 0)),
-                pb=float(row.get('市净率', 0)),
-                trading_status="TRADING",  # 简化处理
+                price=data['price'],
+                open=data['open'],
+                prev_close=data['prev_close'],
+                high=data['high'],
+                low=data['low'],
+                volume=data['volume'],
+                amount=data['amount'],
+                change=data['change'],
+                change_percent=data['change_percent'],
+                turnover_rate=data['turnover_rate'],
+                market_cap=data['market_cap'],
+                pe=data['pe'],
+                pb=data['pb'],
+                trading_status="TRADING",
                 timestamp=datetime.now()
             )
             
-            logger.info("realtime_quote_fetched", symbol=symbol)
+            logger.info("realtime_quote_fetched", symbol=symbol, market=market)
             return quote
             
         except Exception as e:
@@ -194,7 +242,7 @@ class AkShareClient:
             
             # ETF 基金
             if fund_type is None or fund_type == "ETF":
-                df_etf = ak.fund_etf_spot_em()
+                df_etf = await asyncio.to_thread(ak.fund_etf_spot_em)
                 for _, row in df_etf.iterrows():
                     funds.append(FundInfo(
                         symbol=row['代码'],
@@ -202,10 +250,25 @@ class AkShareClient:
                         type="ETF"
                     ))
             
-            # 场外基金
+            # 场外基金 (使用 fund_name_em 获取所有基金信息)
             if fund_type is None or fund_type == "FUND":
-                # TODO: 实现场外基金列表获取
-                pass
+                df_fund = await asyncio.to_thread(ak.fund_name_em)
+                # fund_name_em returns all funds. We might want to filter or just take them.
+                # Columns: 基金代码, 拼音缩写, 基金简称, 基金类型, 拼音全称
+                # We can filter out obvious ETFs if we want, or just add them all as "FUND"
+                # For now, let's add them. If fund_type is None, we might have duplicates if ETF list also returns them.
+                # However, usually 'ETF' list is specific. 'fund_name_em' is comprehensive.
+                # Let's trust the user's "FUND" request specifically targets non-ETF or general funds.
+                
+                for _, row in df_fund.iterrows():
+                    # Simple filter to avoid some duplicates if fetching ALL, 
+                    # but since we append to a list, we let service layer handle dedup if needed or just return mixed.
+                    # But for "FUND" type requests, we return these.
+                    funds.append(FundInfo(
+                        symbol=str(row['基金代码']),
+                        name=str(row['基金简称']),
+                        type="FUND"
+                    ))
             
             logger.info("fund_list_fetched", count=len(funds), type=fund_type)
             return funds

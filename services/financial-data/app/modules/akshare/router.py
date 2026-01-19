@@ -1,6 +1,6 @@
 """AkShare 模块路由"""
 from fastapi import APIRouter, Query, Path
-from typing import List
+from typing import List, Literal
 
 from app.modules.akshare.service import akshare_service
 from app.modules.akshare.schemas import (
@@ -16,9 +16,11 @@ router = APIRouter()
 
 @router.get("/stock/list", response_model=List[StockInfo])
 async def get_stock_list(
-    market: MarketType | None = Query(None, description="市场过滤 (CN/HK/US)")
+    market: MarketType | Literal[""] | None = Query(None, description="市场过滤 (CN/HK/US)")
 ):
     """获取全量股票列表 (用于同步)"""
+    if market == "":
+        market = None
     return await akshare_service.get_stock_list(market)
 
 
@@ -55,9 +57,11 @@ async def get_kline(
 
 @router.get("/fund/list", response_model=List[FundInfo])
 async def get_fund_list(
-    type: FundType | None = Query(None, description="基金类型过滤 (ETF/FUND)")
+    type: FundType | Literal[""] | None = Query(None, description="基金类型过滤 (ETF/FUND)")
 ):
     """获取全量基金列表 (用于同步)"""
+    if type == "":
+        type = None
     return await akshare_service.get_fund_list(type)
 
 

@@ -1,5 +1,6 @@
 """AkShare 业务逻辑层"""
 from typing import List
+import asyncio
 import structlog
 
 from app.config import settings
@@ -23,30 +24,70 @@ class AkShareService:
     # ==================== 股票服务 ====================
     
     async def get_stock_list(self, market: MarketType | None = None) -> List[StockInfo]:
-        """获取股票列表（带缓存）"""
-        cache_key = f"stock:list:{market or 'all'}"
+        """获取股票列表（带缓存）
         
-        # 尝试从缓存获取
-        cached = await cache.get(cache_key)
-        if cached:
-            logger.info("stock_list_cache_hit", market=market)
-            return [StockInfo(**item) for item in cached]
+        策略:
+        1. 如果指定 market，尝试获取对应缓存
+        2. 如果 market 为 None，分别获取 CN/HK/US 缓存并合并
+        3. 缓存未命中时并发调用 client 获取并更新缓存
+        """
+        markets = [market] if market else ["CN", "HK", "US"]
+        all_stocks = []
         
-        # 从数据源获取
-        stocks = await self.client.get_stock_list(market)
+        async def _fetch_market(m: str) -> List[StockInfo]:
+            cache_key = f"stock:list:{m}"
+            
+            # 尝试从缓存获取
+            cached = await cache.get(cache_key)
+            if cached:
+                logger.info("stock_list_cache_hit", market=m)
+                return [StockInfo(**item) for item in cached]
+            
+            # 从数据源获取
+            try:
+                stocks = await self.client.get_stock_list(m)
+                
+                # 缓存结果 (1小时)
+                await cache.set(
+                    cache_key,
+                    [stock.model_dump() for stock in stocks],
+                    ttl=3600
+                )
+                return stocks
+            except Exception as e:
+                logger.error("stock_list_fetch_error", market=m, error=str(e))
+                return []
+
+        # 并发获取所有市场数据
+        results = await asyncio.gather(*[_fetch_market(m) for m in markets])
         
-        # 缓存结果 (1小时)
-        await cache.set(
-            cache_key,
-            [stock.model_dump() for stock in stocks],
-            ttl=3600
-        )
+        for res in results:
+            all_stocks.extend(res)
         
-        return stocks
+        return all_stocks
     
     async def search_stock(self, query: str) -> List[StockInfo]:
-        """搜索股票"""
-        return await self.client.search_stock(query)
+        """搜索股票 (基于缓存)"""
+        if not query:
+            return []
+            
+        # 获取全量列表 (利用缓存)
+        all_stocks = await self.get_stock_list(None)
+        
+        # 内存过滤
+        query_lower = query.lower()
+        results = []
+        
+        for stock in all_stocks:
+            # 匹配代码或名称
+            if query_lower in stock.symbol.lower() or query in stock.name:
+                results.append(stock)
+                
+            # 限制返回数量，防止过大
+            if len(results) >= 50:
+                break
+                
+        return results
     
     async def get_realtime_quote(self, symbol: str, market: MarketType | None = None) -> RealtimeQuote:
         """获取实时行情（带缓存）"""
@@ -103,29 +144,62 @@ class AkShareService:
     
     async def get_fund_list(self, fund_type: FundType | None = None) -> List[FundInfo]:
         """获取基金列表（带缓存）"""
-        cache_key = f"fund:list:{fund_type or 'all'}"
+        types = [fund_type] if fund_type else ["ETF", "FUND"]
+        all_funds = []
         
-        # 尝试从缓存获取
-        cached = await cache.get(cache_key)
-        if cached:
-            logger.info("fund_list_cache_hit", type=fund_type)
-            return [FundInfo(**item) for item in cached]
+        async def _fetch_type(t: str) -> List[FundInfo]:
+            cache_key = f"fund:list:{t}"
+            
+            # 尝试从缓存获取
+            cached = await cache.get(cache_key)
+            if cached:
+                logger.info("fund_list_cache_hit", type=t)
+                return [FundInfo(**item) for item in cached]
+            
+            # 从数据源获取
+            try:
+                funds = await self.client.get_fund_list(t)
+                
+                # 缓存结果 (1小时)
+                await cache.set(
+                    cache_key,
+                    [fund.model_dump() for fund in funds],
+                    ttl=3600
+                )
+                return funds
+            except Exception as e:
+                logger.error("fund_list_fetch_error", type=t, error=str(e))
+                return []
+
+        # 并发获取
+        results = await asyncio.gather(*[_fetch_type(t) for t in types])
         
-        # 从数据源获取
-        funds = await self.client.get_fund_list(fund_type)
+        for res in results:
+            all_funds.extend(res)
         
-        # 缓存结果 (1小时)
-        await cache.set(
-            cache_key,
-            [fund.model_dump() for fund in funds],
-            ttl=3600
-        )
-        
-        return funds
+        return all_funds
     
     async def search_fund(self, query: str) -> List[FundInfo]:
-        """搜索基金"""
-        return await self.client.search_fund(query)
+        """搜索基金 (基于缓存)"""
+        if not query:
+            return []
+            
+        # 获取全量列表 (利用缓存)
+        # 注意: get_fund_list(None) 会获取 ETF 和 FUND，数量可能较多
+        all_funds = await self.get_fund_list(None)
+        
+        # 内存过滤
+        query_lower = query.lower()
+        results = []
+        
+        for fund in all_funds:
+            if query_lower in fund.symbol.lower() or query in fund.name:
+                results.append(fund)
+                
+            if len(results) >= 50:
+                break
+                
+        return results
     
     async def get_fund_nav(self, symbol: str) -> FundNav:
         """获取基金净值（带缓存）"""
