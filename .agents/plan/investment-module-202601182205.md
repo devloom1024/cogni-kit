@@ -1,98 +1,165 @@
 # Implementation Plan: Investment Module (Revised)
 
 > Created at: 2026-01-18 22:15
+> Last Updated: 2026-01-19 11:45
 > Feature: Investment Module (Watchlist & Market Data)
 
 ## 目标
 实现投资模块的后端服务与前端界面，支持股票/基金的搜索、自选管理及详情展示。
-**核心架构变更**: 新增 Python 微服务 (`apps/financial-data`) 封装 AkShare 功能，主后端 (`apps/server`) 通过 HTTP 调用。
+
+## 架构概览
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────────────────────────┐
+│  apps/web   │────▶│ apps/server │────▶│ services/financial-data (Python)│
+│  (React)    │     │  (Node.js)  │     │                                 │
+└─────────────┘     └──────┬──────┘     │  ├── /akshare/*   (行情数据)    │
+                           │            │  ├── /indicators/* (技术指标)   │
+                           ▼            │  └── /quant/*      (未来)       │
+                    ┌─────────────┐     └─────────────────────────────────┘
+                    │    Redis    │
+                    └─────────────┘
+```
 
 ## 依赖检查
 - [x] PRD 已确认 (`.agents/design/investment/prd.md`)
 - [x] Schema 已更新 (`apps/server/prisma/schema.prisma`)
-- [x] API 原型已定义 (`.agents/design/investment/openapi.yml`)
+- [x] API 设计已定义 (`.agents/design/investment/openapi.yml`)
+- [x] Python API 已定义 (`services/financial-data/openapi-python.yml`)
 
 ---
 
-## Part 1: Python Data Service (New)
+## Part 1: Python Data Service (模块化架构)
 
-### 1. Initialize Python Service
-- [ ] 创建目录 `services/financial-data`.
-- [ ] 初始化 Python 环境 (使用 `uv` 或 `venv`).
-- [ ] 创建 `requirements.txt`: 添加 `akshare`, `fastapi`, `uvicorn`.
+### 1.1 目录结构
 
-### 2. Implement Data Wrappers
-- [ ] 创建 `services/financial-data/main.py` (FastAPI 入口).
-- [ ] 根据 `services/financial-data/openapi-python.yml` 实现 HTTP 接口:
-    - `GET /stock/search?q={query}` (调用 ak.stock_info_a_code_name).
-    - `GET /stock/{symbol}/spot` (调用 ak.stock_bid_ask_em 或类似实时接口).
-    - `GET /stock/{symbol}/kline?period={period}`.
-    - `GET /fund/...` (同理, 基金/ETF 接口).
-    - `GET /fund/{symbol}/holdings` (十大重仓).
+```
+services/financial-data/
+├── pyproject.toml
+├── Dockerfile
+├── start.sh
+│
+├── app/
+│   ├── main.py              # FastAPI 入口
+│   ├── config.py            # 配置管理
+│   ├── deps.py              # 依赖注入
+│   │
+│   ├── core/                # 核心通用
+│   │   ├── cache.py         # Redis 缓存
+│   │   ├── exceptions.py    # 自定义异常
+│   │   └── schemas.py       # 通用模型
+│   │
+│   ├── modules/             # 功能模块
+│   │   ├── akshare/         # 行情数据模块
+│   │   │   ├── router.py    # /akshare/* 路由
+│   │   │   ├── service.py   # 业务逻辑
+│   │   │   └── client.py    # AkShare API 封装
+│   │   │
+│   │   └── talib/           # 技术指标模块
+│   │       ├── router.py    # /indicators/* 路由
+│   │       ├── service.py   # 指标计算
+│   │       └── calculator.py
+│   │
+│   └── utils/
+│       └── pinyin.py
+```
 
-### 3. Run & Test
-- [ ] 编写简单的启动脚本 `start.sh` 或集成到 `package.json` (可选).
-- [ ] 验证 FastAPI 接口能否成功返回 AkShare 数据.
+### 1.2 初始化
+- [ ] 创建目录结构
+- [ ] 使用 `uv init` 初始化
+- [ ] 配置依赖: `akshare`, `fastapi`, `uvicorn`, `pandas-ta`, `redis`
+
+### 1.3 AkShare 模块实现
+- [ ] `GET /akshare/stock/list` - 全量股票列表
+- [ ] `GET /akshare/stock/search` - 搜索股票
+- [ ] `GET /akshare/stock/{symbol}/spot` - 实时行情
+- [ ] `GET /akshare/stock/{symbol}/kline` - K 线数据 (纯 OHLCV)
+- [ ] `GET /akshare/fund/list` - 全量基金列表
+- [ ] `GET /akshare/fund/{symbol}/nav` - 场外基金净值
+- [ ] `GET /akshare/fund/{symbol}/holdings` - 十大重仓
+
+### 1.4 技术指标模块实现
+- [ ] `POST /indicators/calculate` - 计算技术指标
+- [ ] `GET /indicators/supported` - 获取支持的指标列表
+- [ ] MVP 指标: `ma(n)`, `ema(n)`, `macd(fast,slow,signal)`
+- [ ] 二期指标: `rsi(n)`, `boll(n,std)`, `kdj(n,m1,m2)`
+
+### 1.5 缓存实现
+- [ ] Redis 连接封装
+- [ ] K 线数据缓存 (TTL: 5-10min)
+- [ ] 指标计算结果缓存 (TTL: 1-2min)
 
 ---
 
 ## Part 2: Shared Library (Schema First)
 
-### 1. Define Zod Schemas
-- [ ] **依据 `.agents/design/investment/openapi.yml` 作为设计蓝本**。
-- [ ] 创建 `packages/shared/src/schemas/investment.ts`.
-    - 定义 Models: `AssetSchema`, `AssetHoldingSchema`, `RealtimeQuoteSchema`, `KLinePointSchema`.
-    - 定义 Request/Response: `AssetSearchResponseSchema` (aka `AssetSearchResultSchema`).
-    - 定义 Watchlist: `WatchlistGroupSchema`, `WatchlistItemSchema`.
-    - 导出 TypeScript 类型 (`z.infer`): `Asset`, `RealtimeQuote`, `WatchlistGroup` 等.
-- [ ] 确保导出别名以保持风格一致 (e.g., `export const AssetSearchResultSchema = assetSearchResultSchema`).
+### 2.1 Define Zod Schemas
+创建 `packages/shared/src/schemas/investment.ts`:
+- [ ] `AssetSchema`, `AssetSearchResultSchema`
+- [ ] `RealtimeQuoteSchema` (含 tradingStatus)
+- [ ] `KLinePointSchema`, `KLineResponseSchema`
+- [ ] `IndicatorRequestSchema`, `IndicatorResponseSchema`
+- [ ] `WatchlistGroupSchema`, `WatchlistItemSchema`
 
 ---
 
 ## Part 3: Main Backend (apps/server)
 
-### 1. Database Migration
-- [ ] 运行 `bun run db:migrate` 应用 Schema 变更。
+### 3.1 Database Migration
+- [ ] 运行 `bun run db:migrate` (pinyinInitial, lastSyncedAt)
 
-### 2. Infrastructure (Service Integration)
-- [ ] 创建 `apps/server/src/features/investment/constants.ts` (配置 Python Service URL).
-- [ ] 创建 `apps/server/src/features/investment/utils/data-provider.ts`.
-    - 封装对 `services/financial-data` 的 HTTP 调用。
-    - 实现错误处理与超时重试。
+### 3.2 Redis Cache Layer
+Key 规范:
+```
+inv:quote:{market}:{symbol}     → TTL: 5-10s / 60s
+inv:kline:{market}:{symbol}:{period}  → TTL: 5-10 min
+inv:nav:{symbol}                → TTL: 1 hour
+```
+- [ ] 创建 `apps/server/src/features/investment/cache.ts`
 
-### 3. Service Layer (Business Logic)
-- [ ] 创建 `apps/server/src/features/investment/service.ts`.
-    - `getQuote(assetId)`: **Redis Cache Layer** -> `data-provider` -> Redis.
-    - `syncAssetsCommand()`: 供 Cron Job 调用，从 data-provider 拉取全量列表更新 DB.
+### 3.3 Data Provider
+- [ ] 创建 `data-provider.ts` 封装 Python 服务调用
+- [ ] AkShare 模块调用 (`/akshare/*`)
+- [ ] 指标计算调用 (`POST /indicators/calculate`)
 
-### 4. Controller & Routes (Hono + OpenAPI)
-- [ ] 创建 `apps/server/src/features/investment/routes.ts`.
-    - **完全使用 Shared Schemas** 定义路由。
-    - 实现具体的 API 处理函数。
+### 3.4 Service Layer
+- [ ] `getQuote(assetId)`: 单个行情
+- [ ] `getQuotesBatch(assetIds)`: 批量行情
+- [ ] `getKLine(assetId, period)`: K 线原始数据
+- [ ] `getKLineWithIndicators(assetId, period, indicators)`: K 线 + 指标 (组合调用)
+- [ ] `syncAllAssets()`: Cron Job 数据同步
+
+### 3.5 Controller & Routes
+- [ ] 使用 `OpenAPIHono` + Shared Schemas
+- [ ] 实现所有 API 端点
+
+### 3.6 Cron Job
+- [ ] 创建 `apps/server/src/jobs/asset-sync.ts`
+- [ ] 每日 02:00 执行同步
+- [ ] 拼音首字母生成 (`pinyin-pro`)
 
 ---
 
 ## Part 4: Frontend (apps/web)
 
-### 1. Components (UI)
-- [ ] **Data Fetching**:
-    - **严格遵循**: 使用 `TanStack Query` (useQuery) 获取数据。
-    - 自选列表: `useQuery({ queryKey: ['watchlist'], refetchInterval: 5000 })`.
-- [ ] **Charts**:
-    - [ ] `KLineChart.tsx` (Recharts).
-- [ ] **Watchlist UI**:
-    - [ ] `WatchlistSidebar.tsx` (折叠/分组).
-    - [ ] 状态管理: 使用 Zustand 仅管理 `sidebarOpen`, `layoutMode` (Grid/List).
+### 4.1 API Client
+- [ ] `apps/web/src/features/investment/api.ts`
 
-### 2. Pages
-- [ ] `apps/web/src/pages/investment/InvestmentPage.tsx`.
+### 4.2 Components
+- [ ] `useWatchlistGroups()` - TanStack Query
+- [ ] `useQuotesBatch(ids)` - refetchInterval: 5000
+- [ ] `useKLine(id, period, indicators)`
+- [ ] `KLineChart.tsx` - K 线图表
+
+### 4.3 Pages
+- [ ] `app/investment/page.tsx` - 自选列表
+- [ ] `app/investment/[id]/page.tsx` - 详情页
 
 ---
 
 ## Part 5: Verification
 
-### 1. Integration Testing
-- [ ] 启动 Python Service (`:8000`).
-- [ ] 启动 Main Server (`:3001`).
-- [ ] 启动 Web (`:3000`).
-- [ ] 测试完整链路: Web -> Server -> Redis/Python -> AkShare.
+- [ ] 启动 Python Service (`:8000`)
+- [ ] 启动 Main Server (`:3001`)
+- [ ] 启动 Web (`:3000`)
+- [ ] 完整链路测试

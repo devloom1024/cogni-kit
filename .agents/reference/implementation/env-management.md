@@ -129,6 +129,23 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 ```
 
+### 数据卷配置
+
+使用 `DOCKER_VOLUMES_ROOT` 环境变量自定义数据存储位置：
+
+```bash
+# 方式1: 使用本地目录 (相对于 infra/docker 目录)
+DOCKER_VOLUMES_ROOT=./data
+
+# 方式2: 使用绝对路径
+DOCKER_VOLUMES_ROOT=/data/docker-volumes
+
+# 方式3: 使用默认位置 (不设置或留空)
+DOCKER_VOLUMES_ROOT=
+```
+
+> **注意**: 如果使用自定义目录，请确保目录存在且具有正确的权限。
+
 生成的 `infra/docker/.env` 内容：
 
 ```bash
@@ -224,10 +241,12 @@ WEB_API_URL=http://localhost:3001
 WEB_ENABLE_ANALYTICS=false
 
 # =================================
-# Docker
+# Docker 专用配置
 # =================================
 DOCKER_POSTGRES_PORT=5432
 DOCKER_REDIS_PORT=6379
+# Docker 数据卷根目录 (留空使用默认位置，或指定路径如 /data/docker-volumes)
+DOCKER_VOLUMES_ROOT=
 ```
 
 ---

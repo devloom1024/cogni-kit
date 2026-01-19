@@ -83,22 +83,40 @@
 
 采用 **混合持久化 (Hybrid Persistence)** 策略：
 
-### 4.1 需入库数据 (Persisted Data)
+### 4.1 资产类型定义
+*   **STOCK**: 股票 (A股/港股/美股)
+*   **ETF**: 场内交易型基金 (可在交易所实时买卖，有实时价格)
+*   **FUND**: 场外基金 (通过基金公司申赎，仅有每日净值)
+
+### 4.2 需入库数据 (Persisted Data)
 *   **目的**: 支持搜索、关联关系、无需频繁更新的信息。
 *   **内容**:
-    *   `AssetMetadata`: 代码, 名称, 类型 (Stock/ETF/Fund), 市场 (SH/SZ/HK/US), 行业, 主营业务, 基金经理.
-    *   `AssetHoldings`: 基金/ETF 的最新十大重仓股 (定期更新).
-    *   `UserWatchlist`: 用户ID, 分组ID, 标的ID.
-*   **更新频率**: 每日或每周通过定时任务 (Cron) 从 AkShare 同步。
+    *   `Asset`: 代码, 名称, 拼音首字母, 类型, 市场, 行业, 主营业务, 基金经理, 上次同步时间。
+    *   `AssetHolding`: 基金/ETF 的最新十大重仓股 (定期更新)。
+    *   `WatchlistGroup` + `WatchlistItem`: 用户自选分组和标的关联。
+*   **更新频率**: 每日 02:00 AM 通过定时任务 (Cron) 从 AkShare 同步。
 
-### 4.2 实时/缓存数据 (Ephemeral Data)
-*   **目的**: 保证行情时效性，减少数据库写入压力。
-*   **内容**:
-    *   `RealtimeQuote`: 最新价, 涨跌幅,盘口数据.
-    *   `KLineData`: 历史 K 线数据.
-*   **存储**:
-    *   **服务端缓存 (Redis/Memory)**: 缓存 5-60 秒，防止频繁请求 AkShare 被封 IPL.
-    *   **前端**: 页面加载时请求，离开页面即销毁.
+### 4.3 缓存策略 (Caching Strategy)
+
+| 数据类型 | Redis Key 格式 | TTL | 说明 |
+|:---------|:---------------|:----|:-----|
+| **实时行情** | `inv:quote:{market}:{symbol}` | 5-10s (交易中) / 60s (休市) | 高频访问，短缓存 |
+| **K 线原始数据** | `inv:kline:{market}:{symbol}:{period}` | 5-10 min | 日内不变，较长缓存 |
+| **技术指标** | `inv:indicator:{market}:{symbol}:{period}:{expr}` | 1-2 min | 实时计算 + 短缓存 |
+| **基金净值** | `inv:nav:{symbol}` | 1 hour | 每日更新一次，长缓存 |
+
+### 4.4 技术指标规划
+
+**MVP 阶段 (必须支持)**:
+*   `ma(n)`: 移动平均线 (参数化，如 ma(5), ma(60), ma(250))
+*   `ema(n)`: 指数移动平均
+*   `vol`: 成交量
+*   `macd(fast,slow,signal)`: MACD 指标
+
+**第二期扩展**:
+*   `rsi(n)`: 相对强弱指标
+*   `boll(n,std)`: 布林带
+*   `kdj(n,m1,m2)`: KDJ 随机指标
 
 ---
 

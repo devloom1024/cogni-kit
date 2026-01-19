@@ -41,6 +41,9 @@ cp .env.example .env
 ### 3. 初始化数据库
 
 ```bash
+# 同步环境变量到子项目 (infra/docker/.env 必须存在，Docker Compose 依赖它)
+bun run sync-env
+
 # 启动数据库容器 (需要使用 -f 指定文件路径)
 docker-compose -f infra/docker/docker-compose.yml up -d
 

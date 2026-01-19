@@ -21,10 +21,11 @@ const ENV_MAPPINGS = {
     prefix: '',
     shared: [
       'POSTGRES_USER',
-      'POSTGRES_PASSWORD', 
+      'POSTGRES_PASSWORD',
       'POSTGRES_DB',
       'DOCKER_POSTGRES_PORT',
       'DOCKER_REDIS_PORT',
+      'DOCKER_VOLUMES_ROOT',
     ],
     stripPrefix: false,
   },

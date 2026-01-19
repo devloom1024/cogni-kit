@@ -193,3 +193,8 @@ apps/server/.env
 
 # 保留示例文件
 !.env.example
+
+# 其他
+nul
+tmpclaude-*
+*.local.json

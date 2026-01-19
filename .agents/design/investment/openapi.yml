@@ -18,15 +18,33 @@ paths:
           schema:
             type: string
           description: 搜索关键词 (例如 "600519", "茅台", "MT")
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: 页码 (从 1 开始)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: 每页数量
       responses:
         "200":
-          description: 匹配的标的列表
+          description: 匹配的标的列表 (分页)
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AssetSearchResult"
+                $ref: "#/components/schemas/AssetSearchResponse"
+        "400":
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /investment/assets/{id}:
     get:
@@ -49,6 +67,10 @@ paths:
                 $ref: "#/components/schemas/AssetDetail"
         "404":
           description: 未找到标的
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /investment/assets/{id}/quote:
     get:
@@ -70,10 +92,43 @@ paths:
               schema:
                 $ref: "#/components/schemas/RealtimeQuote"
 
+  /investment/assets/quotes/batch:
+    post:
+      summary: 批量获取实时行情
+      description: 批量获取多个标的的实时行情，用于自选列表页优化性能。
+      tags: [Investment]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                  description: 标的 ID 数组
+                  maxItems: 50
+      responses:
+        "200":
+          description: 批量行情结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties:
+                      $ref: "#/components/schemas/RealtimeQuote"
+                    description: key 为 assetId，value 为行情数据
+
   /investment/assets/{id}/kline:
     get:
-      summary: 获取 K 线数据
-      description: 获取用于绘制图表的历史 K 线数据。
+      summary: 获取 K 线数据和技术指标
+      description: 获取用于绘制图表的历史 K 线数据，支持动态技术指标计算。
       tags: [Investment]
       parameters:
         - name: id
@@ -94,16 +149,28 @@ paths:
           schema:
             type: integer
             default: 250
+            maximum: 1000
           description: 返回的数据点数量
+        - name: indicators
+          in: query
+          schema:
+            type: string
+          description: |
+            逗号分隔的指标表达式，支持参数化:
+            - ma(n): n日移动平均线
+            - ema(n): n日指数移动平均
+            - macd(fast,slow,signal): MACD指标
+            - rsi(n): RSI指标
+            - boll(n,std): 布林带
+            - kdj(n,m1,m2): KDJ指标
+          example: "ma(5),ma(20),ma(60),macd(12,26,9)"
       responses:
         "200":
-          description: K 线数据
+          description: K 线数据和技术指标
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/KLinePoint"
+                $ref: "#/components/schemas/KLineResponse"
 
   # ==================== 自选列表管理 (Watchlist Management) ====================
   /investment/watchlist/groups:
@@ -120,6 +187,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/WatchlistGroup"
+        "401":
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     post:
       summary: 创建新自选分组
       tags: [Watchlist]
@@ -134,6 +207,7 @@ paths:
                 name:
                   type: string
                   description: 新分组名称
+                  maxLength: 50
       responses:
         "201":
           description: 分组已创建
@@ -172,6 +246,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WatchlistGroup"
+        "404":
+          description: 分组不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     delete:
       summary: 删除自选分组
       tags: [Watchlist]
@@ -184,6 +264,12 @@ paths:
       responses:
         "204":
           description: 分组已删除
+        "404":
+          description: 分组不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /investment/watchlist/items:
     post:
@@ -210,10 +296,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WatchlistItem"
+        "409":
+          description: 标的已存在于该分组
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /investment/watchlist/items/{id}:
     patch:
-      summary: 更新自选项
+      summary: 更新自选项 (移动分组/调整排序)
       tags: [Watchlist]
       parameters:
         - name: id
@@ -256,17 +348,62 @@ paths:
 
 components:
   schemas:
-    # 枚举
+    # ==================== 枚举 ====================
     AssetType:
       type: string
       enum: [STOCK, ETF, FUND]
-      description: 资产类型 (STOCK=股票, ETF=场内基金, FUND=场外基金)
+      description: |
+        资产类型:
+        - STOCK: 股票
+        - ETF: 场内交易型基金
+        - FUND: 场外基金
+
     AssetMarket:
       type: string
       enum: [CN, HK, US]
       description: 所属市场 (CN=A股, HK=港股, US=美股)
 
-    # 模型
+    TradingStatus:
+      type: string
+      enum: [TRADING, CLOSED, SUSPENDED]
+      description: |
+        交易状态:
+        - TRADING: 交易中
+        - CLOSED: 休市
+        - SUSPENDED: 停牌
+
+    # ==================== 通用响应 ====================
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: 业务错误码
+        message:
+          type: string
+          description: 错误描述
+        details:
+          type: object
+          description: 额外错误详情
+
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: 总记录数
+        page:
+          type: integer
+          description: 当前页码
+        limit:
+          type: integer
+          description: 每页数量
+        totalPages:
+          type: integer
+          description: 总页数
+
+    # ==================== 资产模型 ====================
     AssetSearchResult:
       type: object
       description: 搜索结果摘要信息
@@ -284,6 +421,17 @@ components:
           $ref: "#/components/schemas/AssetType"
         market:
           $ref: "#/components/schemas/AssetMarket"
+
+    AssetSearchResponse:
+      type: object
+      description: 分页搜索响应
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssetSearchResult"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
 
     AssetDetail:
       type: object
@@ -310,7 +458,7 @@ components:
           description: 基金经理姓名 (仅基金/ETF)
         establishmentDate:
           type: string
-          format: date-time
+          format: date
           description: 上市日期或成立日期
         scale:
           type: number
@@ -339,7 +487,7 @@ components:
           description: 持仓占比 (例如 15.5 代表 15.5%)
         reportDate:
           type: string
-          format: date-time
+          format: date
           description: 数据报告期
 
     RealtimeQuote:
@@ -378,21 +526,57 @@ components:
           description: 换手率 (%)
         marketCap:
           type: number
-          description: 总市值
+          description: 总市值 (亿元)
         pe:
           type: number
           description: 市盈率 (TTM)
         pb:
           type: number
           description: 市净率
+        tradingStatus:
+          $ref: "#/components/schemas/TradingStatus"
         timestamp:
           type: string
           format: date-time
           description: 数据更新时间
 
+    # ==================== K 线模型 ====================
+    KLineResponse:
+      type: object
+      description: K线数据响应 (含动态指标)
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          description: K线原始数据 (OHLCV)
+          items:
+            $ref: "#/components/schemas/KLinePoint"
+        indicators:
+          type: object
+          additionalProperties: true
+          description: |
+            动态技术指标，key 为指标表达式。
+            单值指标 (MA/EMA/RSI) 返回数字数组；
+            多值指标 (MACD/BOLL/KDJ) 返回对象。
+        meta:
+          type: object
+          properties:
+            symbol:
+              type: string
+            period:
+              type: string
+
     KLinePoint:
       type: object
-      description: 单个 K 线数据点
+      description: 单个 K 线数据点 (仅 OHLCV)
+      required:
+        - timestamp
+        - open
+        - high
+        - low
+        - close
+        - volume
       properties:
         timestamp:
           type: number
@@ -412,16 +596,8 @@ components:
         volume:
           type: number
           description: 成交量
-        ma5:
-          type: number
-          description: 5日均线
-        ma10:
-          type: number
-          description: 10日均线
-        ma20:
-          type: number
-          description: 20日均线
 
+    # ==================== 自选列表模型 ====================
     WatchlistGroup:
       type: object
       description: 用户自选分组
@@ -436,6 +612,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WatchlistItem"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     WatchlistItem:
       type: object
@@ -460,3 +642,9 @@ components:
           $ref: "#/components/schemas/AssetType"
         market:
           $ref: "#/components/schemas/AssetMarket"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

@@ -202,6 +202,9 @@ model Asset {
   /// 所属市场
   market      AssetMarket
   
+  /// 拼音首字母 (用于搜索，如 "ZGPA" 为中国平安)
+  pinyinInitial String? @map("pinyin_initial")
+  
   /// 所属行业 (股票/ETF)
   industry    String?
   /// 主营业务描述 (股票)
@@ -215,6 +218,9 @@ model Asset {
   scale       Decimal?    @db.Decimal(20, 4)
   /// 风险等级
   riskLevel   String?     @map("risk_level")
+  
+  /// 上次数据同步时间
+  lastSyncedAt DateTime? @map("last_synced_at")
 
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
@@ -226,6 +232,7 @@ model Asset {
   @@unique([market, symbol]) // 同一市场下代码唯一
   @@index([type])
   @@index([name]) // 支持名称搜索
+  @@index([pinyinInitial]) // 支持拼音首字母搜索
   @@map("assets")
 }
 
