@@ -3,6 +3,7 @@
 import { readFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
 
+// @ts-ignore
 const ROOT_DIR = resolve(import.meta.dir, '..')
 const ROOT_ENV = resolve(ROOT_DIR, '.env')
 
@@ -10,6 +11,7 @@ const REQUIRED_VARS = {
   shared: ['NODE_ENV'],
   server: ['DATABASE_URL', 'REDIS_URL', 'SERVER_JWT_SECRET', 'SERVER_EMAIL_FROM'],
   web: [],
+  python: ['REDIS_URL', 'PYTHON_PORT', 'PYTHON_LOG_LEVEL'],
 }
 
 function checkEnv() {
@@ -21,7 +23,7 @@ function checkEnv() {
 
   const content = readFileSync(ROOT_ENV, 'utf-8')
   const env: Record<string, string> = {}
-  
+
   content.split('\n').forEach(line => {
     const match = line.match(/^([^=]+)=(.*)$/)
     if (match) {
@@ -35,12 +37,12 @@ function checkEnv() {
 
   Object.entries(REQUIRED_VARS).forEach(([category, vars]) => {
     if (vars.length === 0) return
-    
+
     console.log(`📋 ${category.toUpperCase()}:`)
-    
+
     vars.forEach(varName => {
       const value = env[varName]
-      
+
       if (!value || value.startsWith('your-') || value.startsWith('please-change')) {
         console.log(`  ❌ ${varName} - 未配置或使用默认值`)
         hasError = true

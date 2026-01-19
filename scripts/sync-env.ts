@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
 
+// @ts-ignore
 const ROOT_DIR = resolve(import.meta.dir, '..')
 const ROOT_ENV = resolve(ROOT_DIR, '.env')
 
@@ -15,6 +16,11 @@ const ENV_MAPPINGS = {
   'apps/web/.env': {
     prefix: 'WEB_',
     shared: ['NODE_ENV', 'FRONTEND_URL', 'BACKEND_URL'],
+    stripPrefix: true,
+  },
+  'services/financial-data/.env': {
+    prefix: 'PYTHON_',
+    shared: ['REDIS_URL'],
     stripPrefix: true,
   },
   'infra/docker/.env': {
@@ -33,17 +39,17 @@ const ENV_MAPPINGS = {
 
 function parseEnv(content: string): Record<string, string> {
   const env: Record<string, string> = {}
-  
+
   content.split('\n').forEach(line => {
     line = line.trim()
     if (!line || line.startsWith('#')) return
-    
+
     const match = line.match(/^([^=]+)=(.*)$/)
     if (match) {
       env[match[1]] = match[2]
     }
   })
-  
+
   return env
 }
 
@@ -54,17 +60,17 @@ function syncEnv() {
   }
 
   const rootEnv = parseEnv(readFileSync(ROOT_ENV, 'utf-8'))
-  
+
   console.log('🔄 开始同步环境变量...\n')
 
   Object.entries(ENV_MAPPINGS).forEach(([targetPath, config]) => {
     const fullPath = resolve(ROOT_DIR, targetPath)
     const envLines: string[] = []
-    
+
     envLines.push('# ⚠️  此文件由 scripts/sync-env.ts 自动生成')
     envLines.push('# ⚠️  请勿直接修改，在根目录 .env 中修改后运行: bun run sync-env')
     envLines.push('')
-    
+
     if (config.shared.length > 0) {
       envLines.push('# 共享配置')
       config.shared.forEach(key => {
@@ -74,23 +80,23 @@ function syncEnv() {
       })
       envLines.push('')
     }
-    
+
     if (config.prefix) {
       envLines.push(`# ${config.prefix}前缀变量`)
       Object.entries(rootEnv).forEach(([key, value]) => {
         if (key.startsWith(config.prefix)) {
-          const newKey = config.stripPrefix 
+          const newKey = config.stripPrefix
             ? key.substring(config.prefix.length)
             : key
           envLines.push(`${newKey}=${value}`)
         }
       })
     }
-    
+
     writeFileSync(fullPath, envLines.join('\n') + '\n')
     console.log(`✅ 已同步: ${targetPath}`)
   })
-  
+
   console.log('\n✨ 环境变量同步完成！')
 }
 

@@ -65,29 +65,29 @@ services/financial-data/
 ```
 
 ### 1.2 初始化
-- [ ] 创建目录结构
-- [ ] 使用 `uv init` 初始化
-- [ ] 配置依赖: `akshare`, `fastapi`, `uvicorn`, `pandas-ta`, `redis`
+- [x] 创建目录结构
+- [x] 使用 `uv init` 初始化
+- [x] 配置依赖: `akshare`, `fastapi`, `uvicorn`, `pandas-ta`, `redis`
 
 ### 1.3 AkShare 模块实现
-- [ ] `GET /akshare/stock/list` - 全量股票列表
-- [ ] `GET /akshare/stock/search` - 搜索股票
-- [ ] `GET /akshare/stock/{symbol}/spot` - 实时行情
-- [ ] `GET /akshare/stock/{symbol}/kline` - K 线数据 (纯 OHLCV)
-- [ ] `GET /akshare/fund/list` - 全量基金列表
-- [ ] `GET /akshare/fund/{symbol}/nav` - 场外基金净值
-- [ ] `GET /akshare/fund/{symbol}/holdings` - 十大重仓
+- [x] `GET /akshare/stock/list` - 全量股票列表
+- [x] `GET /akshare/stock/search` - 搜索股票
+- [x] `GET /akshare/stock/{symbol}/spot` - 实时行情
+- [x] `GET /akshare/stock/{symbol}/kline` - K 线数据 (纯 OHLCV)
+- [x] `GET /akshare/fund/list` - 全量基金列表
+- [x] `GET /akshare/fund/{symbol}/nav` - 场外基金净值
+- [x] `GET /akshare/fund/{symbol}/holdings` - 十大重仓
 
 ### 1.4 技术指标模块实现
-- [ ] `POST /indicators/calculate` - 计算技术指标
-- [ ] `GET /indicators/supported` - 获取支持的指标列表
-- [ ] MVP 指标: `ma(n)`, `ema(n)`, `macd(fast,slow,signal)`
-- [ ] 二期指标: `rsi(n)`, `boll(n,std)`, `kdj(n,m1,m2)`
+- [x] `POST /indicators/calculate` - 计算技术指标
+- [x] `GET /indicators/supported` - 获取支持的指标列表
+- [x] MVP 指标: `ma(n)`, `ema(n)`, `macd(fast,slow,signal)`
+- [x] 二期指标: `rsi(n)`, `boll(n,std)`, `kdj(n,m1,m2)`
 
 ### 1.5 缓存实现
-- [ ] Redis 连接封装
-- [ ] K 线数据缓存 (TTL: 5-10min)
-- [ ] 指标计算结果缓存 (TTL: 1-2min)
+- [x] Redis 连接封装
+- [x] K 线数据缓存 (TTL: 5-10min)
+- [x] 指标计算结果缓存 (TTL: 1-2min)
 
 ---
 
