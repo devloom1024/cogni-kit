@@ -57,13 +57,23 @@ app.route('/api/v1/auth', oauth)
 app.route('/api/v1/users', user)
 
 // OpenAPI documentation
-// OpenAPI documentation
 app.doc('/doc', {
   openapi: '3.0.0',
   info: {
     version: '1.0.0',
-    title: 'CogniKit API',
+    title: '认证 API',
+    description: '提供用户注册、登录、个人信息管理等功能',
   },
+  servers: [
+    {
+      url: `http://localhost:${env.PORT}`,
+      description: '本地开发服务器',
+    },
+    {
+      url: 'https://api.cognikit.com/auth',
+      description: '生产环境服务器',
+    },
+  ],
   // @ts-expect-error: components is valid at runtime but missing in type definition
   components: {
     securitySchemes: {
@@ -71,6 +81,7 @@ app.doc('/doc', {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
+        description: 'JWT Token 认证，通过 Authorization: Bearer <token> 传递',
       },
     },
   },

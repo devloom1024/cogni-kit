@@ -36,7 +36,8 @@ const sendCodeRoute = createRoute({
         'application/json': {
           schema: z.object({
             success: z.boolean().openapi({ example: true }),
-            message: z.string().openapi({ example: 'Verification code sent' })
+            message: z.string().openapi({ example: 'Verification code sent' }),
+            expiresIn: z.number().int().openapi({ description: 'Verification code expiration time in seconds', example: 900 })
           })
         }
       },
@@ -52,7 +53,7 @@ const sendCodeRoute = createRoute({
 auth.openapi(sendCodeRoute, async (c) => {
   const data = c.req.valid('json')
   await authService.sendCode(data)
-  return c.json({ success: true, message: 'Verification code sent' }, 200)
+  return c.json({ success: true, message: 'Verification code sent', expiresIn: 900 }, 200)
 })
 
 // --- Register ---
@@ -192,15 +193,7 @@ const logoutRoute = createRoute({
 })
 
 auth.openapi(logoutRoute, async (c) => {
-  // Use authMiddleware?
-  // In OpenAPIHono, middleware is usually applied via hook or app.use.
-  // The original code used `auth.post('/logout', authMiddleware, ...)`
-  // We can manually invoke middleware or use `.use()`.
-  // For OpenAPI, security definition tells clients to send token, but we still need middleware to verify it.
-
-  // Checking auth header manually or relying on middleware applied to this path
-  // Let's reuse the logic from original controller for now to be safe, 
-  // but ideally we should apply authMiddleware.
+  const currentUser = c.get('user')
   const authHeader = c.req.header('Authorization')
   const token = authHeader?.substring(7) || ''
   await authService.logout(token)

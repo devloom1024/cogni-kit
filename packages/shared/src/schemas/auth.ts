@@ -6,7 +6,7 @@ import { TokenPairSchema } from './token.js'
 export const passwordSchema = z
   .string()
   .min(8, 'validation.password.min')
-  .max(128, 'validation.password.max')
+  .max(64, 'validation.password.max')
   .regex(/[A-Z]/, 'validation.password.uppercase')
   .regex(/[a-z]/, 'validation.password.lowercase')
   .regex(/[0-9]/, 'validation.password.number')
@@ -69,6 +69,7 @@ export const oauthResponseSchema = z.object({
 export const sendCodeResponseSchema = z.object({
   success: z.boolean().openapi({ example: true }),
   message: z.string().openapi({ example: 'Verification code sent' }),
+  expiresIn: z.number().int().openapi({ description: 'Verification code expiration time in seconds', example: 900 }),
 }).openapi('SendCodeResponse')
 
 export const successResponseSchema = z.object({

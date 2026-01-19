@@ -2,17 +2,17 @@ import { z } from '@hono/zod-openapi'
 import { UserStatus } from '../types/index.js'
 
 export const UserSchema = z.object({
-  id: z.string().openapi({ example: '123' }),
-  username: z.string().openapi({ example: 'johndoe' }),
+  id: z.string().uuid().openapi({ example: '550e8400-e29b-41d4-a716-446655440000' }),
+  username: z.string().min(3).max(20).openapi({ example: 'johndoe' }),
   nickname: z.string().nullable().optional().openapi({ example: 'John' }),
   email: z.string().email().nullable().openapi({ example: 'john@example.com' }),
-  emailVerified: z.boolean().optional(),
+  emailVerified: z.boolean(),
   phone: z.string().nullable().optional(),
   phoneVerified: z.boolean().optional(),
   avatar: z.string().nullable().optional(),
   status: z.nativeEnum(UserStatus).openapi({ example: UserStatus.ACTIVE }),
-  createdAt: z.string().openapi({ example: '2024-01-01T00:00:00.000Z' }),
-  updatedAt: z.string().openapi({ example: '2024-01-01T00:00:00.000Z' }),
+  createdAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00.000Z' }),
+  updatedAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00.000Z' }),
 }).openapi('User')
 
 export const updateUserSchema = z.object({
