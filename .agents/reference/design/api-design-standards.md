@@ -14,13 +14,19 @@
 ## 2. URL 设计
 
 *   **使用名词复数**: `/users`, `/articles`, `/comments`
+*   **版本前缀**: 所有 API 路径必须包含版本前缀 `/api/v1`
+    *   完整路径示例: `/api/v1/users`, `/api/v1/investment/assets`
+    *   版本号使用 `v1`, `v2` 格式（小写 v + 数字）
+    *   版本变更规则：
+        *   **破坏性变更**（删除字段、修改响应结构）→ 升级大版本（v1 → v2）
+        *   **兼容性变更**（新增字段、新增接口）→ 保持当前版本
 *   **层级结构**:
-    *   获取用户列表: `GET /users`
-    *   获取特定用户: `GET /users/:id`
-    *   获取用户的文章: `GET /users/:id/articles`
+    *   获取用户列表: `GET /api/v1/users`
+    *   获取特定用户: `GET /api/v1/users/:id`
+    *   获取用户的文章: `GET /api/v1/users/:id/articles`
 *   **连字符命名**: URL 路径中使用连字符 (`kebab-case`)，避免驼峰或下划线。
-    *   正例: `/user-profiles`
-    *   反例: `/userProfiles`, `/user_profiles`
+    *   正例: `/api/v1/user-profiles`
+    *   反例: `/api/v1/userProfiles`, `/api/v1/user_profiles`
 
 ---
 
@@ -30,7 +36,7 @@
 
 **原则**: 直接返回数据对象或数组。
 
-*   **单资源 (GET /users/1)**
+*   **单资源 (GET /api/v1/users/1)**
     *   状态码: `200 OK`
     *   响应体:
         ```json
@@ -42,7 +48,7 @@
         }
         ```
 
-*   **列表资源 (GET /users)**
+*   **列表资源 (GET /api/v1/users)**
     *   状态码: `200 OK`
     *   响应体: 直接返回数组 (或分页对象)
         ```json
@@ -53,15 +59,15 @@
         ```
     *   *注: 如果需要分页，返回分页对象结构（见后文）。*
 
-*   **创建资源 (POST /users)**
+*   **创建资源 (POST /api/v1/users)**
     *   状态码: `201 Created`
     *   响应体: 返回创建后的完整资源对象。
 
-*   **更新资源 (PATCH /users/1)**
+*   **更新资源 (PATCH /api/v1/users/1)**
     *   状态码: `200 OK`
     *   响应体: 返回更新后的完整资源对象。
 
-*   **删除资源 (DELETE /users/1)**
+*   **删除资源 (DELETE /api/v1/users/1)**
     *   状态码: `204 No Content`
     *   响应体: 空。
 
@@ -117,12 +123,14 @@
 
 ### 4.1 分页 (Pagination)
 
+#### 4.1.1 常规分页接口
+
 对于返回大量数据的列表接口，**必须**支持分页。
 
 *   **请求参数**: 使用 query 参数
     *   `page`: 页码 (从 1 开始)
     *   `limit`: 每页数量 (默认 20)
-    *   示例: `GET /users?page=2&limit=10`
+    *   示例: `GET /api/v1/users?page=2&limit=10`
 
 *   **响应结构**:
     ```json
@@ -137,6 +145,33 @@
     }
     ```
     *注意：仅在分页场景下，为了包含 meta 信息，允许包裹一层 `data`。非分页列表推荐直接返回数组。*
+
+#### 4.1.2 全量接口（特殊场景）
+
+**适用场景**:
+- 定时任务数据同步（如每日同步股票列表）
+- 系统内部服务间调用
+- 数据量相对固定且可控（通常 < 10000 条）
+
+**规范要求**:
+- 直接返回数组，不使用分页结构
+- 必须在接口文档中说明用途和数据量级
+- 如果数据量可能超过 10000 条，必须改为分页接口
+
+**示例**:
+```
+GET /api/v1/akshare/stock/list
+用途: 供定时任务同步使用
+数据量: 约 5000 条
+
+响应: 200 OK
+[
+  { "symbol": "600519", "name": "贵州茅台", "market": "CN" },
+  { "symbol": "00700", "name": "腾讯控股", "market": "HK" }
+]
+```
+
+**注意**: 面向前端用户的查询接口不应使用全量返回，必须支持分页。
 
 ### 4.2 字段命名
 
@@ -162,4 +197,19 @@
 | **409** | Conflict | 资源冲突 (如注册时邮箱已存在) |
 | **429** | Too Many Requests | 请求过于频繁 (限流) |
 | **500** | Internal Server Error | 服务器内部未知错误 |
+
+---
+
+## 6. OpenAPI 文档规范
+
+所有 API 必须提供 OpenAPI 3.0 规范文档。详细的文档编写标准请参考：
+
+**[OpenAPI 文档编写规范](./openapi-documentation-standards.md)**
+
+核心要求：
+- 所有描述使用中文
+- 所有字段、参数、枚举必须有完整的 `description`
+- 关键接口必须提供请求/响应示例
+- 必须定义安全认证方案（`securitySchemes`）
+- 必须为参数添加验证约束（`minLength`, `maximum`, `enum` 等）
 
