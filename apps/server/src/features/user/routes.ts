@@ -8,6 +8,7 @@ const getMeRoute = createRoute({
   method: 'get',
   path: '/me',
   tags: ['User'],
+  summary: '获取当前用户信息',
   security: [{ bearerAuth: [] }],
   responses: {
     200: {
@@ -16,7 +17,7 @@ const getMeRoute = createRoute({
           schema: UserSchema,
         },
       },
-      description: 'Get current user profile',
+      description: '当前用户信息',
     },
   },
 })

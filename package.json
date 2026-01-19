@@ -15,7 +15,8 @@
     "lint": "turbo lint",
     "clean": "turbo clean",
     "sync-env": "bun run scripts/sync-env.ts",
-    "check-env": "bun run scripts/check-env.ts"
+    "check-env": "bun run scripts/check-env.ts",
+    "check-i18n": "bun run scripts/check-i18n.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

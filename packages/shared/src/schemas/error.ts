@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi'
 
 export const ErrorSchema = z.object({
-    code: z.string().openapi({ description: 'Business error code', example: 'auth.user_not_found' }),
-    message: z.string().openapi({ description: 'Developer-friendly error message', example: 'User not found' }),
-    details: z.record(z.string(), z.any()).optional().openapi({ description: 'Additional error details' }),
+    code: z.string().openapi({ description: '业务错误码 (如 "auth.user_not_found", "auth.invalid_token")', example: 'auth.user_not_found' }),
+    message: z.string().openapi({ description: '错误描述 (开发者可读的调试信息)', example: '用户不存在' }),
+    details: z.record(z.string(), z.any()).optional().openapi({ description: '额外的错误详情 (如表单字段验证错误)' }),
 }).openapi('Error')
 
 export const ApiResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) => z.object({

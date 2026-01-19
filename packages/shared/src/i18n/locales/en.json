@@ -3,7 +3,7 @@
         "error": "Validation failed",
         "password": {
             "min": "Password must be at least 8 characters",
-            "max": "Password must be at most 128 characters",
+            "max": "Password must be at most 64 characters",
             "uppercase": "Password must contain at least one uppercase letter",
             "lowercase": "Password must contain at least one lowercase letter",
             "number": "Password must contain at least one number",
@@ -19,11 +19,46 @@
         "account": {
             "required": "Account is required"
         },
+        "nickname": {
+            "min": "Nickname must be at least 2 characters",
+            "max": "Nickname must be at most 50 characters"
+        },
+        "avatar": {
+            "invalid": "Invalid avatar URL"
+        },
         "refresh_token": {
             "required": "Refresh token is required"
         },
         "auth_code": {
             "required": "Authorization code is required"
         }
+    },
+    "error": {
+        "validation_error": "Validation failed",
+        "internal_error": "Internal server error",
+        "database_error": "Database error"
+    },
+    "auth": {
+        "invalid_code": "Invalid or expired verification code",
+        "code_expired": "Verification code expired",
+        "code_already_used": "Verification code already used",
+        "invalid_credentials": "Invalid credentials",
+        "user_not_found": "User not found",
+        "email_exists": "Email already exists",
+        "username_exists": "Username already exists",
+        "unauthorized": "Unauthorized, please login first",
+        "token_expired": "Token expired",
+        "invalid_token": "Invalid token",
+        "session_revoked": "Session revoked",
+        "account_banned": "Account has been banned, please contact support",
+        "account_inactive": "Please verify your email before logging in",
+        "account_deleted": "Account has been deleted"
+    },
+    "rate_limit": {
+        "exceeded": "Rate limit exceeded, please try again later",
+        "too_many_requests": "Too many requests, please try again later"
+    },
+    "email": {
+        "service_error": "Email service error, please try again later"
     }
 }

@@ -19,11 +19,46 @@
         "account": {
             "required": "请输入账号"
         },
+        "nickname": {
+            "min": "昵称至少需要 2 个字符",
+            "max": "昵称最多 50 个字符"
+        },
+        "avatar": {
+            "invalid": "无效的头像 URL"
+        },
         "refresh_token": {
             "required": "缺少刷新令牌"
         },
         "auth_code": {
             "required": "缺少授权码"
         }
+    },
+    "error": {
+        "validation_error": "输入数据校验失败",
+        "internal_error": "服务器内部错误",
+        "database_error": "数据库错误"
+    },
+    "auth": {
+        "invalid_code": "验证码错误或已过期",
+        "code_expired": "验证码已过期",
+        "code_already_used": "验证码已被使用",
+        "invalid_credentials": "账号或密码错误",
+        "user_not_found": "用户不存在",
+        "email_exists": "该邮箱已被注册",
+        "username_exists": "该用户名已被使用",
+        "unauthorized": "未授权，请先登录",
+        "token_expired": "Token 已过期",
+        "invalid_token": "无效的 Token",
+        "session_revoked": "会话已撤销",
+        "account_banned": "账号已被封禁，请联系客服",
+        "account_inactive": "请先验证邮箱后再登录",
+        "account_deleted": "账号已被删除"
+    },
+    "rate_limit": {
+        "exceeded": "请求过于频繁，请稍后再试",
+        "too_many_requests": "请求次数过多，请稍后再试"
+    },
+    "email": {
+        "service_error": "邮件服务错误，请稍后重试"
     }
 }

@@ -16,13 +16,13 @@ const getAuthUrlRoute = createRoute({
   method: 'get',
   path: '/{provider}/url',
   tags: ['OAuth'],
-  summary: 'Get OAuth authorization URL',
+  summary: '获取 OAuth 授权 URL',
   request: {
     params: z.object({
       provider: z.nativeEnum(SocialProvider).openapi({ example: SocialProvider.github })
     }),
     query: z.object({
-      redirectUri: z.string().optional().openapi({ description: 'Redirect URI after auth' })
+      redirectUri: z.string().optional().openapi({ description: '授权成功后的回调地址 (可选)' })
     })
   },
   responses: {
@@ -32,15 +32,15 @@ const getAuthUrlRoute = createRoute({
           schema: OAuthUrlResponseSchema
         }
       },
-      description: 'Authorization URL retrieved'
+      description: '授权 URL 获取成功'
     },
     400: {
       content: { 'application/json': { schema: ErrorSchema } },
-      description: 'Invalid provider'
+      description: '不支持的 OAuth 提供商'
     },
     503: {
       content: { 'application/json': { schema: ErrorSchema } },
-      description: 'Provider not configured'
+      description: '提供商未配置'
     }
   }
 })
@@ -79,7 +79,7 @@ const handleCallbackRoute = createRoute({
   method: 'post',
   path: '/{provider}/callback',
   tags: ['OAuth'],
-  summary: 'Handle OAuth callback',
+  summary: 'OAuth 回调 (交换 Token)',
   request: {
     params: z.object({
       provider: z.nativeEnum(SocialProvider).openapi({ example: SocialProvider.github })
@@ -99,19 +99,19 @@ const handleCallbackRoute = createRoute({
           schema: OAuthResponseSchema
         }
       },
-      description: 'OAuth login successful'
+      description: 'OAuth 登录成功'
     },
     400: {
       content: { 'application/json': { schema: ErrorSchema } },
-      description: 'Invalid request or code'
+      description: '授权码无效或已过期'
     },
     403: {
       content: { 'application/json': { schema: ErrorSchema } },
-      description: 'Account not active'
+      description: '账号未激活'
     },
     503: {
       content: { 'application/json': { schema: ErrorSchema } },
-      description: 'Provider not configured'
+      description: '提供商未配置'
     }
   }
 })

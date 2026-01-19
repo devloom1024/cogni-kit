@@ -10,7 +10,10 @@ import {
   ForgotPasswordRequestSchema,
   TokenPairSchema,
   UserSchema,
-  ErrorSchema
+  ErrorSchema,
+  SendCodeResponseSchema,
+  AuthResponseSchema,
+  SuccessResponseSchema
 } from 'shared'
 
 const auth = new OpenAPIHono()
@@ -20,7 +23,7 @@ const sendCodeRoute = createRoute({
   method: 'post',
   path: '/send-code',
   tags: ['Auth'],
-  summary: 'Send verification code',
+  summary: '发送验证码',
   request: {
     body: {
       content: {
@@ -34,18 +37,14 @@ const sendCodeRoute = createRoute({
     200: {
       content: {
         'application/json': {
-          schema: z.object({
-            success: z.boolean().openapi({ example: true }),
-            message: z.string().openapi({ example: 'Verification code sent' }),
-            expiresIn: z.number().int().openapi({ description: 'Verification code expiration time in seconds', example: 900 })
-          })
+          schema: SendCodeResponseSchema
         }
       },
-      description: 'Code sent successfully'
+      description: '验证码发送成功'
     },
     429: {
       content: { 'application/json': { schema: ErrorSchema } },
-      description: 'Too many requests'
+      description: '请求过于频繁'
     }
   }
 })
@@ -61,7 +60,7 @@ const registerRoute = createRoute({
   method: 'post',
   path: '/register',
   tags: ['Auth'],
-  summary: 'Register new user',
+  summary: '用户注册',
   request: {
     body: {
       content: {
@@ -75,21 +74,18 @@ const registerRoute = createRoute({
     201: {
       content: {
         'application/json': {
-          schema: z.object({
-            user: UserSchema,
-            tokens: TokenPairSchema
-          })
+          schema: AuthResponseSchema
         }
       },
-      description: 'Registration successful'
+      description: '注册成功'
     },
     400: {
       content: { 'application/json': { schema: ErrorSchema } },
-      description: 'Validation error'
+      description: '请求参数错误或验证码错误'
     },
     409: {
       content: { 'application/json': { schema: ErrorSchema } },
-      description: 'Email already exists'
+      description: '邮箱已存在'
     }
   }
 })
@@ -105,7 +101,7 @@ const loginRoute = createRoute({
   method: 'post',
   path: '/login',
   tags: ['Auth'],
-  summary: 'Login user',
+  summary: '用户登录',
   request: {
     body: {
       content: {
@@ -119,21 +115,18 @@ const loginRoute = createRoute({
     200: {
       content: {
         'application/json': {
-          schema: z.object({
-            user: UserSchema,
-            tokens: TokenPairSchema
-          })
+          schema: AuthResponseSchema
         }
       },
-      description: 'Login successful'
+      description: '登录成功'
     },
     400: {
       content: { 'application/json': { schema: ErrorSchema } },
-      description: 'Invalid credentials'
+      description: '账号或密码错误'
     },
     403: {
       content: { 'application/json': { schema: ErrorSchema } },
-      description: 'Account banned or inactive'
+      description: '账号未激活或被封禁'
     }
   }
 })
@@ -150,7 +143,7 @@ const refreshTokenRoute = createRoute({
   method: 'post',
   path: '/refresh-token',
   tags: ['Auth'],
-  summary: 'Refresh access token',
+  summary: '刷新 Access Token',
   request: {
     body: {
       content: {
@@ -167,7 +160,7 @@ const refreshTokenRoute = createRoute({
           schema: TokenPairSchema
         }
       },
-      description: 'Token refreshed'
+      description: 'Token 刷新成功'
     }
   }
 })
@@ -183,11 +176,11 @@ const logoutRoute = createRoute({
   method: 'post',
   path: '/logout',
   tags: ['Auth'],
-  summary: 'Logout user',
+  summary: '退出登录',
   security: [{ bearerAuth: [] }],
   responses: {
     204: {
-      description: 'Logout successful'
+      description: '退出登录成功'
     }
   }
 })
@@ -205,7 +198,7 @@ const forgotPasswordRoute = createRoute({
   method: 'post',
   path: '/forgot-password',
   tags: ['Auth'],
-  summary: 'Reset password',
+  summary: '通过邮箱验证码重置密码',
   request: {
     body: {
       content: {
@@ -219,13 +212,10 @@ const forgotPasswordRoute = createRoute({
     200: {
       content: {
         'application/json': {
-          schema: z.object({
-            success: z.boolean().openapi({ example: true }),
-            message: z.string().openapi({ example: 'Password reset successfully' })
-          })
+          schema: SuccessResponseSchema
         }
       },
-      description: 'Password reset successful'
+      description: '密码重置成功'
     }
   }
 })
