@@ -339,10 +339,10 @@ class StockClient:
         """
         try:
             # 需要带市场标识和日期参数
-            # 使用最近的季度末日期（简化处理，使用当前年份的 Q2）
+            # 使用最近的季度末日期
             from datetime import date
             current_year = date.today().year
-            report_date = f"{current_year}0630"  # 使用6月30日
+            report_date = f"{current_year}0630"  # 先尝试当年6月30日
             
             # 确定市场标识
             if symbol.startswith('6'):
@@ -350,25 +350,40 @@ class StockClient:
             else:
                 market_symbol = f"sz{symbol}"
             
-            # 获取十大股东（需要 symbol 和 date 参数）
-            df_top10 = await asyncio.to_thread(ak.stock_gdfx_top_10_em, symbol=market_symbol, date=report_date)
+            # 获取十大股东，如果失败则尝试上一年的数据
+            df_top10 = None
+            for year_offset in [0, -1]:
+                try:
+                    test_date = f"{current_year + year_offset}1231" if year_offset < 0 else report_date
+                    df_top10 = await asyncio.to_thread(ak.stock_gdfx_top_10_em, symbol=market_symbol, date=test_date)
+                    if not df_top10.empty:
+                        break
+                except Exception as e:
+                    logger.warning("shareholders_fetch_attempt_failed", symbol=symbol, date=test_date, error=str(e))
+                    continue
+            
             top10_shareholders = []
             
-            if not df_top10.empty:
-                for _, row in df_top10.head(10).iterrows():
-                    top10_shareholders.append(ShareholderItem(
-                        name=str(row['股东名称']),
-                        shares=float(row['持股数']) / 10000,  # 转换为万股
-                        percentage=float(row['占总股本持股比例']),
-                        change=str(row.get('增减', ''))
-                    ))
+            if df_top10 is not None and not df_top10.empty:
+                # 直接使用文档中的列名，添加错误处理
+                for idx, row in df_top10.head(10).iterrows():
+                    try:
+                        top10_shareholders.append(ShareholderItem(
+                            name=str(row['股东名称']),
+                            shares=float(row['持股数']) / 10000,  # 转换为万股
+                            percentage=float(row['占总股本持股比例']),
+                            change=str(row.get('增减', ''))
+                        ))
+                    except (KeyError, ValueError, TypeError) as e:
+                        logger.warning("shareholder_item_parse_failed", index=idx, error=str(e))
+                        continue
             
-            # 十大流通股东使用相同接口（暂时返回空）
+            # 十大流通股东暂时返回空
             top10_float_shareholders = []
             
             shareholders = StockShareholders(
                 symbol=symbol,
-                shareholder_count=None,  # 暂时不获取股东人数
+                shareholder_count=None,
                 top10_shareholders=top10_shareholders,
                 top10_float_shareholders=top10_float_shareholders
             )

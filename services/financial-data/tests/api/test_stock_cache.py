@@ -1,4 +1,7 @@
-"""股票接口缓存验证测试"""
+"""股票接口缓存验证测试
+
+注意：这些测试依赖 AkShare API，可能因网络问题失败。
+"""
 import pytest
 import time
 import asyncio
@@ -10,6 +13,7 @@ from app.core.cache import cache
 class TestStockCacheValidation:
     """股票接口缓存验证测试"""
     
+    @pytest.mark.flaky(reruns=2, reruns_delay=1)
     async def test_profile_cache_hit(self, client: AsyncClient):
         """测试 profile 接口缓存命中"""
         symbol = "600519"
@@ -36,6 +40,7 @@ class TestStockCacheValidation:
         # 由于网络延迟等因素，不强制要求快很多
         assert time2 <= time1 * 1.5, f"缓存可能未生效：第一次 {time1:.3f}s，第二次 {time2:.3f}s"
     
+    @pytest.mark.flaky(reruns=2, reruns_delay=1)
     async def test_valuation_cache_ttl(self, client: AsyncClient):
         """测试 valuation 接口缓存 TTL"""
         symbol = "600519"
@@ -56,6 +61,7 @@ class TestStockCacheValidation:
         ttl = await cache.ttl(cache_key)
         assert 290 <= ttl <= 300, f"TTL 不正确: {ttl}"
     
+    @pytest.mark.flaky(reruns=2, reruns_delay=1)
     async def test_spot_cache_different_markets(self, client: AsyncClient):
         """测试不同市场的缓存隔离"""
         # A股
@@ -74,6 +80,7 @@ class TestStockCacheValidation:
         assert cache_hk is not None
         assert cache_cn != cache_hk
     
+    @pytest.mark.flaky(reruns=2, reruns_delay=1)
     async def test_fund_flow_cache_refresh(self, client: AsyncClient):
         """测试资金流向缓存刷新（TTL 5秒）"""
         symbol = "600519"
@@ -94,6 +101,7 @@ class TestStockCacheValidation:
         # 数据可能不同（因为重新获取）
         assert response2.status_code == 200
     
+    @pytest.mark.flaky(reruns=2, reruns_delay=1)
     async def test_bid_ask_cache_ultra_short(self, client: AsyncClient):
         """测试五档盘口超短缓存（TTL 1秒）"""
         symbol = "600519"

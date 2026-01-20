@@ -1,4 +1,7 @@
-"""股票批量接口测试"""
+"""股票批量接口测试
+
+注意：这些测试依赖 AkShare API，可能因网络问题失败。
+"""
 import pytest
 from httpx import AsyncClient
 
@@ -7,6 +10,7 @@ from httpx import AsyncClient
 class TestStockBatchAPI:
     """批量接口测试"""
     
+    @pytest.mark.flaky(reruns=2, reruns_delay=1)
     async def test_batch_spot_basic(self, client: AsyncClient):
         """测试批量获取行情"""
         payload = {
@@ -24,6 +28,7 @@ class TestStockBatchAPI:
         # 验证返回的是字典
         assert isinstance(data, dict)
     
+    @pytest.mark.flaky(reruns=2, reruns_delay=1)
     async def test_batch_spot_mixed_markets(self, client: AsyncClient):
         """测试混合市场批量请求"""
         payload = {
