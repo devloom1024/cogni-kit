@@ -310,7 +310,7 @@ class AkShareClient:
             基金净值数据
         """
         try:
-            df = ak.fund_open_fund_info_em(fund=symbol, indicator="单位净值走势")
+            df = ak.fund_open_fund_info_em(symbol=symbol, indicator="单位净值走势")
             
             if df.empty:
                 raise DataSourceError(f"未找到基金: {symbol}")
@@ -343,7 +343,7 @@ class AkShareClient:
             基金详细信息
         """
         try:
-            df = ak.fund_open_fund_info_em(fund=symbol, indicator="基金信息")
+            df = ak.fund_open_fund_info_em(symbol=symbol, indicator="基金信息")
             
             if df.empty:
                 raise DataSourceError(f"未找到基金: {symbol}")
