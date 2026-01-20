@@ -5,6 +5,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """应用配置"""
     
+    # 环境配置（共享变量）
+    node_env: str = "development"  # development | production | test
+    
     # 服务配置
     port: int = 8000
     log_level: str = "INFO"

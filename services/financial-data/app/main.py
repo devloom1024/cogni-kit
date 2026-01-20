@@ -41,7 +41,11 @@ app = FastAPI(
     title="金融数据服务",
     version="1.0.0",
     description="模块化金融数据微服务，封装 AkShare 和技术指标计算",
-    lifespan=lifespan
+    lifespan=lifespan,
+    # 生产环境禁用文档
+    docs_url="/api-docs" if settings.node_env != "production" else None,
+    redoc_url="/api-docs/redoc" if settings.node_env != "production" else None,
+    openapi_url="/api-docs/openapi.json" if settings.node_env != "production" else None
 )
 
 # CORS 中间件

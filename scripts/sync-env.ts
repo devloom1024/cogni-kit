@@ -20,7 +20,7 @@ const ENV_MAPPINGS = {
   },
   'services/financial-data/.env': {
     prefix: 'PYTHON_',
-    shared: ['REDIS_URL'],
+    shared: ['NODE_ENV', 'REDIS_URL'],
     stripPrefix: true,
   },
   'infra/docker/.env': {

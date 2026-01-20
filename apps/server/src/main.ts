@@ -56,39 +56,47 @@ app.route('/api/v1/auth', auth)
 app.route('/api/v1/auth', oauth)
 app.route('/api/v1/users', user)
 
-// OpenAPI documentation
-app.doc('/doc', {
-  openapi: '3.0.0',
-  info: {
-    version: '1.0.0',
-    title: '认证 API',
-    description: '提供用户注册、登录、个人信息管理等功能',
-  },
-  servers: [
-    {
-      url: `http://localhost:${env.PORT}`,
-      description: '本地开发服务器',
+// OpenAPI documentation - 仅在非生产环境启用
+if (env.NODE_ENV !== 'production') {
+  app.doc('/api-docs/openapi.json', {
+    openapi: '3.0.0',
+    info: {
+      version: '1.0.0',
+      title: '认证 API',
+      description: '提供用户注册、登录、个人信息管理等功能',
     },
-    {
-      url: 'https://api.cognikit.com/auth',
-      description: '生产环境服务器',
-    },
-  ],
-  // @ts-expect-error: components is valid at runtime but missing in type definition
-  components: {
-    securitySchemes: {
-      bearerAuth: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        description: 'JWT Token 认证，通过 Authorization: Bearer <token> 传递',
+    servers: [
+      {
+        url: `http://localhost:${env.PORT}`,
+        description: '本地开发服务器',
+      },
+      {
+        url: 'https://api.cognikit.com/auth',
+        description: '生产环境服务器',
+      },
+    ],
+    // @ts-expect-error: components is valid at runtime but missing in type definition
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'JWT Token 认证，通过 Authorization: Bearer <token> 传递',
+        },
       },
     },
-  },
-})
+  })
 
-// Swagger UI
-app.get('/swagger', swaggerUI({ url: '/doc' }))
+  // Swagger UI
+  app.get('/api-docs', swaggerUI({ url: '/api-docs/openapi.json' }))
+  
+  logger.info('📚 API Documentation enabled at /api-docs')
+} else {
+  // 生产环境返回 404
+  app.get('/api-docs', (c) => c.notFound())
+  app.get('/api-docs/openapi.json', (c) => c.notFound())
+}
 
 const port = Number(env.PORT)
 
