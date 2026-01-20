@@ -190,74 +190,34 @@ enum AssetMarket {
 
 // ==================== 投资模块核心表 ====================
 
-/// 资产基础信息表 - 存储静态元数据
+/// 资产基础信息表 - 仅存储搜索和列表展示必需的静态信息
+/// 其他动态数据（行业、财务、持仓等）从 Python 服务实时获取
 model Asset {
-  id          String      @id @default(uuid())
-  /// 标的代码 (如 600519, AAPL)
-  symbol      String
+  id              String      @id @default(uuid())
+  /// 标的代码 (如 600519, 00700, AAPL)
+  symbol          String
   /// 标的名称
-  name        String
-  /// 资产类型
-  type        AssetType
-  /// 所属市场
-  market      AssetMarket
-  
+  name            String
+  /// 资产类型 (STOCK/ETF/FUND)
+  type            AssetType
+  /// 所属市场 (CN/HK/US)
+  market          AssetMarket
   /// 拼音首字母 (用于搜索，如 "ZGPA" 为中国平安)
-  pinyinInitial String? @map("pinyin_initial")
-  
-  /// 所属行业 (股票/ETF)
-  industry    String?
-  /// 主营业务描述 (股票)
-  businessSummary String? @map("business_summary") @db.Text
-  
-  /// 基金经理 (基金)
-  manager     String?
-  /// 成立日期
-  establishmentDate DateTime? @map("establishment_date")
-  /// 资产规模 (单位: 亿)
-  scale       Decimal?    @db.Decimal(20, 4)
-  /// 风险等级
-  riskLevel   String?     @map("risk_level")
-  
+  pinyinInitial   String?     @map("pinyin_initial")
   /// 上次数据同步时间
-  lastSyncedAt DateTime? @map("last_synced_at")
+  lastSyncedAt    DateTime?   @map("last_synced_at")
 
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
 
   // 关联关系
-  holdings      AssetHolding[]
-  watchlistItems WatchlistItem[]
+  watchlistItems  WatchlistItem[]
 
   @@unique([market, symbol]) // 同一市场下代码唯一
   @@index([type])
   @@index([name]) // 支持名称搜索
   @@index([pinyinInitial]) // 支持拼音首字母搜索
   @@map("assets")
-}
-
-/// 基金/ETF 持仓明细表 (十大重仓)
-model AssetHolding {
-  id          String   @id @default(uuid())
-  assetId     String   @map("asset_id")
-  
-  /// 持仓标的代码
-  symbol      String
-  /// 持仓标的名称
-  name        String
-  /// 持仓占比 (百分比, 如 15.5 表示 15.5%)
-  percentage  Decimal  @db.Decimal(10, 4)
-  
-  /// 数据报告期 (如 2023-12-31)
-  reportDate  DateTime? @map("report_date")
-
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-
-  @@index([assetId])
-  @@map("asset_holdings")
 }
 
 /// 自选分组表
