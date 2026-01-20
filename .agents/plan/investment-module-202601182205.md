@@ -34,42 +34,51 @@
 
 ### 1.1 目录结构
 
+- [x] **已完成重构** - 按资产类型拆分模块
+
 ```
 services/financial-data/
 ├── app/
 │   ├── main.py
 │   ├── modules/
 │   │   ├── akshare/
-│   │   │   ├── stock/       # 股票模块
+│   │   │   ├── stock/       # 股票模块 ✅
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── schemas.py
 │   │   │   │   ├── router.py
 │   │   │   │   ├── service.py
 │   │   │   │   └── client.py
-│   │   │   ├── etf/         # ETF 模块
+│   │   │   ├── etf/         # ETF 模块 ✅
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── schemas.py
 │   │   │   │   ├── router.py
 │   │   │   │   ├── service.py
 │   │   │   │   └── client.py
-│   │   │   └── fund/        # 场外基金模块
+│   │   │   └── fund/        # 场外基金模块 ✅
+│   │   │       ├── __init__.py
+│   │   │       ├── schemas.py
 │   │   │       ├── router.py
 │   │   │       ├── service.py
 │   │   │       └── client.py
-│   │   └── indicators/      # 技术指标模块
+│   │   └── indicators/      # 技术指标模块 ✅
 │   └── core/
 ```
 
-### 1.2 股票接口 (`/akshare/stock/*`)
+### 1.2 股票接口 (`/akshare/stock/*`) ✅
 - [x] `GET /list` - 全量股票列表 (同步用)
-- [ ] `GET /{symbol}/spot` - 实时行情
-- [ ] `GET /{symbol}/profile` - 公司信息 (F10)
-- [ ] `GET /{symbol}/valuation` - 估值数据
-- [ ] `GET /{symbol}/financial` - 财务摘要
-- [ ] `GET /{symbol}/shareholders` - 股东信息 (仅A股)
-- [ ] `GET /{symbol}/fund-flow` - 资金流向 (仅A股)
-- [ ] `GET /{symbol}/bid-ask` - 五档盘口 (仅A股)
-- [ ] `GET /{symbol}/kline` - K线数据
+- [x] `GET /{symbol}/spot` - 实时行情
+- [x] `GET /{symbol}/kline` - K线数据
+- [x] `GET /{symbol}/profile` - 公司信息 (F10)
+- [x] `GET /{symbol}/valuation` - 估值数据
+- [x] `GET /{symbol}/financial` - 财务摘要
+- [x] `GET /{symbol}/shareholders` - 股东信息 (仅A股)
+- [x] `GET /{symbol}/fund-flow` - 资金流向 (仅A股)
+- [x] `GET /{symbol}/bid-ask` - 五档盘口 (仅A股)
+- [x] `POST /spot/batch` - 批量行情
 
 ### 1.3 ETF 接口 (`/akshare/etf/*`)
-- [ ] `GET /list` - 全量 ETF 列表
-- [ ] `GET /{symbol}/spot` - 实时行情 (含IOPV/折溢价)
+- [x] `GET /list` - 全量 ETF 列表
+- [x] `GET /{symbol}/spot` - 实时行情
 - [ ] `GET /{symbol}/info` - 基金信息
 - [ ] `GET /{symbol}/holdings` - 十大重仓
 - [ ] `GET /{symbol}/fund-flow` - 资金流向
@@ -78,10 +87,10 @@ services/financial-data/
 
 ### 1.4 场外基金接口 (`/akshare/fund/*`)
 - [x] `GET /list` - 全量基金列表
-- [ ] `GET /{symbol}/nav` - 最新净值
-- [ ] `GET /{symbol}/info` - 基金信息
+- [x] `GET /{symbol}/nav` - 最新净值
+- [x] `GET /{symbol}/info` - 基金信息
+- [x] `GET /{symbol}/holdings` - 十大重仓
 - [ ] `GET /{symbol}/performance` - 收益表现
-- [ ] `GET /{symbol}/holdings` - 十大重仓
 - [ ] `GET /{symbol}/allocation` - 资产配置
 - [ ] `GET /{symbol}/estimation` - 盘中估值
 - [ ] `GET /{symbol}/nav-history` - 历史净值

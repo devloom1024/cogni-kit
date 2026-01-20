@@ -9,12 +9,9 @@
         "build": "echo 'Python service, no build needed'",
         "type-check": "echo 'Python service, no type check needed'",
         "lint": "echo 'Python service, no lint needed'",
-        "test": "uv run pytest -m \"not slow\" -v",
-        "test:unit": "uv run pytest tests/unit/ -v",
-        "test:integration": "uv run pytest tests/integration/ -v",
-        "test:api": "uv run pytest tests/api/ -v",
-        "test:all": "uv run pytest -v",
-        "test:coverage": "uv run pytest --cov=app --cov-report=html --cov-report=term -v"
+        "test": "uv run pytest tests/api/ -v",
+        "test:cache": "uv run pytest tests/api/test_stock_cache.py -v",
+        "test:all": "uv run pytest -v"
     },
     "description": "金融数据微服务 - 封装 AkShare 和技术指标计算"
 }

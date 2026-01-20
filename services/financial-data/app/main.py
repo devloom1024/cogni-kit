@@ -106,8 +106,12 @@ async def health_check():
 
 
 # 注册路由模块
-from app.modules.akshare.router import router as akshare_router
+from app.modules.akshare.stock.router import router as stock_router
+from app.modules.akshare.etf.router import router as etf_router
+from app.modules.akshare.fund.router import router as fund_router
 from app.modules.indicators.router import router as indicators_router
 
-app.include_router(akshare_router, prefix="/api/v1/akshare", tags=["AkShare"])
+app.include_router(stock_router, prefix="/api/v1/akshare/stock", tags=["Stock"])
+app.include_router(etf_router, prefix="/api/v1/akshare/etf", tags=["ETF"])
+app.include_router(fund_router, prefix="/api/v1/akshare/fund", tags=["Fund"])
 app.include_router(indicators_router, prefix="/api/v1/indicators", tags=["Indicators"])

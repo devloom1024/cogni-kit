@@ -1,0 +1,62 @@
+"""股票基础接口测试"""
+import pytest
+from httpx import AsyncClient
+
+
+@pytest.mark.asyncio
+class TestStockBasicAPI:
+    """股票基础接口测试"""
+    
+    async def test_get_profile(self, client: AsyncClient):
+        """测试获取公司信息"""
+        response = await client.get("/api/v1/akshare/stock/600519/profile?market=CN")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["symbol"] == "600519"
+        assert "name" in data
+        assert "industry" in data
+    
+    async def test_get_valuation(self, client: AsyncClient):
+        """测试获取估值数据"""
+        response = await client.get("/api/v1/akshare/stock/600519/valuation?market=CN")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["symbol"] == "600519"
+        assert "marketCap" in data or "market_cap" in data
+        assert "pe" in data
+    
+    async def test_get_financial(self, client: AsyncClient):
+        """测试获取财务数据"""
+        response = await client.get("/api/v1/akshare/stock/600519/financial?market=CN")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["symbol"] == "600519"
+        assert "revenue" in data or "reportDate" in data or "report_date" in data
+    
+    async def test_get_shareholders_cn_only(self, client: AsyncClient):
+        """测试股东信息（仅A股）"""
+        # A股应该成功
+        response = await client.get("/api/v1/akshare/stock/600519/shareholders")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["symbol"] == "600519"
+        assert "top10Shareholders" in data or "top10_shareholders" in data
+    
+    async def test_get_fund_flow(self, client: AsyncClient):
+        """测试资金流向"""
+        response = await client.get("/api/v1/akshare/stock/600519/fund-flow")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["symbol"] == "600519"
+        assert "mainNetInflow" in data or "main_net_inflow" in data
+    
+    async def test_get_bid_ask(self, client: AsyncClient):
+        """测试五档盘口"""
+        response = await client.get("/api/v1/akshare/stock/600519/bid-ask")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["symbol"] == "600519"
+        assert "bids" in data
+        assert "asks" in data
+        assert len(data["bids"]) <= 5
+        assert len(data["asks"]) <= 5

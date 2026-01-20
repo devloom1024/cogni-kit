@@ -106,6 +106,24 @@ class CacheManager:
         except Exception as e:
             logger.warning("cache_exists_failed", key=key, error=str(e))
             return False
+    
+    async def ttl(self, key: str) -> int:
+        """获取缓存剩余过期时间
+        
+        Args:
+            key: 缓存键
+            
+        Returns:
+            剩余秒数，-1 表示永不过期，-2 表示不存在
+        """
+        if not self._client:
+            return -2
+        
+        try:
+            return await self._client.ttl(key)
+        except Exception as e:
+            logger.warning("cache_ttl_failed", key=key, error=str(e))
+            return -2
 
 
 # 全局缓存实例
