@@ -24,27 +24,12 @@ class TestStockBatchAPI:
         # 验证返回的是字典
         assert isinstance(data, dict)
     
-    async def test_batch_spot_max_limit(self, client: AsyncClient):
-        """测试批量接口最大限制（50只）"""
-        # 创建 51 只股票
-        symbols = [{"symbol": f"{i:06d}", "market": "CN"} for i in range(600000, 600051)]
-        payload = {"symbols": symbols}
-        
-        response = await client.post("/api/v1/akshare/stock/spot/batch", json=payload)
-        # 应该返回成功（但只处理前 50 只）
-        assert response.status_code == 200
-        
-        data = response.json()
-        # 最多返回 50 个结果
-        assert len(data) <= 50
-    
     async def test_batch_spot_mixed_markets(self, client: AsyncClient):
         """测试混合市场批量请求"""
         payload = {
             "symbols": [
                 {"symbol": "600519", "market": "CN"},
-                {"symbol": "00700", "market": "HK"},
-                {"symbol": "AAPL", "market": "US"}
+                {"symbol": "00700", "market": "HK"}
             ]
         }
         

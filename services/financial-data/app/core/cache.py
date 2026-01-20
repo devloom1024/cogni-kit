@@ -1,11 +1,21 @@
 """Redis 缓存管理"""
 import json
 from typing import Any, Optional
+from datetime import date, datetime
 import redis.asyncio as redis
 from app.config import settings
 import structlog
 
 logger = structlog.get_logger()
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    """支持 date 和 datetime 的 JSON encoder"""
+    def default(self, obj):
+        if isinstance(obj, (date, datetime)):
+            return obj.isoformat()
+        return super().default(obj)
+
 
 
 class CacheManager:
@@ -70,7 +80,7 @@ class CacheManager:
             await self._client.setex(
                 key,
                 ttl,
-                json.dumps(value, ensure_ascii=False)
+                json.dumps(value, ensure_ascii=False, cls=DateTimeEncoder)
             )
         except Exception as e:
             logger.warning("cache_set_failed", key=key, error=str(e))

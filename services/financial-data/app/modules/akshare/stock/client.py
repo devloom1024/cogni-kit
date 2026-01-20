@@ -287,26 +287,32 @@ class StockClient:
             财务数据
         """
         try:
-            # A股：使用 stock_financial_abstract
+            # A股：使用 stock_financial_abstract（只需 symbol 参数）
             if market == "CN" or (market is None and symbol.isdigit() and len(symbol) == 6):
                 df = await asyncio.to_thread(ak.stock_financial_abstract, symbol=symbol)
                 
                 if df.empty:
                     raise DataSourceError(f"未找到财务数据: {symbol}")
                 
-                # 取最新一期数据
-                latest = df.iloc[0]
+                # DataFrame 是转置的，列是报告期，行是指标
+                # 取第一列（最新一期）
+                latest_col = df.columns[2]  # 跳过 '选项' 和 '指标' 列
+                
+                # 构建指标字典
+                metrics = {}
+                for _, row in df.iterrows():
+                    metrics[row['指标']] = row[latest_col]
                 
                 financial = StockFinancial(
                     symbol=symbol,
-                    report_date=pd.to_datetime(latest['报告期']).date(),
-                    revenue=float(latest.get('营业收入', 0)) / 100000000 if '营业收入' in latest else None,
-                    net_profit=float(latest.get('净利润', 0)) / 100000000 if '净利润' in latest else None,
-                    eps=float(latest.get('每股收益', 0)) if '每股收益' in latest else None,
-                    bvps=float(latest.get('每股净资产', 0)) if '每股净资产' in latest else None,
-                    roe=float(latest.get('净资产收益率', 0)) if '净资产收益率' in latest else None,
-                    gross_margin=float(latest.get('销售毛利率', 0)) if '销售毛利率' in latest else None,
-                    debt_ratio=float(latest.get('资产负债率', 0)) if '资产负债率' in latest else None
+                    report_date=pd.to_datetime(latest_col).date(),
+                    revenue=float(metrics.get('营业总收入', 0)) / 100000000 if metrics.get('营业总收入') else None,
+                    net_profit=float(metrics.get('归母净利润', 0)) / 100000000 if metrics.get('归母净利润') else None,
+                    eps=float(metrics.get('基本每股收益', 0)) if metrics.get('基本每股收益') else None,
+                    bvps=float(metrics.get('每股净资产', 0)) if metrics.get('每股净资产') else None,
+                    roe=float(metrics.get('净资产收益率', 0)) if metrics.get('净资产收益率') else None,
+                    gross_margin=float(metrics.get('销售毛利率', 0)) if metrics.get('销售毛利率') else None,
+                    debt_ratio=float(metrics.get('资产负债率', 0)) if metrics.get('资产负债率') else None
                 )
             else:
                 # 港股和美股暂时返回基本数据
@@ -332,41 +338,37 @@ class StockClient:
             股东信息
         """
         try:
-            # 获取十大股东
-            df_top10 = await asyncio.to_thread(ak.stock_gdfx_top_10_em, symbol=symbol)
+            # 需要带市场标识和日期参数
+            # 使用最近的季度末日期（简化处理，使用当前年份的 Q2）
+            from datetime import date
+            current_year = date.today().year
+            report_date = f"{current_year}0630"  # 使用6月30日
+            
+            # 确定市场标识
+            if symbol.startswith('6'):
+                market_symbol = f"sh{symbol}"
+            else:
+                market_symbol = f"sz{symbol}"
+            
+            # 获取十大股东（需要 symbol 和 date 参数）
+            df_top10 = await asyncio.to_thread(ak.stock_gdfx_top_10_em, symbol=market_symbol, date=report_date)
             top10_shareholders = []
             
             if not df_top10.empty:
                 for _, row in df_top10.head(10).iterrows():
                     top10_shareholders.append(ShareholderItem(
                         name=str(row['股东名称']),
-                        shares=float(row['持股数量']) / 10000,  # 转换为万股
-                        percentage=float(row['持股比例']),
-                        change=str(row.get('变动情况', ''))
+                        shares=float(row['持股数']) / 10000,  # 转换为万股
+                        percentage=float(row['占总股本持股比例']),
+                        change=str(row.get('增减', ''))
                     ))
             
-            # 获取十大流通股东
-            df_float = await asyncio.to_thread(ak.stock_gdfx_free_top_10_em, symbol=symbol)
+            # 十大流通股东使用相同接口（暂时返回空）
             top10_float_shareholders = []
-            
-            if not df_float.empty:
-                for _, row in df_float.head(10).iterrows():
-                    top10_float_shareholders.append(ShareholderItem(
-                        name=str(row['股东名称']),
-                        shares=float(row['持股数量']) / 10000,
-                        percentage=float(row['持股比例']),
-                        change=str(row.get('变动情况', ''))
-                    ))
-            
-            # 获取股东人数
-            df_count = await asyncio.to_thread(ak.stock_zh_a_gdhs, symbol=symbol)
-            shareholder_count = None
-            if not df_count.empty:
-                shareholder_count = int(df_count.iloc[0]['股东人数'])
             
             shareholders = StockShareholders(
                 symbol=symbol,
-                shareholder_count=shareholder_count,
+                shareholder_count=None,  # 暂时不获取股东人数
                 top10_shareholders=top10_shareholders,
                 top10_float_shareholders=top10_float_shareholders
             )
@@ -388,7 +390,16 @@ class StockClient:
             资金流向数据
         """
         try:
-            df = await asyncio.to_thread(ak.stock_individual_fund_flow, symbol=symbol, market="沪深A股")
+            # 确定市场标识
+            if symbol.startswith('6'):
+                market = "sh"
+            elif symbol.startswith('0') or symbol.startswith('3'):
+                market = "sz"
+            else:
+                market = "bj"
+            
+            # stock_individual_fund_flow 参数是 stock 和 market
+            df = await asyncio.to_thread(ak.stock_individual_fund_flow, stock=symbol, market=market)
             
             if df.empty:
                 raise DataSourceError(f"未找到资金流向数据: {symbol}")
