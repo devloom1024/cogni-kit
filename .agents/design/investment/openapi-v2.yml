@@ -697,7 +697,11 @@ components:
       schema:
         type: string
         enum: [day, week, month]
-      description: K 线周期
+      description: |
+        K 线周期:
+        - day: 日线
+        - week: 周线
+        - month: 月线
 
     KLineLimit:
       name: limit
@@ -706,14 +710,21 @@ components:
         type: integer
         default: 250
         maximum: 1000
-      description: 数据点数量
+      description: 返回的数据点数量，最多 1000 条
 
     Indicators:
       name: indicators
       in: query
       schema:
         type: string
-      description: 技术指标表达式，如 ma(5),ma(20),macd(12,26,9)
+      description: |
+        技术指标表达式，逗号分隔。支持的指标:
+        - ma(n): n日移动平均线
+        - ema(n): n日指数移动平均
+        - macd(fast,slow,signal): MACD 指标
+        - rsi(n): RSI 相对强弱指标
+        - boll(n,std): 布林带
+        - kdj(n,m1,m2): KDJ 指标
 
   responses:
     NotFound:
@@ -745,15 +756,20 @@ components:
 
     PaginationMeta:
       type: object
+      description: 分页元数据
       properties:
         total:
           type: integer
+          description: 总记录数
         page:
           type: integer
+          description: 当前页码
         limit:
           type: integer
+          description: 每页数量
         totalPages:
           type: integer
+          description: 总页数
 
     AssetType:
       type: string
@@ -1148,18 +1164,22 @@ components:
           description: 折溢价率 (%)
         open:
           type: number
+          description: 今开
         prevClose:
           type: number
+          description: 昨收
         high:
           type: number
+          description: 最高
         low:
           type: number
+          description: 最低
         volume:
           type: number
-          description: 成交量
+          description: 成交量 (手)
         amount:
           type: number
-          description: 成交额
+          description: 成交额 (元)
         turnoverRate:
           type: number
           nullable: true
@@ -1177,6 +1197,7 @@ components:
         timestamp:
           type: string
           format: date-time
+          description: 数据更新时间
 
     EtfInfo:
       type: object
@@ -1466,10 +1487,13 @@ components:
               date:
                 type: string
                 format: date
+                description: 净值日期
               nav:
                 type: number
+                description: 单位净值
               accNav:
                 type: number
+                description: 累计净值
 
     # ==================== 持仓 (通用) ====================
     Holdings:
@@ -1534,6 +1558,7 @@ components:
 
     KLinePoint:
       type: object
+      description: K 线数据点
       required: [timestamp, open, high, low, close, volume]
       properties:
         timestamp:
@@ -1541,50 +1566,67 @@ components:
           description: 时间戳 (毫秒)
         open:
           type: number
+          description: 开盘价
         high:
           type: number
+          description: 最高价
         low:
           type: number
+          description: 最低价
         close:
           type: number
+          description: 收盘价
         volume:
           type: number
+          description: 成交量
 
     # ==================== 自选列表 ====================
     WatchlistGroup:
       type: object
+      description: 自选分组
       properties:
         id:
           type: string
+          description: 分组 ID
         name:
           type: string
+          description: 分组名称
         sortOrder:
           type: integer
+          description: 排序权重
         items:
           type: array
+          description: 分组内的自选项
           items:
             $ref: "#/components/schemas/WatchlistItem"
         createdAt:
           type: string
           format: date-time
+          description: 创建时间
 
     WatchlistItem:
       type: object
+      description: 自选项
       properties:
         id:
           type: string
+          description: 自选项 ID
         assetId:
           type: string
+          description: 关联的标的 ID
         symbol:
           type: string
+          description: 标的代码
         name:
           type: string
+          description: 标的名称
         type:
           $ref: "#/components/schemas/AssetType"
         market:
           $ref: "#/components/schemas/AssetMarket"
         sortOrder:
           type: integer
+          description: 排序权重
 
     QuoteSummary:
       type: object
@@ -1592,10 +1634,13 @@ components:
       properties:
         price:
           type: number
+          description: 最新价/净值
         change:
           type: number
+          description: 涨跌额
         changePercent:
           type: number
+          description: 涨跌幅 (%)
         tradingStatus:
           $ref: "#/components/schemas/TradingStatus"
         timestamp:

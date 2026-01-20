@@ -664,7 +664,11 @@ components:
       schema:
         type: string
         enum: [CN, HK, US]
-      description: 市场类型
+      description: |
+        市场类型:
+        - CN: A股 (上交所/深交所)
+        - HK: 港股
+        - US: 美股
 
     Period:
       name: period
@@ -673,7 +677,11 @@ components:
         type: string
         enum: [day, week, month]
         default: day
-      description: K 线周期
+      description: |
+        K 线周期:
+        - day: 日线
+        - week: 周线
+        - month: 月线
 
     Adjust:
       name: adjust
@@ -708,11 +716,14 @@ components:
   schemas:
     Error:
       type: object
+      description: 错误响应
       properties:
         code:
           type: string
+          description: 错误码
         message:
           type: string
+          description: 错误信息
 
     # ==================== 股票 ====================
     StockListItem:
@@ -779,9 +790,15 @@ components:
         tradingStatus:
           type: string
           enum: [TRADING, CLOSED, SUSPENDED]
+          description: |
+            交易状态:
+            - TRADING: 交易中
+            - CLOSED: 休市
+            - SUSPENDED: 停牌
         timestamp:
           type: string
           format: date-time
+          description: 数据更新时间
 
     StockProfile:
       type: object
@@ -800,10 +817,12 @@ components:
         industry:
           type: string
           nullable: true
+          description: 所属行业
         listingDate:
           type: string
           format: date
           nullable: true
+          description: 上市日期
         totalShares:
           type: number
           nullable: true
@@ -815,27 +834,35 @@ components:
         mainBusiness:
           type: string
           nullable: true
+          description: 主营业务
         registeredCapital:
           type: number
           nullable: true
+          description: 注册资本 (亿元)
         employeeCount:
           type: integer
           nullable: true
+          description: 员工人数
         legalRepresentative:
           type: string
           nullable: true
+          description: 法人代表
         secretary:
           type: string
           nullable: true
+          description: 董秘
         website:
           type: string
           nullable: true
+          description: 公司官网
         phone:
           type: string
           nullable: true
+          description: 联系电话
         address:
           type: string
           nullable: true
+          description: 办公地址
 
     StockValuation:
       type: object
@@ -931,9 +958,11 @@ components:
 
     ShareholderItem:
       type: object
+      description: 股东信息项
       properties:
         name:
           type: string
+          description: 股东名称
         shares:
           type: number
           description: 持股数 (万股)
@@ -943,6 +972,7 @@ components:
         change:
           type: string
           nullable: true
+          description: 变动情况 (增持/减持/不变)
 
     BidAsk:
       type: object
@@ -976,11 +1006,14 @@ components:
 
     PriceLevel:
       type: object
+      description: 价格档位
       properties:
         price:
           type: number
+          description: 价格
         volume:
           type: number
+          description: 数量 (手)
 
     FundFlow:
       type: object
@@ -997,18 +1030,23 @@ components:
         superLargeNetInflow:
           type: number
           nullable: true
+          description: 超大单净流入 (万元)
         largeNetInflow:
           type: number
           nullable: true
+          description: 大单净流入 (万元)
         mediumNetInflow:
           type: number
           nullable: true
+          description: 中单净流入 (万元)
         smallNetInflow:
           type: number
           nullable: true
+          description: 小单净流入 (万元)
 
     KLinePoint:
       type: object
+      description: K 线数据点
       required: [timestamp, open, high, low, close, volume]
       properties:
         timestamp:
@@ -1016,23 +1054,31 @@ components:
           description: 时间戳 (毫秒)
         open:
           type: number
+          description: 开盘价
         high:
           type: number
+          description: 最高价
         low:
           type: number
+          description: 最低价
         close:
           type: number
+          description: 收盘价
         volume:
           type: number
+          description: 成交量
 
     # ==================== ETF ====================
     EtfListItem:
       type: object
+      description: ETF 列表项
       properties:
         symbol:
           type: string
+          description: ETF 代码
         name:
           type: string
+          description: ETF 名称
 
     EtfSpot:
       type: object
@@ -1078,9 +1124,15 @@ components:
         tradingStatus:
           type: string
           enum: [TRADING, CLOSED, SUSPENDED]
+          description: |
+            交易状态:
+            - TRADING: 交易中
+            - CLOSED: 休市
+            - SUSPENDED: 停牌
         timestamp:
           type: string
           format: date-time
+          description: 数据更新时间
 
     EtfInfo:
       type: object
@@ -1092,61 +1144,80 @@ components:
         trackingIndex:
           type: string
           nullable: true
+          description: 跟踪标的
         trackingType:
           type: string
           nullable: true
+          description: 跟踪类型 (被动/增强)
         nav:
           type: number
           nullable: true
+          description: 单位净值
         dailyReturn:
           type: number
           nullable: true
+          description: 日增长率 (%)
         return1w:
           type: number
           nullable: true
+          description: 近1周收益 (%)
         return1m:
           type: number
           nullable: true
+          description: 近1月收益 (%)
         return3m:
           type: number
           nullable: true
+          description: 近3月收益 (%)
         return1y:
           type: number
           nullable: true
+          description: 近1年收益 (%)
         fee:
           type: number
           nullable: true
+          description: 管理费 (%)
         minPurchase:
           type: string
           nullable: true
+          description: 起购金额
 
     DividendHistory:
       type: object
+      description: 分红历史
       properties:
         symbol:
           type: string
+          description: 标的代码
         dividends:
           type: array
+          description: 分红记录列表
           items:
             type: object
             properties:
               recordDate:
                 type: string
                 format: date
+                description: 登记日
               exDate:
                 type: string
                 format: date
+                description: 除息日
               dividendPerUnit:
                 type: number
+                description: 每份分红 (元)
 
     # ==================== 场外基金 ====================
     FundListItem:
       type: object
+      description: 场外基金列表项
       properties:
         symbol:
           type: string
+          description: 基金代码
         name:
           type: string
+          description: 基金名称
 
     FundNav:
       type: object
@@ -1167,21 +1238,27 @@ components:
         dailyChange:
           type: number
           nullable: true
+          description: 日增长值
         navDate:
           type: string
           format: date
+          description: 净值日期
         prevNav:
           type: number
           nullable: true
+          description: 前一日净值
         subscriptionStatus:
           type: string
           nullable: true
+          description: 申购状态
         redemptionStatus:
           type: string
           nullable: true
+          description: 赎回状态
         fee:
           type: number
           nullable: true
+          description: 手续费 (%)
 
     FundInfo:
       type: object
@@ -1193,40 +1270,52 @@ components:
         fullName:
           type: string
           nullable: true
+          description: 基金全称
         type:
           type: string
           nullable: true
+          description: 基金类型
         manager:
           type: string
           nullable: true
+          description: 基金经理
         company:
           type: string
           nullable: true
+          description: 基金公司
         scale:
           type: string
           nullable: true
+          description: 最新规模
         establishmentDate:
           type: string
           format: date
           nullable: true
+          description: 成立日期
         custodian:
           type: string
           nullable: true
+          description: 托管银行
         riskLevel:
           type: string
           nullable: true
+          description: 风险等级
         rating:
           type: string
           nullable: true
+          description: 基金评级
         benchmark:
           type: string
           nullable: true
+          description: 业绩比较基准
         investmentStrategy:
           type: string
           nullable: true
+          description: 投资策略
         investmentObjective:
           type: string
           nullable: true
+          description: 投资目标
 
     FundPerformance:
       type: object
@@ -1236,144 +1325,189 @@ components:
         return1w:
           type: number
           nullable: true
+          description: 近1周收益 (%)
         return1m:
           type: number
           nullable: true
+          description: 近1月收益 (%)
         return3m:
           type: number
           nullable: true
+          description: 近3月收益 (%)
         return6m:
           type: number
           nullable: true
+          description: 近6月收益 (%)
         return1y:
           type: number
           nullable: true
+          description: 近1年收益 (%)
         return2y:
           type: number
           nullable: true
+          description: 近2年收益 (%)
         return3y:
           type: number
           nullable: true
+          description: 近3年收益 (%)
         returnYtd:
           type: number
           nullable: true
+          description: 今年以来收益 (%)
         returnSinceInception:
           type: number
           nullable: true
+          description: 成立以来收益 (%)
 
     FundAllocation:
       type: object
+      description: 基金资产配置
       properties:
         symbol:
           type: string
+          description: 基金代码
         assets:
           type: object
+          description: 资产配置比例
           properties:
             stock:
               type: number
               nullable: true
+              description: 股票占比 (%)
             bond:
               type: number
               nullable: true
+              description: 债券占比 (%)
             cash:
               type: number
               nullable: true
+              description: 现金占比 (%)
             other:
               type: number
               nullable: true
+              description: 其他占比 (%)
         industries:
           type: array
+          description: 行业配置
           items:
             type: object
             properties:
               name:
                 type: string
+                description: 行业名称
               percentage:
                 type: number
+                description: 配置比例 (%)
               categoryAvg:
                 type: number
                 nullable: true
+                description: 同类平均 (%)
 
     FundEstimation:
       type: object
+      description: 基金盘中估值
       properties:
         symbol:
           type: string
+          description: 基金代码
         estimatedNav:
           type: number
+          description: 估算净值
         estimatedReturn:
           type: number
+          description: 估算涨跌幅 (%)
         estimatedTime:
           type: string
           format: date-time
+          description: 估值时间
 
     NavHistory:
       type: object
+      description: 历史净值
       properties:
         symbol:
           type: string
+          description: 基金代码
         data:
           type: array
+          description: 净值数据列表
           items:
             type: object
             properties:
               date:
                 type: string
                 format: date
+                description: 净值日期
               nav:
                 type: number
+                description: 单位净值
               accNav:
                 type: number
+                description: 累计净值
 
     Holdings:
       type: object
+      description: 持仓信息
       properties:
         symbol:
           type: string
+          description: 标的代码
         reportDate:
           type: string
           format: date
+          description: 报告期
         holdings:
           type: array
+          description: 持仓列表
           items:
             $ref: "#/components/schemas/HoldingItem"
 
     HoldingItem:
       type: object
+      description: 持仓项
       properties:
         symbol:
           type: string
+          description: 持仓代码
         name:
           type: string
+          description: 持仓名称
         percentage:
           type: number
+          description: 持仓比例 (%)
         shares:
           type: number
           nullable: true
+          description: 持仓股数 (万股)
         marketValue:
           type: number
           nullable: true
+          description: 持仓市值 (万元)
         change:
           type: string
           nullable: true
+          description: 变动情况 (新进/增持/减持/不变)
 
-    # ==================== 技术指标 ====================
     IndicatorRequest:
       type: object
+      description: 技术指标计算请求
       required: [data, indicators]
       properties:
         data:
           type: array
+          description: K 线数据
           items:
             $ref: "#/components/schemas/KLinePoint"
         indicators:
           type: array
+          description: 指标表达式列表
           items:
             type: string
           example: ["ma(5)", "ma(20)", "macd(12,26,9)"]
 
     IndicatorResponse:
       type: object
+      description: 技术指标计算结果
       additionalProperties: true
       example:
         ma(5): [null, null, null, null, 10.12, 10.25]
@@ -1384,16 +1518,22 @@ components:
 
     IndicatorMeta:
       type: object
+      description: 技术指标元信息
       properties:
         name:
           type: string
+          description: 指标名称
         syntax:
           type: string
+          description: 语法格式
         description:
           type: string
+          description: 指标说明
         parameters:
           type: array
+          description: 参数列表
           items:
             type: string
         example:
           type: string
+          description: 使用示例
