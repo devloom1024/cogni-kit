@@ -18,52 +18,70 @@ logger = structlog.get_logger()
 
 class StockService:
     """股票服务层（带缓存）"""
-    
+
     def __init__(self):
         self.client = stock_client
-    
+
+    async def _fetch_market_list(self, market: str) -> List[StockListItem]:
+        """获取单个市场的股票列表（带缓存）"""
+        cache_key = f"stock:list:{market}"
+
+        # 尝试从缓存获取
+        cached = await cache.get(cache_key)
+        if cached:
+            logger.info("stock_list_cache_hit", market=market)
+            return [StockListItem(**item) for item in cached]
+
+        # 从数据源获取
+        stocks = await self.client.get_stock_list(market)
+
+        # 缓存结果 (24小时)
+        await cache.set(
+            cache_key,
+            [stock.model_dump() for stock in stocks],
+            ttl=settings.cache_ttl_stock_list
+        )
+        return stocks
+
     async def get_stock_list(self, market: MarketType | None = None) -> List[StockListItem]:
         """获取股票列表（带缓存）
-        
+
         策略:
         1. 如果指定 market，尝试获取对应缓存
         2. 如果 market 为 None，分别获取 CN/HK/US 缓存并合并
         3. 缓存未命中时并发调用 client 获取并更新缓存
         """
         markets = [market] if market else ["CN", "HK", "US"]
+
+        # 并发获取所有市场数据
+        results = await asyncio.gather(*[self._fetch_market_list(m) for m in markets])
+
         all_stocks = []
-        
-        async def _fetch_market(m: str) -> List[StockListItem]:
-            cache_key = f"stock:list:{m}"
-            
-            # 尝试从缓存获取
-            cached = await cache.get(cache_key)
-            if cached:
-                logger.info("stock_list_cache_hit", market=m)
-                return [StockListItem(**item) for item in cached]
-            
-            # 从数据源获取
+        for res in results:
+            all_stocks.extend(res)
+
+        return all_stocks
+
+    async def refresh_stock_list(self):
+        """刷新全量股票列表缓存（强制刷新，无视现有缓存）
+
+        用于定时任务预热缓存，支持 24 小时延迟的更新策略。
+        """
+        logger.info("stock_list_refresh_starting")
+        for market in ["CN", "HK", "US"]:
             try:
-                stocks = await self.client.get_stock_list(m)
-                
-                # 缓存结果 (1小时)
+                stocks = await self.client.get_stock_list(market)
+                cache_key = f"stock:list:{market}"
                 await cache.set(
                     cache_key,
                     [stock.model_dump() for stock in stocks],
-                    ttl=3600
+                    ttl=settings.cache_ttl_stock_list
                 )
-                return stocks
+                logger.info("stock_list_refresh_market_success", market=market, count=len(stocks))
             except Exception as e:
-                logger.error("stock_list_fetch_error", market=m, error=str(e))
-                return []
-
-        # 并发获取所有市场数据
-        results = await asyncio.gather(*[_fetch_market(m) for m in markets])
-        
-        for res in results:
-            all_stocks.extend(res)
-        
-        return all_stocks
+                logger.error("stock_list_refresh_market_failed", market=market, error=str(e))
+                raise
+        logger.info("stock_list_refresh_completed")
     
     async def get_spot(self, symbol: str, market: MarketType | None = None) -> StockSpot:
         """获取实时行情（带缓存）"""
@@ -133,7 +151,7 @@ class StockService:
         await cache.set(
             cache_key,
             profile.model_dump(),
-            ttl=86400
+            ttl=settings.cache_ttl_profile
         )
         
         return profile
@@ -155,7 +173,7 @@ class StockService:
         await cache.set(
             cache_key,
             valuation.model_dump(),
-            ttl=300
+            ttl=settings.cache_ttl_valuation
         )
         
         return valuation
@@ -177,7 +195,7 @@ class StockService:
         await cache.set(
             cache_key,
             financial.model_dump(),
-            ttl=3600
+            ttl=settings.cache_ttl_financial
         )
         
         return financial
@@ -199,7 +217,7 @@ class StockService:
         await cache.set(
             cache_key,
             shareholders.model_dump(),
-            ttl=3600
+            ttl=settings.cache_ttl_shareholders
         )
         
         return shareholders
@@ -221,7 +239,7 @@ class StockService:
         await cache.set(
             cache_key,
             fund_flow.model_dump(),
-            ttl=5
+            ttl=settings.cache_ttl_fund_flow
         )
         
         return fund_flow
@@ -243,7 +261,7 @@ class StockService:
         await cache.set(
             cache_key,
             bid_ask.model_dump(),
-            ttl=1
+            ttl=settings.cache_ttl_bid_ask
         )
         
         return bid_ask

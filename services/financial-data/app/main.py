@@ -7,6 +7,7 @@ import structlog
 
 from app.config import settings
 from app.core.cache import cache
+from app.core.scheduler import cache_refresh_scheduler
 from app.core.exceptions import BaseServiceError
 from app.core.schemas import HealthResponse, ErrorResponse
 
@@ -28,11 +29,16 @@ async def lifespan(app: FastAPI):
     # 启动时
     logger.info("service_starting", port=settings.port)
     await cache.connect()
-    
+
+    # 启动定时调度器并注册股票列表刷新任务
+    await cache_refresh_scheduler.start()
+    cache_refresh_scheduler.add_stock_list_refresh_job()
+
     yield
-    
+
     # 关闭时
     logger.info("service_stopping")
+    await cache_refresh_scheduler.stop()
     await cache.disconnect()
 
 

@@ -33,7 +33,7 @@ class EtfService:
         await cache.set(
             cache_key,
             [etf.model_dump() for etf in etfs],
-            ttl=3600
+            ttl=settings.cache_ttl_etf_list
         )
         
         return etfs

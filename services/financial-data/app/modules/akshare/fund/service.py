@@ -35,7 +35,7 @@ class FundService:
         await cache.set(
             cache_key,
             [fund.model_dump() for fund in funds],
-            ttl=3600
+            ttl=settings.cache_ttl_fund_list
         )
         
         return funds
@@ -53,11 +53,11 @@ class FundService:
         # 从数据源获取
         nav = await self.client.get_nav(symbol)
         
-        # 缓存结果
+        # 缓存结果 (1小时)
         await cache.set(
             cache_key,
             nav.model_dump(),
-            ttl=settings.cache_ttl_nav
+            ttl=settings.cache_ttl_fund_nav
         )
         
         return nav
@@ -79,7 +79,7 @@ class FundService:
         await cache.set(
             cache_key,
             info.model_dump(),
-            ttl=3600
+            ttl=settings.cache_ttl_fund_info
         )
         
         return info
@@ -101,7 +101,7 @@ class FundService:
         await cache.set(
             cache_key,
             [holding.model_dump() for holding in holdings],
-            ttl=3600
+            ttl=settings.cache_ttl_fund_holdings
         )
         
         return holdings
