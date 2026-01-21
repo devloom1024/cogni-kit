@@ -20,8 +20,12 @@ class Settings(BaseSettings):
     # === 实时行情类 (高频变化) ===
     cache_ttl_bid_ask: int = 1  # 五档盘口 (1秒)
     cache_ttl_fund_flow: int = 5  # 资金流向 (5秒)
-    cache_ttl_quote: int = 10  # 实时行情 (10秒)
+    cache_ttl_quote: int = 10  # 实时行情 (10秒) - 已废弃,使用智能缓存
     cache_ttl_valuation: int = 300  # 估值数据 (5分钟)
+    
+    # === 智能缓存配置 (根据交易时段动态调整) ===
+    cache_ttl_quote_trading: int = 60  # 交易时段行情缓存 (1分钟)
+    cache_ttl_quote_closed: int = 3600  # 非交易时段行情缓存 (60分钟)
 
     # === K线/指标类 (中频变化) ===
     cache_ttl_kline: int = 300  # K线数据 (5分钟)

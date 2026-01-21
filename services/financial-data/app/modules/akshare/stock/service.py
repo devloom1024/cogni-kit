@@ -6,6 +6,7 @@ import structlog
 
 from app.config import settings
 from app.core.cache import cache
+from app.utils.trading_time import TradingTimeHelper
 from app.modules.akshare.stock.client import stock_client
 from app.modules.akshare.stock.schemas import (
     StockListItem,
@@ -87,7 +88,10 @@ class StockService:
     async def get_spot(
         self, symbol: str, market: MarketType | None = None
     ) -> StockSpot:
-        """获取实时行情（带缓存）"""
+        """获取实时行情（带智能缓存）
+        
+        缓存策略根据交易时段动态调整,详见 config.py
+        """
         cache_key = f"stock:spot:{market or 'AUTO'}:{symbol}"
 
         # 尝试从缓存获取
@@ -99,8 +103,12 @@ class StockService:
         # 从数据源获取
         spot = await self.client.get_spot(symbol, market)
 
-        # 缓存结果
-        await cache.set(cache_key, spot.model_dump(), ttl=settings.cache_ttl_quote)
+        # 智能缓存: 根据交易时段动态调整TTL
+        ttl = TradingTimeHelper.get_quote_cache_ttl(market)
+        await cache.set(cache_key, spot.model_dump(), ttl=ttl)
+        
+        logger.info("stock_spot_cached", symbol=symbol, ttl=ttl, 
+                   is_trading=TradingTimeHelper.is_trading_time(market))
 
         return spot
 
@@ -136,7 +144,7 @@ class StockService:
     async def get_profile(
         self, symbol: str, market: MarketType | None = None
     ) -> StockProfile:
-        """获取公司信息（带缓存 - 24小时）"""
+        """获取公司信息（带缓存）"""
         cache_key = f"stock:profile:{market or 'AUTO'}:{symbol}"
 
         # 尝试从缓存获取
@@ -160,7 +168,7 @@ class StockService:
     async def get_financial(
         self, symbol: str, market: MarketType | None = None
     ) -> StockFinancial:
-        """获取财务数据（带缓存 - 1小时）"""
+        """获取财务数据（带缓存）"""
         cache_key = f"stock:financial:{market or 'AUTO'}:{symbol}"
 
         # 尝试从缓存获取
@@ -180,7 +188,7 @@ class StockService:
         return financial
 
     async def get_shareholders(self, symbol: str) -> StockShareholders:
-        """获取股东信息（带缓存 - 1小时，仅A股）"""
+        """获取股东信息（带缓存，仅A股）"""
         cache_key = f"stock:shareholders:{symbol}"
 
         # 尝试从缓存获取
@@ -200,7 +208,7 @@ class StockService:
         return shareholders
 
     async def get_fund_flow(self, symbol: str) -> FundFlow:
-        """获取资金流向（带缓存 - 5秒，仅A股）"""
+        """获取资金流向（带缓存，仅A股）"""
         cache_key = f"stock:fund-flow:{symbol}"
 
         # 尝试从缓存获取
