@@ -1,4 +1,5 @@
 """FastAPI 应用入口"""
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,7 +17,7 @@ structlog.configure(
     processors=[
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.processors.add_log_level,
-        structlog.processors.JSONRenderer()
+        structlog.processors.JSONRenderer(),
     ]
 )
 
@@ -30,9 +31,11 @@ async def lifespan(app: FastAPI):
     logger.info("service_starting", port=settings.port)
     await cache.connect()
 
-    # 启动定时调度器并注册股票列表刷新任务
+    # 启动定时调度器并注册各类缓存刷新任务
     await cache_refresh_scheduler.start()
     cache_refresh_scheduler.add_stock_list_refresh_job()
+    cache_refresh_scheduler.add_etf_list_refresh_job()
+    cache_refresh_scheduler.add_fund_list_refresh_job()
 
     yield
 
@@ -51,7 +54,7 @@ app = FastAPI(
     # 生产环境禁用文档
     docs_url="/api-docs" if settings.node_env != "production" else None,
     redoc_url="/api-docs/redoc" if settings.node_env != "production" else None,
-    openapi_url="/api-docs/openapi.json" if settings.node_env != "production" else None
+    openapi_url="/api-docs/openapi.json" if settings.node_env != "production" else None,
 )
 
 # CORS 中间件
@@ -69,35 +72,23 @@ app.add_middleware(
 async def service_error_handler(request: Request, exc: BaseServiceError):
     """处理服务异常"""
     logger.error(
-        "service_error",
-        code=exc.code,
-        message=exc.message,
-        path=request.url.path
+        "service_error", code=exc.code, message=exc.message, path=request.url.path
     )
     return JSONResponse(
         status_code=500,
-        content=ErrorResponse(
-            code=exc.code,
-            message=exc.message
-        ).model_dump()
+        content=ErrorResponse(code=exc.code, message=exc.message).model_dump(),
     )
 
 
 @app.exception_handler(Exception)
 async def general_error_handler(request: Request, exc: Exception):
     """处理未捕获的异常"""
-    logger.error(
-        "unexpected_error",
-        error=str(exc),
-        path=request.url.path
-    )
+    logger.error("unexpected_error", error=str(exc), path=request.url.path)
     return JSONResponse(
         status_code=500,
         content=ErrorResponse(
-            code="INTERNAL_ERROR",
-            message="Internal server error",
-            detail=str(exc)
-        ).model_dump()
+            code="INTERNAL_ERROR", message="Internal server error", detail=str(exc)
+        ).model_dump(),
     )
 
 
@@ -105,10 +96,7 @@ async def general_error_handler(request: Request, exc: Exception):
 @app.get("/api/v1/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
     """服务健康检查"""
-    return HealthResponse(
-        status="ok",
-        modules=["akshare", "indicators"]
-    )
+    return HealthResponse(status="ok", modules=["akshare", "indicators"])
 
 
 # 注册路由模块
