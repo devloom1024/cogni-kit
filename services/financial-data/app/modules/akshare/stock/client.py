@@ -119,7 +119,6 @@ class StockClient:
                 turnover_rate=float(row.get('换手率', 0)) if '换手率' in row else None,
                 amplitude=float(row.get('振幅', 0)) if '振幅' in row else None,
                 volume_ratio=float(row.get('量比', 0)) if '量比' in row else None,
-                trading_status="TRADING",
                 timestamp=datetime.now()
             )
             
@@ -201,7 +200,6 @@ class StockClient:
                 ask4_volume=float(data_dict.get('sell_4_vol', 0)) if 'sell_4_vol' in data_dict else None,
                 ask5=float(data_dict.get('sell_5', 0)) if 'sell_5' in data_dict else None,
                 ask5_volume=float(data_dict.get('sell_5_vol', 0)) if 'sell_5_vol' in data_dict else None,
-                trading_status="TRADING",
                 timestamp=datetime.now()
             )
             

@@ -854,14 +854,6 @@ components:
           type: number
           nullable: true
           description: 卖五量(手)
-        tradingStatus:
-          type: string
-          enum: [TRADING, CLOSED, SUSPENDED]
-          description: |
-            交易状态:
-            - TRADING: 交易中
-            - CLOSED: 休市
-            - SUSPENDED: 停牌
         timestamp:
           type: string
           format: date-time

@@ -77,7 +77,6 @@ class StockSpot(BaseModel):
     ask5Volume: float | None = Field(None, description="卖五量(手)", alias="ask5_volume")
     
     # 状态信息
-    tradingStatus: TradingStatus = Field(..., description="交易状态", alias="trading_status")
     timestamp: datetime = Field(..., description="数据更新时间")
     
     class Config:
