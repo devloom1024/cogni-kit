@@ -5,8 +5,8 @@ from typing import List, Literal
 from app.modules.akshare.stock.service import stock_service
 from app.modules.akshare.stock.schemas import (
     StockListItem, StockSpot, KLinePoint, MarketType,
-    StockProfile, StockValuation, StockFinancial,
-    StockShareholders, FundFlow, BidAsk,
+    StockProfile, StockFinancial,
+    StockShareholders, FundFlow,
     BatchSpotRequest
 )
 
@@ -28,7 +28,10 @@ async def get_stock_spot(
     symbol: str = Path(..., description="股票代码"),
     market: MarketType | None = Query(None, description="市场类型")
 ):
-    """获取股票实时行情"""
+    """获取股票实时行情(含五档盘口)
+    
+    A股返回完整行情数据(含五档盘口),港股/美股返回基础行情数据
+    """
     return await stock_service.get_spot(symbol, market)
 
 
@@ -53,13 +56,7 @@ async def get_stock_profile(
     return await stock_service.get_profile(symbol, market)
 
 
-@router.get("/{symbol}/valuation", response_model=StockValuation)
-async def get_stock_valuation(
-    symbol: str = Path(..., description="股票代码"),
-    market: MarketType | None = Query(None, description="市场类型")
-):
-    """获取估值数据"""
-    return await stock_service.get_valuation(symbol, market)
+# /valuation 接口已删除,估值数据请使用 /profile 接口获取
 
 
 @router.get("/{symbol}/financial", response_model=StockFinancial)
@@ -87,12 +84,7 @@ async def get_stock_fund_flow(
     return await stock_service.get_fund_flow(symbol)
 
 
-@router.get("/{symbol}/bid-ask", response_model=BidAsk)
-async def get_stock_bid_ask(
-    symbol: str = Path(..., description="股票代码")
-):
-    """获取五档盘口（仅A股）"""
-    return await stock_service.get_bid_ask(symbol)
+# /bid-ask 接口已删除,五档盘口数据已包含在 /spot 接口中
 
 
 @router.post("/spot/batch", response_model=dict[str, StockSpot])

@@ -83,8 +83,12 @@ paths:
   # ==================== 股票接口 ====================
   /api/v1/investment/stocks/{id}/quote:
     get:
-      summary: 获取股票实时行情
-      description: 获取股票最新价格、成交量、涨跌幅等实时数据
+      summary: 获取股票实时行情(含五档盘口)
+      description: |
+        获取股票最新价格、成交量、涨跌幅等实时数据。
+
+        **A股**: 返回完整行情数据(含五档盘口、涨跌停价、内外盘等)
+        **港股/美股**: 返回基础行情数据(不含五档盘口)
       tags: [Stock]
       parameters:
         - $ref: "#/components/parameters/AssetId"
@@ -115,22 +119,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /api/v1/investment/stocks/{id}/valuation:
-    get:
-      summary: 获取估值数据
-      description: 获取市值、市盈率、市净率等估值指标
-      tags: [Stock]
-      parameters:
-        - $ref: "#/components/parameters/AssetId"
-      responses:
-        "200":
-          description: 估值数据
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/StockValuation"
-        "404":
-          $ref: "#/components/responses/NotFound"
+  # /valuation 接口已删除 - 估值数据请使用 /profile 接口获取
 
   /api/v1/investment/stocks/{id}/financial:
     get:
@@ -183,22 +172,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /api/v1/investment/stocks/{id}/bid-ask:
-    get:
-      summary: 获取五档盘口
-      description: 获取买卖五档挂单数据 (仅 A 股支持)
-      tags: [Stock]
-      parameters:
-        - $ref: "#/components/parameters/AssetId"
-      responses:
-        "200":
-          description: 五档盘口数据
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BidAsk"
-        "404":
-          $ref: "#/components/responses/NotFound"
+  # /bid-ask 接口已删除 - 五档盘口数据已包含在 /quote 接口中
 
   /api/v1/investment/stocks/{id}/kline:
     get:
@@ -829,13 +803,14 @@ components:
     # ==================== 股票 ====================
     StockQuote:
       type: object
-      description: 股票实时行情
+      description: 股票实时行情(A股含五档盘口)
       properties:
         symbol:
           type: string
           description: 代码
         name:
           type: string
+          nullable: true
           description: 名称
         price:
           type: number
@@ -858,6 +833,10 @@ components:
         low:
           type: number
           description: 最低
+        avgPrice:
+          type: number
+          nullable: true
+          description: 均价
         volume:
           type: number
           description: 成交量 (手)
@@ -876,6 +855,102 @@ components:
           type: number
           nullable: true
           description: 量比
+        upperLimit:
+          type: number
+          nullable: true
+          description: 涨停价
+        lowerLimit:
+          type: number
+          nullable: true
+          description: 跌停价
+        outerVolume:
+          type: number
+          nullable: true
+          description: 外盘(手)
+        innerVolume:
+          type: number
+          nullable: true
+          description: 内盘(手)
+        bid1:
+          type: number
+          nullable: true
+          description: 买一价
+        bid1Volume:
+          type: number
+          nullable: true
+          description: 买一量(手)
+        bid2:
+          type: number
+          nullable: true
+          description: 买二价
+        bid2Volume:
+          type: number
+          nullable: true
+          description: 买二量(手)
+        bid3:
+          type: number
+          nullable: true
+          description: 买三价
+        bid3Volume:
+          type: number
+          nullable: true
+          description: 买三量(手)
+        bid4:
+          type: number
+          nullable: true
+          description: 买四价
+        bid4Volume:
+          type: number
+          nullable: true
+          description: 买四量(手)
+        bid5:
+          type: number
+          nullable: true
+          description: 买五价
+        bid5Volume:
+          type: number
+          nullable: true
+          description: 买五量(手)
+        ask1:
+          type: number
+          nullable: true
+          description: 卖一价
+        ask1Volume:
+          type: number
+          nullable: true
+          description: 卖一量(手)
+        ask2:
+          type: number
+          nullable: true
+          description: 卖二价
+        ask2Volume:
+          type: number
+          nullable: true
+          description: 卖二量(手)
+        ask3:
+          type: number
+          nullable: true
+          description: 卖三价
+        ask3Volume:
+          type: number
+          nullable: true
+          description: 卖三量(手)
+        ask4:
+          type: number
+          nullable: true
+          description: 卖四价
+        ask4Volume:
+          type: number
+          nullable: true
+          description: 卖四量(手)
+        ask5:
+          type: number
+          nullable: true
+          description: 卖五价
+        ask5Volume:
+          type: number
+          nullable: true
+          description: 卖五量(手)
         tradingStatus:
           $ref: "#/components/schemas/TradingStatus"
         timestamp:

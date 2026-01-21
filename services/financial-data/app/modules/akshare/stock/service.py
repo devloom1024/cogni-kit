@@ -153,27 +153,9 @@ class StockService:
 
         return profile
 
-    async def get_valuation(
-        self, symbol: str, market: MarketType | None = None
-    ) -> StockValuation:
-        """获取估值数据（带缓存 - 5分钟）"""
-        cache_key = f"stock:valuation:{market or 'AUTO'}:{symbol}"
-
-        # 尝试从缓存获取
-        cached = await cache.get(cache_key)
-        if cached:
-            logger.info("stock_valuation_cache_hit", symbol=symbol)
-            return StockValuation(**cached)
-
-        # 从数据源获取
-        valuation = await self.client.get_valuation(symbol, market)
-
-        # 缓存结果 (5分钟)
-        await cache.set(
-            cache_key, valuation.model_dump(), ttl=settings.cache_ttl_valuation
-        )
-
-        return valuation
+    # get_valuation 方法已废弃 - /valuation 接口已删除
+    # 估值数据现在通过 /profile 接口获取
+    # async def get_valuation(...):
 
     async def get_financial(
         self, symbol: str, market: MarketType | None = None
@@ -237,23 +219,9 @@ class StockService:
 
         return fund_flow
 
-    async def get_bid_ask(self, symbol: str) -> BidAsk:
-        """获取五档盘口（带缓存 - 1秒，仅A股）"""
-        cache_key = f"stock:bid-ask:{symbol}"
-
-        # 尝试从缓存获取
-        cached = await cache.get(cache_key)
-        if cached:
-            logger.info("stock_bid_ask_cache_hit", symbol=symbol)
-            return BidAsk(**cached)
-
-        # 从数据源获取
-        bid_ask = await self.client.get_bid_ask(symbol)
-
-        # 缓存结果 (1秒)
-        await cache.set(cache_key, bid_ask.model_dump(), ttl=settings.cache_ttl_bid_ask)
-
-        return bid_ask
+    # get_bid_ask 方法已废弃 - /bid-ask 接口已删除
+    # 五档盘口数据现在包含在 /spot 接口的返回中
+    # async def get_bid_ask(...):
 
     async def get_spot_batch(
         self, symbols: List[BatchSymbolItem]

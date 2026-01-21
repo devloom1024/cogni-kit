@@ -81,11 +81,15 @@ paths:
   # ==================== 股票实时行情 ====================
   /api/v1/akshare/stock/{symbol}/spot:
     get:
-      summary: 获取股票实时行情
+      summary: 获取股票实时行情(含五档盘口)
       description: |
         获取单只股票的实时行情数据。
+
+        **A股**: 返回完整行情数据(含五档盘口、涨跌停价、内外盘等)
+        **港股/美股**: 返回基础行情数据(不含五档盘口)
+
         **AkShare**:
-        - A股: `stock_zh_a_spot_em()`
+        - A股: `stock_bid_ask_em()` (优化性能,支持单股查询)
         - 港股: `stock_hk_spot_em()`
         - 美股: `stock_us_spot_em()`
       tags: [Stock]
@@ -160,29 +164,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  # ==================== 股票估值数据 ====================
-  /api/v1/akshare/stock/{symbol}/valuation:
-    get:
-      summary: 获取估值数据
-      description: |
-        获取市值、市盈率、市净率等数据。
-        **AkShare**:
-        - A股: 包含在 `stock_zh_a_spot_em()`
-        - 港股: `stock_hk_indicator_eniu()`
-        - 美股: 包含在 `stock_us_spot_em()`
-      tags: [Stock]
-      parameters:
-        - $ref: "#/components/parameters/Symbol"
-        - $ref: "#/components/parameters/Market"
-      responses:
-        "200":
-          description: 估值数据
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/StockValuation"
-        "404":
-          $ref: "#/components/responses/NotFound"
+  # /valuation 接口已删除 - 估值数据请使用 /profile 接口获取
 
   # ==================== 股票财务数据 ====================
   /api/v1/akshare/stock/{symbol}/financial:
@@ -251,25 +233,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  # ==================== 股票五档盘口 (仅A股) ====================
-  /api/v1/akshare/stock/{symbol}/bid-ask:
-    get:
-      summary: 获取五档盘口
-      description: |
-        获取买卖五档数据。**仅 A 股支持**。
-        **AkShare**: `stock_bid_ask_em()`
-      tags: [Stock]
-      parameters:
-        - $ref: "#/components/parameters/Symbol"
-      responses:
-        "200":
-          description: 五档盘口
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BidAsk"
-        "404":
-          $ref: "#/components/responses/NotFound"
+  # /bid-ask 接口已删除 - 五档盘口数据已包含在 /spot 接口中
 
   # ==================== 股票 K 线 ====================
   /api/v1/akshare/stock/{symbol}/kline:
@@ -742,12 +706,15 @@ components:
 
     StockSpot:
       type: object
-      description: 股票实时行情
+      description: 股票实时行情(A股含五档盘口)
       properties:
         symbol:
           type: string
+          description: 股票代码
         name:
           type: string
+          nullable: true
+          description: 股票名称
         price:
           type: number
           description: 最新价
@@ -763,12 +730,16 @@ components:
         low:
           type: number
           description: 最低
+        avgPrice:
+          type: number
+          nullable: true
+          description: 均价
         volume:
           type: number
-          description: 成交量
+          description: 成交量(手)
         amount:
           type: number
-          description: 成交额
+          description: 成交额(元)
         change:
           type: number
           description: 涨跌额
@@ -787,6 +758,102 @@ components:
           type: number
           nullable: true
           description: 量比
+        upperLimit:
+          type: number
+          nullable: true
+          description: 涨停价
+        lowerLimit:
+          type: number
+          nullable: true
+          description: 跌停价
+        outerVolume:
+          type: number
+          nullable: true
+          description: 外盘(手)
+        innerVolume:
+          type: number
+          nullable: true
+          description: 内盘(手)
+        bid1:
+          type: number
+          nullable: true
+          description: 买一价
+        bid1Volume:
+          type: number
+          nullable: true
+          description: 买一量(手)
+        bid2:
+          type: number
+          nullable: true
+          description: 买二价
+        bid2Volume:
+          type: number
+          nullable: true
+          description: 买二量(手)
+        bid3:
+          type: number
+          nullable: true
+          description: 买三价
+        bid3Volume:
+          type: number
+          nullable: true
+          description: 买三量(手)
+        bid4:
+          type: number
+          nullable: true
+          description: 买四价
+        bid4Volume:
+          type: number
+          nullable: true
+          description: 买四量(手)
+        bid5:
+          type: number
+          nullable: true
+          description: 买五价
+        bid5Volume:
+          type: number
+          nullable: true
+          description: 买五量(手)
+        ask1:
+          type: number
+          nullable: true
+          description: 卖一价
+        ask1Volume:
+          type: number
+          nullable: true
+          description: 卖一量(手)
+        ask2:
+          type: number
+          nullable: true
+          description: 卖二价
+        ask2Volume:
+          type: number
+          nullable: true
+          description: 卖二量(手)
+        ask3:
+          type: number
+          nullable: true
+          description: 卖三价
+        ask3Volume:
+          type: number
+          nullable: true
+          description: 卖三量(手)
+        ask4:
+          type: number
+          nullable: true
+          description: 卖四价
+        ask4Volume:
+          type: number
+          nullable: true
+          description: 卖四量(手)
+        ask5:
+          type: number
+          nullable: true
+          description: 卖五价
+        ask5Volume:
+          type: number
+          nullable: true
+          description: 卖五量(手)
         tradingStatus:
           type: string
           enum: [TRADING, CLOSED, SUSPENDED]

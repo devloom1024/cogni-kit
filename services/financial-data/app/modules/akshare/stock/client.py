@@ -80,15 +80,15 @@ class StockClient:
             实时行情数据
         """
         try:
-            # A股
+            # A股: 使用优化的 stock_bid_ask_em
             if market == "CN" or (market is None and (symbol.isdigit() and len(symbol) == 6)):
-                df = await asyncio.to_thread(ak.stock_zh_a_spot_em)
-                row = df[df['代码'] == symbol]
-            # 港股
+                return await self._get_spot_cn_optimized(symbol)
+            
+            # 港股: 保持原实现
             elif market == "HK" or (market is None and (symbol.isdigit() and len(symbol) == 5)):
                 df = await asyncio.to_thread(ak.stock_hk_spot_em)
                 row = df[df['代码'] == symbol]
-            # 美股
+            # 美股: 保持原实现
             elif market == "US" or market is None:
                 df = await asyncio.to_thread(ak.stock_us_spot_em)
                 row = df[df['代码'].astype(str).str.endswith(f".{symbol}")]
@@ -97,12 +97,13 @@ class StockClient:
             else:
                 raise DataSourceError(f"未知市场或代码格式: {symbol}")
             
+            # 港股/美股的数据处理
             if row.empty:
                 raise DataSourceError(f"未找到股票: {symbol}")
             
             row = row.iloc[0]
             
-            # 构建响应数据
+            # 构建响应数据(港股/美股不含五档盘口)
             spot = StockSpot(
                 symbol=symbol,
                 name=str(row.get('名称', '')),
@@ -118,9 +119,6 @@ class StockClient:
                 turnover_rate=float(row.get('换手率', 0)) if '换手率' in row else None,
                 amplitude=float(row.get('振幅', 0)) if '振幅' in row else None,
                 volume_ratio=float(row.get('量比', 0)) if '量比' in row else None,
-                market_cap=float(row.get('总市值', 0)) if '总市值' in row else None,
-                pe=float(row.get('市盈率-动态', row.get('市盈率', 0))) if '市盈率' in row or '市盈率-动态' in row else None,
-                pb=float(row.get('市净率', 0)) if '市净率' in row else None,
                 trading_status="TRADING",
                 timestamp=datetime.now()
             )
@@ -131,6 +129,111 @@ class StockClient:
         except Exception as e:
             logger.error("stock_spot_fetch_failed", error=str(e), symbol=symbol)
             raise DataSourceError(f"获取实时行情失败: {str(e)}")
+    
+    async def _get_spot_cn_optimized(self, symbol: str) -> StockSpot:
+        """使用 stock_bid_ask_em 获取A股实时行情(优化版)
+        
+        Args:
+            symbol: 股票代码
+            
+        Returns:
+            实时行情数据(含五档盘口)
+        """
+        try:
+            # 调用 stock_bid_ask_em 获取完整行情数据
+            df = await asyncio.to_thread(ak.stock_bid_ask_em, symbol=symbol)
+            
+            # 转换 item/value 格式为字典
+            data_dict = dict(zip(df['item'], df['value']))
+            
+            # 计算振幅
+            amplitude = None
+            if all(k in data_dict for k in ['最高', '最低', '昨收']):
+                high = float(data_dict['最高'])
+                low = float(data_dict['最低'])
+                prev_close = float(data_dict['昨收'])
+                if prev_close > 0:
+                    amplitude = (high - low) / prev_close * 100
+            
+            # 从列表缓存中获取股票名称
+            name = await self._get_stock_name_from_cache(symbol)
+            
+            # 构建 StockSpot 对象
+            spot = StockSpot(
+                symbol=symbol,
+                name=name,
+                price=float(data_dict.get('最新', 0)),
+                open=float(data_dict.get('今开', 0)),
+                prev_close=float(data_dict.get('昨收', 0)),
+                high=float(data_dict.get('最高', 0)),
+                low=float(data_dict.get('最低', 0)),
+                avg_price=float(data_dict.get('均价', 0)) if '均价' in data_dict else None,
+                volume=float(data_dict.get('总手', 0)),
+                amount=float(data_dict.get('金额', 0)),
+                change=float(data_dict.get('涨跌', 0)),
+                change_percent=float(data_dict.get('涨幅', 0)),
+                turnover_rate=float(data_dict.get('换手', 0)) if '换手' in data_dict else None,
+                amplitude=amplitude,
+                volume_ratio=float(data_dict.get('量比', 0)) if '量比' in data_dict else None,
+                upper_limit=float(data_dict.get('涨停', 0)) if '涨停' in data_dict else None,
+                lower_limit=float(data_dict.get('跌停', 0)) if '跌停' in data_dict else None,
+                outer_volume=float(data_dict.get('外盘', 0)) if '外盘' in data_dict else None,
+                inner_volume=float(data_dict.get('内盘', 0)) if '内盘' in data_dict else None,
+                # 五档买盘
+                bid1=float(data_dict.get('buy_1', 0)) if 'buy_1' in data_dict else None,
+                bid1_volume=float(data_dict.get('buy_1_vol', 0)) if 'buy_1_vol' in data_dict else None,
+                bid2=float(data_dict.get('buy_2', 0)) if 'buy_2' in data_dict else None,
+                bid2_volume=float(data_dict.get('buy_2_vol', 0)) if 'buy_2_vol' in data_dict else None,
+                bid3=float(data_dict.get('buy_3', 0)) if 'buy_3' in data_dict else None,
+                bid3_volume=float(data_dict.get('buy_3_vol', 0)) if 'buy_3_vol' in data_dict else None,
+                bid4=float(data_dict.get('buy_4', 0)) if 'buy_4' in data_dict else None,
+                bid4_volume=float(data_dict.get('buy_4_vol', 0)) if 'buy_4_vol' in data_dict else None,
+                bid5=float(data_dict.get('buy_5', 0)) if 'buy_5' in data_dict else None,
+                bid5_volume=float(data_dict.get('buy_5_vol', 0)) if 'buy_5_vol' in data_dict else None,
+                # 五档卖盘
+                ask1=float(data_dict.get('sell_1', 0)) if 'sell_1' in data_dict else None,
+                ask1_volume=float(data_dict.get('sell_1_vol', 0)) if 'sell_1_vol' in data_dict else None,
+                ask2=float(data_dict.get('sell_2', 0)) if 'sell_2' in data_dict else None,
+                ask2_volume=float(data_dict.get('sell_2_vol', 0)) if 'sell_2_vol' in data_dict else None,
+                ask3=float(data_dict.get('sell_3', 0)) if 'sell_3' in data_dict else None,
+                ask3_volume=float(data_dict.get('sell_3_vol', 0)) if 'sell_3_vol' in data_dict else None,
+                ask4=float(data_dict.get('sell_4', 0)) if 'sell_4' in data_dict else None,
+                ask4_volume=float(data_dict.get('sell_4_vol', 0)) if 'sell_4_vol' in data_dict else None,
+                ask5=float(data_dict.get('sell_5', 0)) if 'sell_5' in data_dict else None,
+                ask5_volume=float(data_dict.get('sell_5_vol', 0)) if 'sell_5_vol' in data_dict else None,
+                trading_status="TRADING",
+                timestamp=datetime.now()
+            )
+            
+            logger.info("stock_spot_cn_optimized_fetched", symbol=symbol)
+            return spot
+            
+        except Exception as e:
+            logger.error("stock_spot_cn_optimized_failed", error=str(e), symbol=symbol)
+            raise DataSourceError(f"获取A股实时行情失败: {str(e)}")
+    
+    async def _get_stock_name_from_cache(self, symbol: str) -> str | None:
+        """从列表缓存中获取股票名称
+        
+        Args:
+            symbol: 股票代码
+            
+        Returns:
+            股票名称,未找到则返回None
+        """
+        try:
+            # 尝试从缓存的股票列表中获取名称
+            from app.core.cache import cache
+            cache_key = "stock:list:CN"
+            cached = await cache.get(cache_key)
+            if cached:
+                for item in cached:
+                    if item.get('symbol') == symbol:
+                        return item.get('name')
+        except Exception as e:
+            logger.warning("get_stock_name_from_cache_failed", error=str(e), symbol=symbol)
+        
+        return None
     
     async def get_kline(
         self,
