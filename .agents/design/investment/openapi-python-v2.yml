@@ -310,20 +310,45 @@ paths:
   # ==================== 股票资金流向 (仅A股) ====================
   /api/v1/akshare/stock/{symbol}/fund-flow:
     get:
-      summary: 获取资金流向
+      summary: 获取资金流向（多期）
       description: |
-        获取主力资金流向数据。**仅 A 股支持**。
+        获取资金流向数据（支持多期）。**仅 A 股支持**。
+
+        **返回多期数据**，默认最近 100 个交易日，支持 limit 和日期参数筛选。
+
         **AkShare**: `stock_individual_fund_flow()`
+
+        **缓存**: 5 秒
       tags: [Stock]
       parameters:
         - $ref: "#/components/parameters/Symbol"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: 返回数据条数，默认 20
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            pattern: "^[0-9]{8}$"
+          description: 开始日期 (YYYYMMDD，与 limit 二选一)
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            pattern: "^[0-9]{8}$"
+          description: 结束日期 (YYYYMMDD)
       responses:
         "200":
-          description: 资金流向
+          description: 资金流向（多期）
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FundFlow"
+                $ref: "#/components/schemas/FundFlowResponse"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -1510,11 +1535,41 @@ components:
           type: number
           description: 数量 (手)
 
-    FundFlow:
+    FundFlowResponse:
       type: object
+      description: 资金流向响应（多期）
       properties:
         symbol:
           type: string
+          description: 股票代码
+        market:
+          type: string
+          enum: [CN]
+          description: 市场类型
+        count:
+          type: integer
+          description: 返回的数据条数
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/FundFlowPeriod"
+
+    FundFlowPeriod:
+      type: object
+      description: 单日资金流向数据
+      properties:
+        date:
+          type: string
+          format: date
+          description: 日期
+        close:
+          type: number
+          nullable: true
+          description: 收盘价
+        changePercent:
+          type: number
+          nullable: true
+          description: 涨跌幅 (%)
         mainNetInflow:
           type: number
           description: 主力净流入 (万元)
@@ -1526,18 +1581,34 @@ components:
           type: number
           nullable: true
           description: 超大单净流入 (万元)
+        superLargeNetInflowRatio:
+          type: number
+          nullable: true
+          description: 超大单净流入占比 (%)
         largeNetInflow:
           type: number
           nullable: true
           description: 大单净流入 (万元)
+        largeNetInflowRatio:
+          type: number
+          nullable: true
+          description: 大单净流入占比 (%)
         mediumNetInflow:
           type: number
           nullable: true
           description: 中单净流入 (万元)
+        mediumNetInflowRatio:
+          type: number
+          nullable: true
+          description: 中单净流入占比 (%)
         smallNetInflow:
           type: number
           nullable: true
           description: 小单净流入 (万元)
+        smallNetInflowRatio:
+          type: number
+          nullable: true
+          description: 小单净流入占比 (%)
 
     # ==================== K 线 ====================
     KLinePoint:

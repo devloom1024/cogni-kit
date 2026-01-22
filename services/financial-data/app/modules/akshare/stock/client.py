@@ -10,7 +10,7 @@ from app.core.exceptions import DataSourceError
 from app.modules.akshare.stock.schemas import (
     StockListItem, StockSpot, KLinePoint, KLineMeta, KLineResponse, MarketType,
     StockProfile, StockValuation, StockFinancial,
-    StockShareholders, ShareholderItem, FundFlow,
+    StockShareholders, ShareholderItem, FundFlowResponse, FundFlowPeriod,
     BidAsk, PriceLevel, BatchSymbolItem,
     StockFinancialCNResponse, StockFinancialCNPeriod,
     StockFinancialHKResponse, StockFinancialHKPeriod,
@@ -861,14 +861,23 @@ class StockClient:
             logger.error("stock_shareholders_fetch_failed", error=str(e), symbol=symbol)
             raise DataSourceError(f"获取股东信息失败: {str(e)}")
     
-    async def get_fund_flow(self, symbol: str) -> FundFlow:
-        """获取资金流向（仅A股）
-        
+    async def get_fund_flow(
+        self,
+        symbol: str,
+        limit: int = 20,
+        start_date: str | None = None,
+        end_date: str | None = None
+    ) -> FundFlowResponse:
+        """获取资金流向（多期，仅A股）
+
         Args:
             symbol: 股票代码
-            
+            limit: 返回数据条数，默认 20
+            start_date: 开始日期 (YYYYMMDD，与 limit 二选一)
+            end_date: 结束日期 (YYYYMMDD，默认当前日期)
+
         Returns:
-            资金流向数据
+            资金流向数据（多期）
         """
         try:
             # 确定市场标识
@@ -878,29 +887,57 @@ class StockClient:
                 market = "sz"
             else:
                 market = "bj"
-            
-            # stock_individual_fund_flow 参数是 stock 和 market
+
+            # 确定结束日期
+            if not end_date:
+                end_date = datetime.now().strftime("%Y%m%d")
+
+            # stock_individual_fund_flow 返回近 100 个交易日的数据
             df = await asyncio.to_thread(ak.stock_individual_fund_flow, stock=symbol, market=market)
-            
+
             if df.empty:
                 raise DataSourceError(f"未找到资金流向数据: {symbol}")
-            
-            # 取最新一天的数据
-            latest = df.iloc[-1]
-            
-            fund_flow = FundFlow(
+
+            # 过滤日期范围
+            if start_date:
+                df = df[(df['日期'] >= start_date) & (df['日期'] <= end_date)]
+
+            # 按日期排序（降序）
+            df = df.sort_values('日期', ascending=False)
+
+            # 取最近 N 条
+            if not start_date:
+                df = df.head(limit)
+
+            # 转换为 FundFlowPeriod
+            periods = []
+            for _, row in df.iterrows():
+                periods.append(FundFlowPeriod(
+                    date=str(row['日期']),
+                    close=float(row.get('收盘价', 0)) if pd.notna(row.get('收盘价')) else None,
+                    change_percent=float(row.get('涨跌幅', 0)) if pd.notna(row.get('涨跌幅')) else None,
+                    main_net_inflow=float(row.get('主力净流入-净额', 0)) if pd.notna(row.get('主力净流入-净额')) else 0.0,
+                    main_net_inflow_ratio=float(row.get('主力净流入-净占比', 0)) if pd.notna(row.get('主力净流入-净占比')) else None,
+                    super_large_net_inflow=float(row.get('超大单净流入-净额', 0)) if pd.notna(row.get('超大单净流入-净额')) else None,
+                    super_large_net_inflow_ratio=float(row.get('超大单净流入-净占比', 0)) if pd.notna(row.get('超大单净流入-净占比')) else None,
+                    large_net_inflow=float(row.get('大单净流入-净额', 0)) if pd.notna(row.get('大单净流入-净额')) else None,
+                    large_net_inflow_ratio=float(row.get('大单净流入-净占比', 0)) if pd.notna(row.get('大单净流入-净占比')) else None,
+                    medium_net_inflow=float(row.get('中单净流入-净额', 0)) if pd.notna(row.get('中单净流入-净额')) else None,
+                    medium_net_inflow_ratio=float(row.get('中单净流入-净占比', 0)) if pd.notna(row.get('中单净流入-净占比')) else None,
+                    small_net_inflow=float(row.get('小单净流入-净额', 0)) if pd.notna(row.get('小单净流入-净额')) else None,
+                    small_net_inflow_ratio=float(row.get('小单净流入-净占比', 0)) if pd.notna(row.get('小单净流入-净占比')) else None,
+                ))
+
+            response = FundFlowResponse(
                 symbol=symbol,
-                main_net_inflow=float(latest.get('主力净流入-净额', 0)),
-                main_net_inflow_ratio=float(latest.get('主力净流入-净占比', 0)),
-                super_large_net_inflow=float(latest.get('超大单净流入-净额', 0)),
-                large_net_inflow=float(latest.get('大单净流入-净额', 0)),
-                medium_net_inflow=float(latest.get('中单净流入-净额', 0)),
-                small_net_inflow=float(latest.get('小单净流入-净额', 0))
+                market="CN",
+                count=len(periods),
+                data=periods
             )
-            
-            logger.info("stock_fund_flow_fetched", symbol=symbol)
-            return fund_flow
-            
+
+            logger.info("stock_fund_flow_fetched", symbol=symbol, count=len(periods))
+            return response
+
         except Exception as e:
             logger.error("stock_fund_flow_fetch_failed", error=str(e), symbol=symbol)
             raise DataSourceError(f"获取资金流向失败: {str(e)}")

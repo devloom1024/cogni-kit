@@ -19,7 +19,7 @@ from app.modules.akshare.stock.schemas import (
     StockValuation,
     StockFinancial,
     StockShareholders,
-    FundFlow,
+    FundFlowResponse,
     BidAsk,
     BatchSymbolItem,
     MarketFetchResult,
@@ -311,22 +311,46 @@ class StockService:
 
         return shareholders
 
-    async def get_fund_flow(self, symbol: str) -> FundFlow:
-        """获取资金流向（带缓存，仅A股）"""
-        cache_key = f"stock:fund-flow:{symbol}"
+    async def get_fund_flow(
+        self,
+        symbol: str,
+        limit: int = 20,
+        start_date: str | None = None,
+        end_date: str | None = None
+    ) -> FundFlowResponse:
+        """获取资金流向（多期，仅A股）
+
+        Args:
+            symbol: 股票代码
+            limit: 返回数据条数，默认 20
+            start_date: 开始日期 (YYYYMMDD，与 limit 二选一)
+            end_date: 结束日期 (YYYYMMDD)
+
+        Returns:
+            资金流向数据（多期）
+        """
+        # 日期范围模式不使用缓存
+        if start_date:
+            logger.info("stock_fund_flow_fetch_no_cache", symbol=symbol, start_date=start_date, end_date=end_date)
+            return await self.client.get_fund_flow(symbol, limit, start_date, end_date)
+
+        # 缓存 key
+        cache_key = f"stock:fund-flow:{symbol}:{limit}"
 
         # 尝试从缓存获取
         cached = await cache.get(cache_key)
         if cached:
             logger.info("stock_fund_flow_cache_hit", symbol=symbol)
-            return FundFlow(**cached)
+            return FundFlowResponse(**cached)
 
         # 从数据源获取
-        fund_flow = await self.client.get_fund_flow(symbol)
+        fund_flow = await self.client.get_fund_flow(symbol, limit, start_date, end_date)
 
         # 缓存结果 (5秒)
         await cache.set(
-            cache_key, fund_flow.model_dump(), ttl=settings.cache_ttl_fund_flow
+            cache_key,
+            fund_flow.model_dump(),
+            ttl=settings.cache_ttl_fund_flow
         )
 
         return fund_flow

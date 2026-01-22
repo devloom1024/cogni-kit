@@ -5,7 +5,7 @@ from app.modules.akshare.stock.service import stock_service
 from app.modules.akshare.stock.schemas import (
     StockListItem, StockSpot, KLinePoint, KLineResponse, MarketType,
     StockProfile, StockFinancial,
-    StockShareholders, FundFlow,
+    StockShareholders, FundFlowResponse,
     BatchSpotRequest, StockListResponse,
     StockFinancialCNResponse, StockFinancialHKResponse, StockFinancialUSResponse
 )
@@ -103,12 +103,15 @@ async def get_stock_shareholders(
     return await stock_service.get_shareholders(symbol)
 
 
-@router.get("/{symbol}/fund-flow", response_model=FundFlow)
+@router.get("/{symbol}/fund-flow", response_model=FundFlowResponse)
 async def get_stock_fund_flow(
-    symbol: str = Path(..., description="股票代码")
+    symbol: str = Path(..., description="股票代码"),
+    limit: int = Query(20, ge=1, le=100, description="返回数据条数"),
+    start_date: str | None = Query(None, description="开始日期 (YYYYMMDD，与 limit 二选一)", pattern="^[0-9]{8}$"),
+    end_date: str | None = Query(None, description="结束日期 (YYYYMMDD)", pattern="^[0-9]{8}$")
 ):
-    """获取资金流向（仅A股）"""
-    return await stock_service.get_fund_flow(symbol)
+    """获取资金流向（多期，仅A股）"""
+    return await stock_service.get_fund_flow(symbol, limit, start_date, end_date)
 
 
 # /bid-ask 接口已删除,五档盘口数据已包含在 /spot 接口中
