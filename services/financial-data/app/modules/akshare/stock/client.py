@@ -19,19 +19,57 @@ logger = structlog.get_logger()
 
 class StockClient:
     """股票数据源客户端"""
-    
+
+    async def _fetch_market_stocks(self, market: MarketType) -> list[StockListItem]:
+        """获取单个市场的股票列表（内部方法，失败抛异常）
+
+        Args:
+            market: 市场类型 (CN/HK/US)
+
+        Returns:
+            股票列表
+        """
+        stocks = []
+
+        if market == "CN":
+            df_cn = await asyncio.to_thread(ak.stock_zh_a_spot_em)
+            for _, row in df_cn.iterrows():
+                stocks.append(StockListItem(
+                    symbol=row['代码'],
+                    name=row['名称'],
+                    market="CN"
+                ))
+        elif market == "HK":
+            df_hk = await asyncio.to_thread(ak.stock_hk_spot_em)
+            for _, row in df_hk.iterrows():
+                stocks.append(StockListItem(
+                    symbol=str(row['代码']),
+                    name=str(row['名称']),
+                    market="HK"
+                ))
+        elif market == "US":
+            df_us = await asyncio.to_thread(ak.stock_us_spot_em)
+            for _, row in df_us.iterrows():
+                stocks.append(StockListItem(
+                    symbol=str(row['代码']).split('.')[-1] if '.' in str(row['代码']) else str(row['代码']),
+                    name=str(row['名称']),
+                    market="US"
+                ))
+
+        return stocks
+
     async def get_stock_list(self, market: MarketType | None = None) -> List[StockListItem]:
         """获取股票列表
-        
+
         Args:
             market: 市场过滤 (CN/HK/US)，None 返回所有
-            
+
         Returns:
             股票列表
         """
         try:
             stocks = []
-            
+
             # A股
             if market is None or market == "CN":
                 df_cn = await asyncio.to_thread(ak.stock_zh_a_spot_em)
@@ -41,7 +79,7 @@ class StockClient:
                         name=row['名称'],
                         market="CN"
                     ))
-            
+
             # 港股
             if market is None or market == "HK":
                 df_hk = await asyncio.to_thread(ak.stock_hk_spot_em)
@@ -51,7 +89,7 @@ class StockClient:
                         name=str(row['名称']),
                         market="HK"
                     ))
-            
+
             # 美股
             if market is None or market == "US":
                 df_us = await asyncio.to_thread(ak.stock_us_spot_em)
@@ -61,13 +99,29 @@ class StockClient:
                         name=str(row['名称']),
                         market="US"
                     ))
-            
+
             logger.info("stock_list_fetched", count=len(stocks), market=market)
             return stocks
-            
+
         except Exception as e:
             logger.error("stock_list_fetch_failed", error=str(e), market=market)
             raise DataSourceError(f"获取股票列表失败: {str(e)}")
+
+    async def get_stock_list_safe(self, market: MarketType) -> list[StockListItem]:
+        """安全获取单个市场的股票列表（失败抛异常，由调用方处理）
+
+        Args:
+            market: 市场类型 (CN/HK/US)
+
+        Returns:
+            股票列表
+
+        Raises:
+            Exception: 获取失败时抛出异常
+        """
+        stocks = await self._fetch_market_stocks(market)
+        logger.info("stock_list_fetched", count=len(stocks), market=market)
+        return stocks
     
     async def get_spot(self, symbol: str, market: MarketType | None = None) -> StockSpot:
         """获取实时行情

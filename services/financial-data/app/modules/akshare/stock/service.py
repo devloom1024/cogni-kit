@@ -20,6 +20,8 @@ from app.modules.akshare.stock.schemas import (
     FundFlow,
     BidAsk,
     BatchSymbolItem,
+    MarketFetchResult,
+    StockListResponse,
 )
 
 logger = structlog.get_logger()
@@ -31,47 +33,86 @@ class StockService:
     def __init__(self):
         self.client = stock_client
 
-    async def _fetch_market_list(self, market: MarketType) -> List[StockListItem]:
-        """获取单个市场的股票列表（带缓存）"""
+    async def _fetch_market_list(self, market: MarketType) -> list[StockListItem]:
+        """获取单个市场的股票列表（优先缓存，失败抛异常）
+
+        Args:
+            market: 市场类型
+
+        Returns:
+            股票列表
+
+        Raises:
+            Exception: 获取失败时抛出
+        """
         cache_key = f"stock:list:{market}"
 
-        # 尝试从缓存获取
+        # 1. 尝试从缓存获取
         cached = await cache.get(cache_key)
         if cached:
             logger.info("stock_list_cache_hit", market=market)
             return [StockListItem(**item) for item in cached]
 
-        # 从数据源获取
+        # 2. 从数据源获取
         stocks = await self.client.get_stock_list(market)
 
-        # 缓存结果 (24小时)
-        await cache.set(
-            cache_key,
-            [stock.model_dump() for stock in stocks],
-            ttl=settings.cache_ttl_stock_list,
-        )
+        # 3. 如果获取成功则缓存
+        if stocks:
+            await cache.set(
+                cache_key,
+                [stock.model_dump() for stock in stocks],
+                ttl=settings.cache_ttl_stock_list,
+            )
+            logger.info("stock_list_fetched", market=market, count=len(stocks))
+
         return stocks
 
     async def get_stock_list(
         self, market: MarketType | None = None
-    ) -> List[StockListItem]:
-        """获取股票列表（带缓存）
+    ) -> StockListResponse:
+        """获取股票列表（带部分成功容错）
 
         策略:
         1. 如果指定 market，尝试获取对应缓存
-        2. 如果 market 为 None，分别获取 CN/HK/US 缓存并合并
-        3. 缓存未命中时并发调用 client 获取并更新缓存
+        2. 如果 market 为 None，分别获取 CN/HK/US 并合并
+        3. 部分市场失败时，仍返回成功获取的数据和各市场状态
         """
         markets: list[MarketType] = [market] if market else ["CN", "HK", "US"]
 
         # 并发获取所有市场数据
-        results = await asyncio.gather(*[self._fetch_market_list(m) for m in markets])
+        results = await asyncio.gather(
+            *[self._fetch_market_list(m) for m in markets],
+            return_exceptions=True
+        )
 
-        all_stocks = []
-        for res in results:
-            all_stocks.extend(res)
+        # 聚合结果
+        all_stocks: list[StockListItem] = []
+        market_results: list[MarketFetchResult] = []
 
-        return all_stocks
+        for market_item, result in zip(markets, results):
+            if isinstance(result, Exception):
+                market_results.append(MarketFetchResult(
+                    market=market_item,
+                    fetched=False,
+                    count=0,
+                    error=str(result)
+                ))
+                logger.warning("market_fetch_failed", market=market_item, error=str(result))
+            else:
+                count = len(result)
+                all_stocks.extend(result)
+                market_results.append(MarketFetchResult(
+                    market=market_item,
+                    fetched=True,
+                    count=count,
+                    error=None
+                ))
+
+        return StockListResponse(
+            total_count=len(all_stocks),
+            markets=market_results,
+            data=all_stocks
+        )
 
     async def refresh_market_list(self, market: MarketType) -> int:
         """刷新单个市场的股票列表缓存（无重试，纯刷新）"""
@@ -89,7 +130,7 @@ class StockService:
         self, symbol: str, market: MarketType | None = None
     ) -> StockSpot:
         """获取实时行情（带智能缓存）
-        
+
         缓存策略根据交易时段动态调整,详见 config.py
         """
         cache_key = f"stock:spot:{market or 'AUTO'}:{symbol}"
@@ -106,8 +147,8 @@ class StockService:
         # 智能缓存: 根据交易时段动态调整TTL
         ttl = TradingTimeHelper.get_quote_cache_ttl(market)
         await cache.set(cache_key, spot.model_dump(), ttl=ttl)
-        
-        logger.info("stock_spot_cached", symbol=symbol, ttl=ttl, 
+
+        logger.info("stock_spot_cached", symbol=symbol, ttl=ttl,
                    is_trading=TradingTimeHelper.is_trading_time(market))
 
         return spot
@@ -156,7 +197,7 @@ class StockService:
         # 从数据源获取
         profile = await self.client.get_profile(symbol, market)
 
-        # 缓存结果 (24小时)
+        # 缓存结果
         await cache.set(cache_key, profile.model_dump(), ttl=settings.cache_ttl_profile)
 
         return profile

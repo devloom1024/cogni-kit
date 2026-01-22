@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     cache_ttl_shareholders: int = 3600  # 股东信息 (1小时)
     cache_ttl_fund_info: int = 3600  # 基金详情 (1小时)
     cache_ttl_fund_nav: int = 3600  # 基金净值 (1小时)
+    cache_ttl_nav: int = 3600  # 导航缓存 (1小时)
     cache_ttl_fund_holdings: int = 3600  # 基金持仓 (1小时)
     cache_ttl_profile: int = 86400  # 公司信息 (24小时)
 

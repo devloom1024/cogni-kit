@@ -7,17 +7,20 @@ from app.modules.akshare.stock.schemas import (
     StockListItem, StockSpot, KLinePoint, MarketType,
     StockProfile, StockFinancial,
     StockShareholders, FundFlow,
-    BatchSpotRequest
+    BatchSpotRequest, StockListResponse
 )
 
 router = APIRouter()
 
 
-@router.get("/list", response_model=List[StockListItem])
+@router.get("/list", response_model=StockListResponse)
 async def get_stock_list(
     market: MarketType | Literal[""] | None = Query(None, description="市场过滤 (CN/HK/US)")
 ):
-    """获取全量股票列表 (用于同步)"""
+    """获取全量股票列表（用于同步）
+
+    返回各市场的获取状态，即使部分市场失败也会返回成功获取的数据。
+    """
     if market == "":
         market = None
     return await stock_service.get_stock_list(market)

@@ -59,6 +59,7 @@ paths:
       description: |
         **用途**: 供定时任务同步使用。
         **数据量**: 约 5000 条。
+        **容错**: 部分市场获取失败时，仍返回成功获取的数据和各市场状态。
         **AkShare**: `stock_zh_a_spot_em()`, `stock_hk_spot_em()`, `stock_us_spot_em()`
       tags: [Stock]
       parameters:
@@ -74,9 +75,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/StockListItem"
+                $ref: "#/components/schemas/StockListResponse"
 
   # ==================== 股票实时行情 ====================
   /api/v1/akshare/stock/{symbol}/spot:
@@ -703,6 +702,44 @@ components:
           type: string
           enum: [CN, HK, US]
           description: 市场
+
+    MarketFetchResult:
+      type: object
+      description: 单个市场的获取结果
+      properties:
+        market:
+          type: string
+          enum: [CN, HK, US]
+          description: 市场类型
+        fetched:
+          type: boolean
+          description: 是否成功获取数据
+        count:
+          type: integer
+          description: 获取到的数据条数
+          default: 0
+        error:
+          type: string
+          nullable: true
+          description: 错误信息
+
+    StockListResponse:
+      type: object
+      description: 股票列表响应（含各市场获取状态）
+      properties:
+        total_count:
+          type: integer
+          description: 总数据条数
+        markets:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketFetchResult"
+          description: 各市场获取状态
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockListItem"
+          description: 股票列表数据
 
     StockSpot:
       type: object
