@@ -1,5 +1,6 @@
 """资金流向模型"""
 from pydantic import BaseModel, Field
+from typing import Literal
 
 
 class FundFlowPeriod(BaseModel):
@@ -25,7 +26,7 @@ class FundFlowPeriod(BaseModel):
 class FundFlowResponse(BaseModel):
     """资金流向响应（多期）"""
     symbol: str = Field(..., description="股票代码")
-    market: str = Field(default="CN", description="市场类型")
+    market: Literal["CN"] = Field(default="CN", description="市场类型", alias="market")
     count: int = Field(..., description="返回的数据条数")
     data: list[FundFlowPeriod] = Field(..., description="资金流向数据列表")
 

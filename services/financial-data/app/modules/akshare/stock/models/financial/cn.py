@@ -1,5 +1,6 @@
 """A股财务数据模型"""
 from pydantic import BaseModel, Field
+from typing import Literal
 from .base import FinancialPeriodBase
 
 
@@ -37,7 +38,7 @@ class StockFinancialCNPeriod(FinancialPeriodBase):
 class StockFinancialCNResponse(BaseModel):
     """A股财务数据响应（多期）"""
     symbol: str = Field(..., description="股票代码")
-    market: str = Field(default="CN", description="市场类型")
+    market: Literal["CN"] = Field(default="CN", description="市场类型", alias="market")
     count: int = Field(..., description="返回的报告期数量")
     data: list[StockFinancialCNPeriod] = Field(..., description="财务数据列表")
 

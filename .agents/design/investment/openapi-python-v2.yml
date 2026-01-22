@@ -68,7 +68,11 @@ paths:
           schema:
             type: string
             enum: [CN, HK, US]
-          description: 市场筛选，不传返回全部
+          description: |
+            市场筛选，不传返回全部
+            - CN: A股
+            - HK: 港股
+            - US: 美股
       responses:
         "200":
           description: 股票列表
@@ -128,6 +132,11 @@ paths:
                       market:
                         type: string
                         enum: [CN, HK, US]
+                        description: |
+                          市场类型:
+                          - CN: A股
+                          - HK: 港股
+                          - US: 美股
                   maxItems: 50
       responses:
         "200":
@@ -844,7 +853,11 @@ components:
         market:
           type: string
           enum: [CN, HK, US]
-          description: 市场
+          description: |
+            市场类型:
+            - CN: A股 (上交所/深交所)
+            - HK: 港股
+            - US: 美股
 
     MarketFetchResult:
       type: object
@@ -853,7 +866,11 @@ components:
         market:
           type: string
           enum: [CN, HK, US]
-          description: 市场类型
+          description: |
+            市场类型:
+            - CN: A股
+            - HK: 港股
+            - US: 美股
         fetched:
           type: boolean
           description: 是否成功获取数据
@@ -1193,7 +1210,9 @@ components:
         market:
           type: string
           enum: [CN]
-          description: 市场类型
+          description: |
+            市场类型:
+            - CN: A股
         count:
           type: integer
           description: 返回的报告期数量
@@ -1330,11 +1349,15 @@ components:
         market:
           type: string
           enum: [HK]
-          description: 市场类型
+          description: |
+            市场类型:
+            - HK: 港股
         currency:
           type: string
           enum: [HKD]
-          description: 货币单位
+          description: |
+            货币单位:
+            - HKD: 港币
         count:
           type: integer
           description: 返回的报告期数量
@@ -1396,11 +1419,15 @@ components:
         market:
           type: string
           enum: [US]
-          description: 市场类型
+          description: |
+            市场类型:
+            - US: 美股
         currency:
           type: string
           enum: [USD]
-          description: 货币单位
+          description: |
+            货币单位:
+            - USD: 美元
         count:
           type: integer
           description: 返回的报告期数量
@@ -1545,7 +1572,9 @@ components:
         market:
           type: string
           enum: [CN]
-          description: 市场类型
+          description: |
+            市场类型:
+            - CN: A股
         count:
           type: integer
           description: 返回的数据条数
@@ -1670,7 +1699,11 @@ components:
         period:
           type: string
           enum: [day, week, month]
-          description: K 线周期
+          description: |
+            K 线周期:
+            - day: 日线
+            - week: 周线
+            - month: 月线
         count:
           type: integer
           description: 数据条数

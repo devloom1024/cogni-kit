@@ -52,6 +52,35 @@ const posts = await getPosts(id);
 *   **Async/Await**: 数据库查询和 HTTP 请求必须异步。
 *   **Non-blocking**: **绝对禁止**在 `async def` 中执行阻塞操作（如 `time.sleep`, `requests`）。CPU 密集型任务应放入后台任务队列。
 
+### 2.4 命名规范
+*   **变量/函数/方法**: 使用 **snake_case**（蛇形命名）
+    *   ✅ `total_count`, `get_stock_list()`
+    *   ❌ `totalCount`, `getStockList()`
+*   **类名**: 使用 **PascalCase**（帕斯卡命名）
+    *   ✅ `StockProfile`, `KLineResponse`
+    *   ❌ `stockProfile`, `kLineResponse`
+*   **常量**: 使用 **UPPER_SNAKE_CASE**
+    *   ✅ `MAX_RETRY_COUNT`
+    *   ❌ `maxRetryCount`
+*   **Pydantic 模型字段**:
+    *   Python 字段名使用 **snake_case**
+    *   JSON 序列化使用 **camelCase**（通过 `alias` 实现）
+    *   必须设置 `populate_by_name = True` 兼容两种格式
+
+```python
+from pydantic import BaseModel, Field
+
+class StockSpot(BaseModel):
+    """股票实时行情"""
+    # Python 使用 snake_case，alias 定义 JSON 输出的 camelCase
+    prev_close: float = Field(..., description="昨收", alias="prevClose")
+    change_percent: float = Field(..., description="涨跌幅 (%)", alias="changePercent")
+    outer_volume: float | None = Field(None, description="外盘(手)", alias="outerVolume")
+
+    class Config:
+        populate_by_name = True  # 支持 snake_case 和 camelCase
+```
+
 ---
 
 ## 3. 数据库最佳实践 (PostgreSQL + Prisma)
