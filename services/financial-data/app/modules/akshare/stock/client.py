@@ -361,41 +361,73 @@ class StockClient:
             raise DataSourceError(f"获取 K 线数据失败: {str(e)}")
     
     async def get_profile(self, symbol: str, market: MarketType | None = None) -> StockProfile:
-        """获取公司基本信息
-        
+        """获取公司基本信息（纯公司信息，不含交易数据）
+
         Args:
             symbol: 股票代码
             market: 市场类型
-            
+
         Returns:
             公司信息
         """
         try:
-            # A股：使用 stock_individual_info_em
+            # A股：使用雪球接口获取纯公司信息
             if market == "CN" or (market is None and symbol.isdigit() and len(symbol) == 6):
-                df = await asyncio.to_thread(ak.stock_individual_info_em, symbol=symbol)
+                # 需要添加交易所前缀
+                ts_symbol = f"SH{symbol}" if symbol.startswith('6') else f"SZ{symbol}"
+                df = await asyncio.to_thread(ak.stock_individual_basic_info_xq, symbol=ts_symbol)
                 if df.empty:
                     raise DataSourceError(f"未找到股票: {symbol}")
-                
+
                 # 转换为字典方便访问
                 info_dict = dict(zip(df['item'], df['value']))
-                
+
+                # 处理行业字段（可能是字典格式）
+                industry = None
+                affiliate_industry = info_dict.get('affiliate_industry')
+                if affiliate_industry:
+                    if isinstance(affiliate_industry, dict):
+                        industry = affiliate_industry.get('ind_name')
+                    else:
+                        industry = str(affiliate_industry)
+
+                # 处理日期字段（毫秒时间戳）
+                def parse_timestamp(ts):
+                    if ts:
+                        try:
+                            return pd.to_datetime(int(ts), unit='ms').date()
+                        except (ValueError, TypeError):
+                            return None
+                    return None
+
                 profile = StockProfile(
                     symbol=symbol,
-                    name=info_dict.get('股票简称', ''),
-                    full_name=info_dict.get('公司名称'),
-                    industry=info_dict.get('行业'),
-                    listing_date=pd.to_datetime(info_dict.get('上市时间')).date() if info_dict.get('上市时间') else None,
-                    total_shares=float(info_dict.get('总股本', 0)) / 100000000 if info_dict.get('总股本') else None,
-                    float_shares=float(info_dict.get('流通股', 0)) / 100000000 if info_dict.get('流通股') else None,
-                    main_business=info_dict.get('主营业务'),
-                    registered_capital=float(info_dict.get('注册资本', 0)) / 100000000 if info_dict.get('注册资本') else None,
-                    employee_count=int(info_dict.get('员工人数', 0)) if info_dict.get('员工人数') else None,
-                    legal_representative=info_dict.get('法人代表'),
-                    secretary=info_dict.get('董秘'),
-                    website=info_dict.get('公司网址'),
-                    phone=info_dict.get('联系电话'),
-                    address=info_dict.get('办公地址')
+                    name=info_dict.get('org_short_name_cn', ''),
+                    full_name=info_dict.get('org_name_cn'),
+                    english_name=info_dict.get('org_name_en'),
+                    industry=industry,
+                    province=info_dict.get('provincial_name'),
+                    listing_date=parse_timestamp(info_dict.get('listed_date')),
+                    established_date=parse_timestamp(info_dict.get('established_date')),
+                    main_business=info_dict.get('main_operation_business'),
+                    operating_scope=info_dict.get('operating_scope'),
+                    introduction=info_dict.get('org_cn_introduction'),
+                    # 注册资本单位是元，转换为亿元
+                    registered_capital=float(info_dict.get('reg_asset', 0)) / 100000000 if info_dict.get('reg_asset') else None,
+                    employee_count=int(info_dict.get('staff_num', 0)) if info_dict.get('staff_num') else None,
+                    legal_representative=info_dict.get('legal_representative'),
+                    chairman=info_dict.get('chairman'),
+                    general_manager=info_dict.get('general_manager'),
+                    secretary=info_dict.get('secretary'),
+                    website=info_dict.get('org_website'),
+                    email=info_dict.get('email'),
+                    phone=info_dict.get('telephone'),
+                    fax=info_dict.get('fax'),
+                    postcode=info_dict.get('postcode'),
+                    reg_address=info_dict.get('reg_address_cn'),
+                    office_address=info_dict.get('office_address_cn'),
+                    pre_name=info_dict.get('pre_name_cn'),
+                    actual_controller=info_dict.get('actual_controller')
                 )
             else:
                 # 港股和美股暂时返回基本信息
@@ -403,10 +435,10 @@ class StockClient:
                     symbol=symbol,
                     name=symbol
                 )
-            
+
             logger.info("stock_profile_fetched", symbol=symbol, market=market)
             return profile
-            
+
         except Exception as e:
             logger.error("stock_profile_fetch_failed", error=str(e), symbol=symbol)
             raise DataSourceError(f"获取公司信息失败: {str(e)}")

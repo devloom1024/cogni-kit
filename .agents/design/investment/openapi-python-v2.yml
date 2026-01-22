@@ -144,11 +144,15 @@ paths:
     get:
       summary: 获取公司基本信息 (F10)
       description: |
-        获取公司基本资料。
+        获取公司基本资料（纯公司信息，不含交易数据）。
+
+        **包含字段**: 公司全称、法定代表人、注册资本、成立日期、上市日期、
+        主营业务、办公地址、联系电话、官网等。
+
         **AkShare**:
-        - A股: `stock_individual_info_em()` + `stock_individual_basic_info_xq()`
-        - 港股: `stock_individual_basic_info_hk_xq()`
-        - 美股: `stock_individual_basic_info_us_xq()`
+        - A股: `stock_individual_basic_info_xq()` (雪球-公司简介)
+        - 港股: `stock_hk_company_profile_em()` (东方财富-港股公司资料)
+        - 美股: 使用 `stock_individual_basic_info_us_xq()`
       tags: [Stock]
       parameters:
         - $ref: "#/components/parameters/Symbol"
@@ -921,39 +925,52 @@ components:
 
     StockProfile:
       type: object
-      description: 公司基本信息
+      description: 公司基本信息（不含交易数据）
       properties:
         symbol:
           type: string
+          description: 股票代码
         name:
           type: string
+          description: 公司简称
         fullName:
           type: string
           nullable: true
+          description: 公司全称
         englishName:
           type: string
           nullable: true
+          description: 英文名称
         industry:
           type: string
           nullable: true
           description: 所属行业
+        province:
+          type: string
+          nullable: true
+          description: 所在省份
         listingDate:
           type: string
           format: date
           nullable: true
           description: 上市日期
-        totalShares:
-          type: number
+        establishedDate:
+          type: string
+          format: date
           nullable: true
-          description: 总股本 (亿股)
-        floatShares:
-          type: number
-          nullable: true
-          description: 流通股 (亿股)
+          description: 成立日期
         mainBusiness:
           type: string
           nullable: true
           description: 主营业务
+        operatingScope:
+          type: string
+          nullable: true
+          description: 经营范围
+        introduction:
+          type: string
+          nullable: true
+          description: 公司简介
         registeredCapital:
           type: number
           nullable: true
@@ -966,6 +983,14 @@ components:
           type: string
           nullable: true
           description: 法人代表
+        chairman:
+          type: string
+          nullable: true
+          description: 董事长
+        generalManager:
+          type: string
+          nullable: true
+          description: 总经理
         secretary:
           type: string
           nullable: true
@@ -974,14 +999,38 @@ components:
           type: string
           nullable: true
           description: 公司官网
+        email:
+          type: string
+          nullable: true
+          description: 电子邮箱
         phone:
           type: string
           nullable: true
           description: 联系电话
-        address:
+        fax:
+          type: string
+          nullable: true
+          description: 传真
+        postcode:
+          type: string
+          nullable: true
+          description: 邮政编码
+        regAddress:
+          type: string
+          nullable: true
+          description: 注册地址
+        officeAddress:
           type: string
           nullable: true
           description: 办公地址
+        preName:
+          type: string
+          nullable: true
+          description: 曾用名称
+        actualController:
+          type: string
+          nullable: true
+          description: 实际控制人
 
     StockValuation:
       type: object
