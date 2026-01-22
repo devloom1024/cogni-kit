@@ -1,6 +1,6 @@
 """股票业务逻辑层"""
 
-from typing import List
+from typing import List, Optional
 import asyncio
 import structlog
 
@@ -24,6 +24,9 @@ from app.modules.akshare.stock.schemas import (
     BatchSymbolItem,
     MarketFetchResult,
     StockListResponse,
+    StockFinancialCNResponse,
+    StockFinancialHKResponse,
+    StockFinancialUSResponse,
 )
 
 logger = structlog.get_logger(__name__)
@@ -222,24 +225,68 @@ class StockService:
     # 估值数据现在通过 /profile 接口获取
     # async def get_valuation(...):
 
-    async def get_financial(
-        self, symbol: str, market: MarketType | None = None
-    ) -> StockFinancial:
-        """获取财务数据（带缓存）"""
-        cache_key = f"stock:financial:{market or 'AUTO'}:{symbol}"
+    async def get_financial_cn(
+        self, symbol: str, limit: int = 8, period: Optional[str] = None
+    ) -> StockFinancialCNResponse:
+        """获取 A 股财务数据（带缓存）"""
+        cache_key = f"stock:financial:cn:{symbol}:{limit}:{period or 'all'}"
 
         # 尝试从缓存获取
         cached = await cache.get(cache_key)
         if cached:
-            logger.info("stock_financial_cache_hit", symbol=symbol)
-            return StockFinancial(**cached)
+            logger.info("stock_financial_cn_cache_hit", symbol=symbol)
+            return StockFinancialCNResponse(**cached)
 
         # 从数据源获取
-        financial = await self.client.get_financial(symbol, market)
+        financial = await self.client.get_financial_cn(symbol, limit, period)
 
-        # 缓存结果 (1小时)
+        # 缓存结果 (1天)
         await cache.set(
-            cache_key, financial.model_dump(), ttl=settings.cache_ttl_financial
+            cache_key, financial.model_dump(), ttl=86400
+        )
+
+        return financial
+
+    async def get_financial_hk(
+        self, symbol: str, limit: int = 8
+    ) -> StockFinancialHKResponse:
+        """获取港股财务数据（带缓存）"""
+        cache_key = f"stock:financial:hk:{symbol}:{limit}"
+
+        # 尝试从缓存获取
+        cached = await cache.get(cache_key)
+        if cached:
+            logger.info("stock_financial_hk_cache_hit", symbol=symbol)
+            return StockFinancialHKResponse(**cached)
+
+        # 从数据源获取
+        financial = await self.client.get_financial_hk(symbol, limit)
+
+        # 缓存结果 (1天)
+        await cache.set(
+            cache_key, financial.model_dump(), ttl=86400
+        )
+
+        return financial
+
+    async def get_financial_us(
+        self, symbol: str, limit: int = 8
+    ) -> StockFinancialUSResponse:
+        """获取美股财务数据（带缓存）"""
+        cache_key = f"stock:financial:us:{symbol}:{limit}"
+
+        # 尝试从缓存获取
+        cached = await cache.get(cache_key)
+        if cached:
+            logger.info("stock_financial_us_cache_hit", symbol=symbol)
+            return StockFinancialUSResponse(**cached)
+
+        # 从数据源获取
+        financial = await self.client.get_financial_us(symbol, limit)
+
+        # 缓存结果 (1天)
+        await cache.set(
+            cache_key, financial.model_dump(), ttl=86400
         )
 
         return financial

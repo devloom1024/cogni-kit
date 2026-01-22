@@ -169,27 +169,118 @@ paths:
 
   # /valuation 接口已删除 - 估值数据请使用 /profile 接口获取
 
-  # ==================== 股票财务数据 ====================
-  /api/v1/akshare/stock/{symbol}/financial:
+  # ==================== 股票财务数据 - A股 ====================
+  /api/v1/akshare/stock/{symbol}/financial/cn:
     get:
-      summary: 获取财务数据摘要
+      summary: 获取 A 股财务数据（多期）
       description: |
-        获取财务指标摘要。
+        获取 A 股完整财务数据，包括利润表、盈利能力、偿债能力、营运能力、现金流等。
+
+        **返回多期数据**，默认最近 8 个报告期，支持 limit 和 period 参数筛选。
+
         **AkShare**:
-        - A股: `stock_financial_abstract()`
-        - 港股: `stock_financial_hk_report_em()`
-        - 美股: `stock_financial_us_report_em()`
+        - `stock_financial_abstract_new_ths()`: 财务指标
+
+        **缓存**: 1 天
+
       tags: [Stock]
       parameters:
         - $ref: "#/components/parameters/Symbol"
-        - $ref: "#/components/parameters/Market"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 8
+            minimum: 1
+            maximum: 20
+          description: 返回报告期数量，默认 8
+        - name: period
+          in: query
+          schema:
+            type: string
+            pattern: "^[0-9]{4}(Q[1-4]|H[1-2])?$"
+          description: |
+            筛选特定报告期，格式:
+            - 2024Q1: 2024年一季度
+            - 2024H1: 2024年上半年
+            - 2024: 2024年全年
       responses:
         "200":
-          description: 财务数据
+          description: A 股财务数据
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StockFinancial"
+                $ref: "#/components/schemas/StockFinancialCNResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ==================== 股票财务数据 - 港股 ====================
+  /api/v1/akshare/stock/{symbol}/financial/hk:
+    get:
+      summary: 获取港股财务数据（多期）
+      description: |
+        获取港股完整财务数据，包括利润表、资产负债表、现金流量表等。
+
+        **返回多期数据**，默认最近 8 个报告期。
+
+        **AkShare**:
+        - `stock_financial_hk_report_em()`: 三大报表
+
+        **缓存**: 1 天
+
+      tags: [Stock]
+      parameters:
+        - $ref: "#/components/parameters/Symbol"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 8
+            minimum: 1
+            maximum: 20
+          description: 返回报告期数量，默认 8
+      responses:
+        "200":
+          description: 港股财务数据
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockFinancialHKResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ==================== 股票财务数据 - 美股 ====================
+  /api/v1/akshare/stock/{symbol}/financial/us:
+    get:
+      summary: 获取美股财务数据（多期）
+      description: |
+        获取美股完整财务数据，包括利润表、资产负债表、现金流量表等。
+
+        **返回多期数据**，默认最近 8 个报告期。
+
+        **AkShare**:
+        - `stock_financial_us_report_em()`: 三大报表
+
+        **缓存**: 1 天
+
+      tags: [Stock]
+      parameters:
+        - $ref: "#/components/parameters/Symbol"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 8
+            minimum: 1
+            maximum: 20
+          description: 返回报告期数量，默认 8
+      responses:
+        "200":
+          description: 美股财务数据
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockFinancialUSResponse"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -1066,42 +1157,278 @@ components:
           nullable: true
           description: 年初至今涨跌幅 (%)
 
-    StockFinancial:
+    # ==================== 财务数据 - A股 ====================
+    StockFinancialCNResponse:
       type: object
+      description: A 股财务数据响应（多期）
       properties:
         symbol:
           type: string
+          description: 股票代码
+        market:
+          type: string
+          enum: [CN]
+          description: 市场类型
+        count:
+          type: integer
+          description: 返回的报告期数量
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockFinancialCNPeriod"
+
+    StockFinancialCNPeriod:
+      type: object
+      description: A 股单个报告期财务数据
+      properties:
         reportDate:
           type: string
           format: date
+          description: 报告期
+        reportName:
+          type: string
+          description: 报告名称，如 "2024年三季报"
+        # 利润表
         revenue:
           type: number
           nullable: true
-          description: 营业收入 (亿元)
+          description: 营业总收入 (亿元)
+        operatingCost:
+          type: number
+          nullable: true
+          description: 营业成本 (亿元)
+        grossProfit:
+          type: number
+          nullable: true
+          description: 毛利 (亿元)
+        operatingProfit:
+          type: number
+          nullable: true
+          description: 营业利润 (亿元)
         netProfit:
           type: number
           nullable: true
           description: 净利润 (亿元)
+        netProfitAttributable:
+          type: number
+          nullable: true
+          description: 归母净利润 (亿元)
+        deductedNetProfit:
+          type: number
+          nullable: true
+          description: 扣非净利润 (亿元)
+        # 盈利能力
         eps:
           type: number
           nullable: true
-          description: 每股收益
-        bvps:
-          type: number
-          nullable: true
-          description: 每股净资产
-        roe:
-          type: number
-          nullable: true
-          description: ROE (%)
+          description: 每股收益 (元)
         grossMargin:
           type: number
           nullable: true
           description: 毛利率 (%)
+        netMargin:
+          type: number
+          nullable: true
+          description: 净利润率 (%)
+        roe:
+          type: number
+          nullable: true
+          description: 净资产收益率 ROE (%)
+        roa:
+          type: number
+          nullable: true
+          description: 总资产收益率 ROA (%)
+        # 偿债能力
+        totalAssets:
+          type: number
+          nullable: true
+          description: 总资产 (亿元)
+        totalLiabilities:
+          type: number
+          nullable: true
+          description: 总负债 (亿元)
         debtRatio:
           type: number
           nullable: true
           description: 资产负债率 (%)
+        currentRatio:
+          type: number
+          nullable: true
+          description: 流动比率
+        quickRatio:
+          type: number
+          nullable: true
+          description: 速动比率
+        # 营运能力
+        turnoverRate:
+          type: number
+          nullable: true
+          description: 总资产周转率
+        inventoryTurnover:
+          type: number
+          nullable: true
+          description: 存货周转率
+        receivableTurnover:
+          type: number
+          nullable: true
+          description: 应收账款周转率
+        # 现金流
+        operatingCF:
+          type: number
+          nullable: true
+          description: 经营现金流 (亿元)
+        investingCF:
+          type: number
+          nullable: true
+          description: 投资现金流 (亿元)
+        financingCF:
+          type: number
+          nullable: true
+          description: 融资现金流 (亿元)
+        netCF:
+          type: number
+          nullable: true
+          description: 净现金流 (亿元)
+        netCFPerShare:
+          type: number
+          nullable: true
+          description: 每股经营现金流 (元)
+
+    # ==================== 财务数据 - 港股 ====================
+    StockFinancialHKResponse:
+      type: object
+      description: 港股财务数据响应（多期）
+      properties:
+        symbol:
+          type: string
+          description: 股票代码
+        market:
+          type: string
+          enum: [HK]
+          description: 市场类型
+        currency:
+          type: string
+          enum: [HKD]
+          description: 货币单位
+        count:
+          type: integer
+          description: 返回的报告期数量
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockFinancialHKPeriod"
+
+    StockFinancialHKPeriod:
+      type: object
+      description: 港股单个报告期财务数据
+      properties:
+        reportDate:
+          type: string
+          format: date
+          description: 报告期
+        reportName:
+          type: string
+          description: 报告名称
+        # 利润表
+        revenue:
+          type: number
+          nullable: true
+          description: 收入 (亿港币)
+        profitBeforeTax:
+          type: number
+          nullable: true
+          description: 除税前溢利 (亿港币)
+        profitAfterTax:
+          type: number
+          nullable: true
+          description: 除税后溢利 (亿港币)
+        profitAttributable:
+          type: number
+          nullable: true
+          description: 公司持有人应占溢利 (亿港币)
+        # 盈利能力
+        eps:
+          type: number
+          nullable: true
+          description: 每股收益 (港币)
+        netMargin:
+          type: number
+          nullable: true
+          description: 净利润率 (%)
+        roe:
+          type: number
+          nullable: true
+          description: 净资产收益率 (%)
+
+    # ==================== 财务数据 - 美股 ====================
+    StockFinancialUSResponse:
+      type: object
+      description: 美股财务数据响应（多期）
+      properties:
+        symbol:
+          type: string
+          description: 股票代码
+        market:
+          type: string
+          enum: [US]
+          description: 市场类型
+        currency:
+          type: string
+          enum: [USD]
+          description: 货币单位
+        count:
+          type: integer
+          description: 返回的报告期数量
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockFinancialUSPeriod"
+
+    StockFinancialUSPeriod:
+      type: object
+      description: 美股单个报告期财务数据
+      properties:
+        reportDate:
+          type: string
+          format: date
+          description: 报告期
+        reportName:
+          type: string
+          description: 报告名称
+        # 利润表
+        totalRevenue:
+          type: number
+          nullable: true
+          description: 总营收 (百万美元)
+        costOfRevenue:
+          type: number
+          nullable: true
+          description: 营收成本 (百万美元)
+        grossProfit:
+          type: number
+          nullable: true
+          description: 毛利 (百万美元)
+        operatingIncome:
+          type: number
+          nullable: true
+          description: 营业利润 (百万美元)
+        netIncome:
+          type: number
+          nullable: true
+          description: 净利润 (百万美元)
+        # 盈利能力
+        eps:
+          type: number
+          nullable: true
+          description: 每股收益 (美元)
+        grossMargin:
+          type: number
+          nullable: true
+          description: 毛利率 (%)
+        netMargin:
+          type: number
+          nullable: true
+          description: 净利润率 (%)
 
     StockShareholders:
       type: object

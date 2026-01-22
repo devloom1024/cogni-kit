@@ -169,19 +169,133 @@ class StockValuation(BaseModel):
         populate_by_name = True
 
 
-# ==================== 财务数据 ====================
-class StockFinancial(BaseModel):
-    """财务数据摘要"""
+# ==================== 财务数据 - A股 ====================
+class StockFinancialCNPeriod(BaseModel):
+    """A股单个报告期财务数据"""
+    report_date: date = Field(..., description="报告期", alias="reportDate")
+    report_name: str = Field(..., description="报告名称，如 2024年三季报", alias="reportName")
+    # 利润表
+    revenue: float | None = Field(None, description="营业总收入 (亿元)")
+    operating_cost: float | None = Field(None, description="营业成本 (亿元)", alias="operatingCost")
+    gross_profit: float | None = Field(None, description="毛利 (亿元)", alias="grossProfit")
+    operating_profit: float | None = Field(None, description="营业利润 (亿元)", alias="operatingProfit")
+    net_profit: float | None = Field(None, description="净利润 (亿元)", alias="netProfit")
+    net_profit_attributable: float | None = Field(None, description="归母净利润 (亿元)", alias="netProfitAttributable")
+    deducted_net_profit: float | None = Field(None, description="扣非净利润 (亿元)", alias="deductedNetProfit")
+    # 盈利能力
+    eps: float | None = Field(None, description="每股收益 (元)")
+    gross_margin: float | None = Field(None, description="毛利率 (%)", alias="grossMargin")
+    net_margin: float | None = Field(None, description="净利润率 (%)", alias="netMargin")
+    roe: float | None = Field(None, description="净资产收益率 ROE (%)")
+    roa: float | None = Field(None, description="总资产收益率 ROA (%)")
+    # 偿债能力
+    total_assets: float | None = Field(None, description="总资产 (亿元)", alias="totalAssets")
+    total_liabilities: float | None = Field(None, description="总负债 (亿元)", alias="totalLiabilities")
+    debt_ratio: float | None = Field(None, description="资产负债率 (%)", alias="debtRatio")
+    current_ratio: float | None = Field(None, description="流动比率", alias="currentRatio")
+    quick_ratio: float | None = Field(None, description="速动比率", alias="quickRatio")
+    # 营运能力
+    turnover_rate: float | None = Field(None, description="总资产周转率", alias="turnoverRate")
+    inventory_turnover: float | None = Field(None, description="存货周转率", alias="inventoryTurnover")
+    receivable_turnover: float | None = Field(None, description="应收账款周转率", alias="receivableTurnover")
+    # 现金流
+    operating_cf: float | None = Field(None, description="经营现金流 (亿元)", alias="operatingCF")
+    investing_cf: float | None = Field(None, description="投资现金流 (亿元)", alias="investingCF")
+    financing_cf: float | None = Field(None, description="融资现金流 (亿元)", alias="financingCF")
+    net_cf: float | None = Field(None, description="净现金流 (亿元)", alias="netCF")
+    net_cf_per_share: float | None = Field(None, description="每股经营现金流 (元)", alias="netCFPerShare")
+
+    class Config:
+        populate_by_name = True
+
+
+class StockFinancialCNResponse(BaseModel):
+    """A股财务数据响应（多期）"""
     symbol: str = Field(..., description="股票代码")
-    reportDate: date = Field(..., description="报告期", alias="report_date")
+    market: str = Field(default="CN", description="市场类型")
+    count: int = Field(..., description="返回的报告期数量")
+    data: list[StockFinancialCNPeriod] = Field(..., description="财务数据列表")
+
+    class Config:
+        populate_by_name = True
+
+
+# ==================== 财务数据 - 港股 ====================
+class StockFinancialHKPeriod(BaseModel):
+    """港股单个报告期财务数据"""
+    report_date: date = Field(..., description="报告期", alias="reportDate")
+    report_name: str = Field(..., description="报告名称", alias="reportName")
+    # 利润表
+    revenue: float | None = Field(None, description="收入 (亿港币)")
+    profit_before_tax: float | None = Field(None, description="除税前溢利 (亿港币)", alias="profitBeforeTax")
+    profit_after_tax: float | None = Field(None, description="除税后溢利 (亿港币)", alias="profitAfterTax")
+    profit_attributable: float | None = Field(None, description="公司持有人应占溢利 (亿港币)", alias="profitAttributable")
+    # 盈利能力
+    eps: float | None = Field(None, description="每股收益 (港币)")
+    net_margin: float | None = Field(None, description="净利润率 (%)", alias="netMargin")
+    roe: float | None = Field(None, description="净资产收益率 (%)")
+
+    class Config:
+        populate_by_name = True
+
+
+class StockFinancialHKResponse(BaseModel):
+    """港股财务数据响应（多期）"""
+    symbol: str = Field(..., description="股票代码")
+    market: str = Field(default="HK", description="市场类型")
+    currency: str = Field(default="HKD", description="货币单位")
+    count: int = Field(..., description="返回的报告期数量")
+    data: list[StockFinancialHKPeriod] = Field(..., description="财务数据列表")
+
+    class Config:
+        populate_by_name = True
+
+
+# ==================== 财务数据 - 美股 ====================
+class StockFinancialUSPeriod(BaseModel):
+    """美股单个报告期财务数据"""
+    report_date: date = Field(..., description="报告期", alias="reportDate")
+    report_name: str = Field(..., description="报告名称", alias="reportName")
+    # 利润表
+    total_revenue: float | None = Field(None, description="总营收 (百万美元)", alias="totalRevenue")
+    cost_of_revenue: float | None = Field(None, description="营收成本 (百万美元)", alias="costOfRevenue")
+    gross_profit: float | None = Field(None, description="毛利 (百万美元)", alias="grossProfit")
+    operating_income: float | None = Field(None, description="营业利润 (百万美元)", alias="operatingIncome")
+    net_income: float | None = Field(None, description="净利润 (百万美元)", alias="netIncome")
+    # 盈利能力
+    eps: float | None = Field(None, description="每股收益 (美元)")
+    gross_margin: float | None = Field(None, description="毛利率 (%)", alias="grossMargin")
+    net_margin: float | None = Field(None, description="净利润率 (%)", alias="netMargin")
+
+    class Config:
+        populate_by_name = True
+
+
+class StockFinancialUSResponse(BaseModel):
+    """美股财务数据响应（多期）"""
+    symbol: str = Field(..., description="股票代码")
+    market: str = Field(default="US", description="市场类型")
+    currency: str = Field(default="USD", description="货币单位")
+    count: int = Field(..., description="返回的报告期数量")
+    data: list[StockFinancialUSPeriod] = Field(..., description="财务数据列表")
+
+    class Config:
+        populate_by_name = True
+
+
+# ==================== 财务数据（旧版本，保留兼容） ====================
+class StockFinancial(BaseModel):
+    """财务数据摘要（旧版本）"""
+    symbol: str = Field(..., description="股票代码")
+    report_date: date = Field(..., description="报告期", alias="reportDate")
     revenue: float | None = Field(None, description="营业收入 (亿元)")
-    netProfit: float | None = Field(None, description="净利润 (亿元)", alias="net_profit")
+    net_profit: float | None = Field(None, description="净利润 (亿元)", alias="netProfit")
     eps: float | None = Field(None, description="每股收益")
     bvps: float | None = Field(None, description="每股净资产")
     roe: float | None = Field(None, description="ROE (%)")
-    grossMargin: float | None = Field(None, description="毛利率 (%)", alias="gross_margin")
-    debtRatio: float | None = Field(None, description="资产负债率 (%)", alias="debt_ratio")
-    
+    gross_margin: float | None = Field(None, description="毛利率 (%)", alias="grossMargin")
+    debt_ratio: float | None = Field(None, description="资产负债率 (%)", alias="debtRatio")
+
     class Config:
         populate_by_name = True
 

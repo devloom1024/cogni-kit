@@ -1,8 +1,8 @@
 """股票数据 AkShare 客户端"""
 import akshare as ak
 import pandas as pd
-from datetime import datetime
-from typing import List
+from datetime import datetime, date
+from typing import List, Optional
 import asyncio
 import structlog
 
@@ -11,7 +11,10 @@ from app.modules.akshare.stock.schemas import (
     StockListItem, StockSpot, KLinePoint, KLineMeta, KLineResponse, MarketType,
     StockProfile, StockValuation, StockFinancial,
     StockShareholders, ShareholderItem, FundFlow,
-    BidAsk, PriceLevel, BatchSymbolItem
+    BidAsk, PriceLevel, BatchSymbolItem,
+    StockFinancialCNResponse, StockFinancialCNPeriod,
+    StockFinancialHKResponse, StockFinancialHKPeriod,
+    StockFinancialUSResponse, StockFinancialUSPeriod
 )
 
 logger = structlog.get_logger(__name__)
@@ -485,62 +488,311 @@ class StockClient:
             
             logger.info("stock_valuation_fetched", symbol=symbol, market=market)
             return valuation
-            
+
         except Exception as e:
             logger.error("stock_valuation_fetch_failed", error=str(e), symbol=symbol)
             raise DataSourceError(f"获取估值数据失败: {str(e)}")
-    
-    async def get_financial(self, symbol: str, market: MarketType | None = None) -> StockFinancial:
-        """获取财务数据摘要
-        
+
+    def _parse_period_filter(self, period: str | None) -> Optional[str]:
+        """解析 period 参数为过滤字符串
+
+        Args:
+            period: 格式如 2024Q1, 2024H1, 2024
+
+        Returns:
+            过滤字符串，用于匹配 report_name
+        """
+        if not period:
+            return None
+
+        # 2024Q1 -> 2024.*1季报
+        # 2024H1 -> 2024.*半年报
+        # 2024 -> 2024
+        if period.endswith('Q1'):
+            return f"{period[:4]}.*一季报"
+        elif period.endswith('Q2'):
+            return f"{period[:4]}.*中报"
+        elif period.endswith('Q3'):
+            return f"{period[:4]}.*三季报"
+        elif period.endswith('Q4'):
+            return f"{period[:4]}.*年报"
+        elif period.endswith('H1'):
+            return f"{period[:4]}.*半年报"
+        elif period.endswith('H2'):
+            return f"{period[:4]}.*年报"
+        else:
+            # 年度，直接匹配
+            return period
+
+    async def get_financial_cn(
+        self, symbol: str, limit: int = 8, period: str | None = None
+    ) -> StockFinancialCNResponse:
+        """获取 A 股财务数据（多期）
+
         Args:
             symbol: 股票代码
-            market: 市场类型
-            
+            limit: 返回报告期数量，默认 8
+            period: 筛选特定报告期，格式 2024Q1, 2024H1, 2024
+
         Returns:
-            财务数据
+            A 股财务数据响应
         """
         try:
-            # A股：使用 stock_financial_abstract（只需 symbol 参数）
-            if market == "CN" or (market is None and symbol.isdigit() and len(symbol) == 6):
-                df = await asyncio.to_thread(ak.stock_financial_abstract, symbol=symbol)
-                
-                if df.empty:
-                    raise DataSourceError(f"未找到财务数据: {symbol}")
-                
-                # DataFrame 是转置的，列是报告期，行是指标
-                # 取第一列（最新一期）
-                latest_col = df.columns[2]  # 跳过 '选项' 和 '指标' 列
-                
-                # 构建指标字典
-                metrics = {}
-                for _, row in df.iterrows():
-                    metrics[row['指标']] = row[latest_col]
-                
-                financial = StockFinancial(
-                    symbol=symbol,
-                    report_date=pd.to_datetime(latest_col).date(),
-                    revenue=float(metrics.get('营业总收入', 0)) / 100000000 if metrics.get('营业总收入') else None,
-                    net_profit=float(metrics.get('归母净利润', 0)) / 100000000 if metrics.get('归母净利润') else None,
-                    eps=float(metrics.get('基本每股收益', 0)) if metrics.get('基本每股收益') else None,
-                    bvps=float(metrics.get('每股净资产', 0)) if metrics.get('每股净资产') else None,
-                    roe=float(metrics.get('净资产收益率', 0)) if metrics.get('净资产收益率') else None,
-                    gross_margin=float(metrics.get('销售毛利率', 0)) if metrics.get('销售毛利率') else None,
-                    debt_ratio=float(metrics.get('资产负债率', 0)) if metrics.get('资产负债率') else None
+            # 需要添加市场前缀
+            ts_symbol = f"sh{symbol}" if symbol.startswith('6') else f"sz{symbol}"
+
+            # 并发获取三种报表数据
+            df_income, df_balance, df_cashflow = await asyncio.gather(
+                asyncio.to_thread(
+                    ak.stock_financial_report_sina,
+                    stock=ts_symbol,
+                    symbol="利润表"
+                ),
+                asyncio.to_thread(
+                    ak.stock_financial_report_sina,
+                    stock=ts_symbol,
+                    symbol="资产负债表"
+                ),
+                asyncio.to_thread(
+                    ak.stock_financial_report_sina,
+                    stock=ts_symbol,
+                    symbol="现金流量表"
                 )
-            else:
-                # 港股和美股暂时返回基本数据
-                financial = StockFinancial(
-                    symbol=symbol,
-                    report_date=datetime.now().date()
+            )
+
+            if df_income.empty:
+                raise DataSourceError(f"未找到财务数据: {symbol}")
+
+            # 构建以报告日为键的字典
+            income_dict = {}
+            for _, row in df_income.iterrows():
+                report_date = str(int(row['报告日']))
+                income_dict[report_date] = row
+
+            balance_dict = {}
+            for _, row in df_balance.iterrows():
+                report_date = str(int(row['报告日']))
+                balance_dict[report_date] = row
+
+            cashflow_dict = {}
+            for _, row in df_cashflow.iterrows():
+                report_date = str(int(row['报告日']))
+                cashflow_dict[report_date] = row
+
+            # 获取所有报告日并排序
+            all_dates = sorted(set(income_dict.keys()) & set(balance_dict.keys()) & set(cashflow_dict.keys()),
+                               reverse=True)
+
+            # 过滤特定报告期
+            period_filter = self._parse_period_filter(period)
+            if period_filter:
+                all_dates = [d for d in all_dates if period_filter in d]
+
+            # 取最近的 N 个报告期
+            all_dates = all_dates[:limit]
+
+            # 构建响应
+            periods = []
+            for report_date in all_dates:
+                income_row = income_dict.get(report_date)
+                balance_row = balance_dict.get(report_date)
+                cashflow_row = cashflow_dict.get(report_date)
+
+                if income_row is None or income_row.empty or balance_row is None or balance_row.empty or cashflow_row is None or cashflow_row.empty:
+                    continue
+
+                # 解析报告名称
+                report_name = str(int(report_date))
+                if report_date.endswith('0331'):
+                    report_name += 'Q1'
+                elif report_date.endswith('0630'):
+                    report_name += 'Q2'
+                elif report_date.endswith('0930'):
+                    report_name += 'Q3'
+                elif report_date.endswith('1231'):
+                    report_name += 'Q4'
+
+                period_data = StockFinancialCNPeriod(
+                    report_date=pd.to_datetime(report_date).date(),
+                    report_name=report_name,
+                    # 利润表
+                    revenue=self._to_float(income_row.get('营业总收入')) / 100000000 if income_row.get('营业总收入') else None,
+                    operating_cost=self._to_float(income_row.get('营业成本')) / 100000000 if income_row.get('营业成本') else None,
+                    gross_profit=self._to_float(income_row.get('毛利')) / 100000000 if income_row.get('毛利') else None,
+                    operating_profit=self._to_float(income_row.get('营业利润')) / 100000000 if income_row.get('营业利润') else None,
+                    net_profit=self._to_float(income_row.get('净利润')) / 100000000 if income_row.get('净利润') else None,
+                    net_profit_attributable=self._to_float(income_row.get('归属于母公司所有者的净利润')) / 100000000 if income_row.get('归属于母公司所有者的净利润') else None,
+                    deducted_net_profit=None,  # 利润表不包含扣非净利润
+                    # 盈利能力
+                    eps=self._to_float(income_row.get('基本每股收益')),
+                    gross_margin=self._to_float(income_row.get('销售毛利率')),
+                    net_margin=self._to_float(income_row.get('销售净利率')),
+                    roe=None,  # 需要计算
+                    roa=None,  # 需要计算
+                    # 偿债能力
+                    total_assets=self._to_float(balance_row.get('资产总计')) / 100000000 if balance_row.get('资产总计') else None,
+                    total_liabilities=self._to_float(balance_row.get('负债合计')) / 100000000 if balance_row.get('负债合计') else None,
+                    debt_ratio=self._to_float(balance_row.get('负债合计')) / self._to_float(balance_row.get('资产总计')) * 100 if balance_row.get('负债合计') and balance_row.get('资产总计') else None,
+                    current_ratio=self._to_float(balance_row.get('流动资产合计')) / self._to_float(balance_row.get('流动负债合计')) if balance_row.get('流动资产合计') and balance_row.get('流动负债合计') else None,
+                    quick_ratio=None,  # 需要流动资产-存货计算
+                    # 营运能力
+                    turnover_rate=None,  # 需要收入/平均资产计算
+                    inventory_turnover=None,
+                    receivable_turnover=None,
+                    # 现金流
+                    operating_cf=self._to_float(cashflow_row.get('经营活动产生的现金流量净额')) / 100000000 if cashflow_row.get('经营活动产生的现金流量净额') else None,
+                    investing_cf=self._to_float(cashflow_row.get('投资活动产生的现金流量净额')) / 100000000 if cashflow_row.get('投资活动产生的现金流量净额') else None,
+                    financing_cf=self._to_float(cashflow_row.get('筹资活动产生的现金流量净额')) / 100000000 if cashflow_row.get('筹资活动产生的现金流量净额') else None,
+                    net_cf=self._to_float(cashflow_row.get('现金及现金等价物净增加额')) / 100000000 if cashflow_row.get('现金及现金等价物净增加额') else None,
+                    net_cf_per_share=None,  # 需要每股数据
                 )
-            
-            logger.info("stock_financial_fetched", symbol=symbol, market=market)
-            return financial
-            
+                periods.append(period_data)
+
+            response = StockFinancialCNResponse(
+                symbol=symbol,
+                market="CN",
+                count=len(periods),
+                data=periods
+            )
+
+            logger.info("stock_financial_cn_fetched", symbol=symbol, count=len(periods))
+            return response
+
         except Exception as e:
-            logger.error("stock_financial_fetch_failed", error=str(e), symbol=symbol)
-            raise DataSourceError(f"获取财务数据失败: {str(e)}")
+            logger.error("stock_financial_cn_fetch_failed", error=str(e), symbol=symbol)
+            raise DataSourceError(f"获取A股财务数据失败: {str(e)}")
+
+    async def get_financial_hk(
+        self, symbol: str, limit: int = 8
+    ) -> StockFinancialHKResponse:
+        """获取港股财务数据（多期）
+
+        Args:
+            symbol: 股票代码
+            limit: 返回报告期数量，默认 8
+
+        Returns:
+            港股财务数据响应
+        """
+        try:
+            # 获取利润表数据
+            df_income = await asyncio.to_thread(
+                ak.stock_financial_hk_report_em,
+                stock=symbol,
+                symbol="利润表",
+                indicator="年度"
+            )
+
+            if df_income.empty:
+                raise DataSourceError(f"未找到港股财务数据: {symbol}")
+
+            # 按日期排序，取最近的 N 个
+            df_income = df_income.sort_values('REPORT_DATE', ascending=False).head(limit)
+
+            # 构建响应
+            periods = []
+            for _, row in df_income.iterrows():
+                # 港股返回的金额单位是元，转换为亿港币
+                amount = float(row.get('AMOUNT', 0)) / 100000000 if row.get('AMOUNT') else None
+
+                period_data = StockFinancialHKPeriod(
+                    report_date=pd.to_datetime(row.get('REPORT_DATE')).date() if row.get('REPORT_DATE') else None,
+                    report_name=row.get('REPORT_NAME', ''),
+                    revenue=amount,
+                    profit_before_tax=None,  # 需要从资产负债表获取
+                    profit_after_tax=None,
+                    profit_attributable=None,
+                    eps=None,  # 需要额外计算
+                    net_margin=None,
+                    roe=None,
+                )
+                periods.append(period_data)
+
+            response = StockFinancialHKResponse(
+                symbol=symbol,
+                market="HK",
+                currency="HKD",
+                count=len(periods),
+                data=periods
+            )
+
+            logger.info("stock_financial_hk_fetched", symbol=symbol, count=len(periods))
+            return response
+
+        except Exception as e:
+            logger.error("stock_financial_hk_fetch_failed", error=str(e), symbol=symbol)
+            raise DataSourceError(f"获取港股财务数据失败: {str(e)}")
+
+    async def get_financial_us(
+        self, symbol: str, limit: int = 8
+    ) -> StockFinancialUSResponse:
+        """获取美股财务数据（多期）
+
+        Args:
+            symbol: 股票代码
+            limit: 返回报告期数量，默认 8
+
+        Returns:
+            美股财务数据响应
+        """
+        try:
+            # 获取利润表数据
+            df_income = await asyncio.to_thread(
+                ak.stock_financial_us_report_em,
+                stock=symbol,
+                symbol="综合损益表",
+                indicator="年报"
+            )
+
+            if df_income.empty:
+                raise DataSourceError(f"未找到美股财务数据: {symbol}")
+
+            # 按日期排序，取最近的 N 个
+            df_income = df_income.sort_values('REPORT_DATE', ascending=False).head(limit)
+
+            # 构建响应
+            periods = []
+            for _, row in df_income.iterrows():
+                # 美股返回的金额单位是元，转换为百万美元
+                amount = float(row.get('AMOUNT', 0)) / 1000000 if row.get('AMOUNT') else None
+
+                period_data = StockFinancialUSPeriod(
+                    report_date=pd.to_datetime(row.get('REPORT_DATE')).date() if row.get('REPORT_DATE') else None,
+                    report_name=row.get('REPORT_NAME', '') or "年报",
+                    total_revenue=amount,
+                    cost_of_revenue=None,
+                    gross_profit=None,
+                    operating_income=None,
+                    net_income=amount,
+                    eps=None,
+                    gross_margin=None,
+                    net_margin=None,
+                )
+                periods.append(period_data)
+
+            response = StockFinancialUSResponse(
+                symbol=symbol,
+                market="US",
+                currency="USD",
+                count=len(periods),
+                data=periods
+            )
+
+            logger.info("stock_financial_us_fetched", symbol=symbol, count=len(periods))
+            return response
+
+        except Exception as e:
+            logger.error("stock_financial_us_fetch_failed", error=str(e), symbol=symbol)
+            raise DataSourceError(f"获取美股财务数据失败: {str(e)}")
+
+    def _to_float(self, value) -> Optional[float]:
+        """安全转换为 float"""
+        if value is None or pd.isna(value):
+            return None
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return None
     
     async def get_shareholders(self, symbol: str) -> StockShareholders:
         """获取股东信息（仅A股）

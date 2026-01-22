@@ -1,13 +1,13 @@
 """股票模块路由"""
 from fastapi import APIRouter, Query, Path
-from typing import List, Literal
 
 from app.modules.akshare.stock.service import stock_service
 from app.modules.akshare.stock.schemas import (
     StockListItem, StockSpot, KLinePoint, KLineResponse, MarketType,
     StockProfile, StockFinancial,
     StockShareholders, FundFlow,
-    BatchSpotRequest, StockListResponse
+    BatchSpotRequest, StockListResponse,
+    StockFinancialCNResponse, StockFinancialHKResponse, StockFinancialUSResponse
 )
 
 router = APIRouter()
@@ -15,14 +15,12 @@ router = APIRouter()
 
 @router.get("/list", response_model=StockListResponse)
 async def get_stock_list(
-    market: MarketType | Literal[""] | None = Query(None, description="市场过滤 (CN/HK/US)")
+    market: MarketType | None = Query(None, description="市场过滤 (CN/HK/US)")
 ):
     """获取全量股票列表（用于同步）
 
     返回各市场的获取状态，即使部分市场失败也会返回成功获取的数据。
     """
-    if market == "":
-        market = None
     return await stock_service.get_stock_list(market)
 
 
@@ -32,7 +30,7 @@ async def get_stock_spot(
     market: MarketType | None = Query(None, description="市场类型")
 ):
     """获取股票实时行情(含五档盘口)
-    
+
     A股返回完整行情数据(含五档盘口),港股/美股返回基础行情数据
     """
     return await stock_service.get_spot(symbol, market)
@@ -69,13 +67,32 @@ async def get_stock_profile(
 # /valuation 接口已删除,估值数据请使用 /profile 接口获取
 
 
-@router.get("/{symbol}/financial", response_model=StockFinancial)
-async def get_stock_financial(
+@router.get("/{symbol}/financial/cn", response_model=StockFinancialCNResponse)
+async def get_stock_financial_cn(
     symbol: str = Path(..., description="股票代码"),
-    market: MarketType | None = Query(None, description="市场类型")
+    limit: int = Query(8, ge=1, le=20, description="返回报告期数量"),
+    period: str | None = Query(None, description="筛选特定报告期，格式: 2024Q1, 2024H1, 2024")
 ):
-    """获取财务数据摘要"""
-    return await stock_service.get_financial(symbol, market)
+    """获取 A 股财务数据（多期）"""
+    return await stock_service.get_financial_cn(symbol, limit, period)
+
+
+@router.get("/{symbol}/financial/hk", response_model=StockFinancialHKResponse)
+async def get_stock_financial_hk(
+    symbol: str = Path(..., description="股票代码"),
+    limit: int = Query(8, ge=1, le=20, description="返回报告期数量")
+):
+    """获取港股财务数据（多期）"""
+    return await stock_service.get_financial_hk(symbol, limit)
+
+
+@router.get("/{symbol}/financial/us", response_model=StockFinancialUSResponse)
+async def get_stock_financial_us(
+    symbol: str = Path(..., description="股票代码"),
+    limit: int = Query(8, ge=1, le=20, description="返回报告期数量")
+):
+    """获取美股财务数据（多期）"""
+    return await stock_service.get_financial_us(symbol, limit)
 
 
 @router.get("/{symbol}/shareholders", response_model=StockShareholders)
