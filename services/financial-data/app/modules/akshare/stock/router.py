@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Query, Path
 
 from app.modules.akshare.stock.service import stock_service
-from app.modules.akshare.stock.schemas import (
+from app.modules.akshare.stock.models import (
     StockListItem, StockSpot, KLinePoint, KLineResponse, MarketType,
     StockProfile, StockFinancial,
     StockShareholders, FundFlowResponse,

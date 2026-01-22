@@ -8,7 +8,7 @@ from app.config import settings
 from app.core.cache import cache
 from app.utils.trading_time import TradingTimeHelper
 from app.modules.akshare.stock.client import stock_client
-from app.modules.akshare.stock.schemas import (
+from app.modules.akshare.stock.models import (
     StockListItem,
     StockSpot,
     KLinePoint,

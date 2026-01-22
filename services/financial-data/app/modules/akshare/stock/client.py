@@ -7,7 +7,7 @@ import asyncio
 import structlog
 
 from app.core.exceptions import DataSourceError
-from app.modules.akshare.stock.schemas import (
+from app.modules.akshare.stock.models import (
     StockListItem, StockSpot, KLinePoint, KLineMeta, KLineResponse, MarketType,
     StockProfile, StockValuation, StockFinancial,
     StockShareholders, ShareholderItem, FundFlowResponse, FundFlowPeriod,
