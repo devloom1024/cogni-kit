@@ -6,7 +6,7 @@ import redis.asyncio as redis
 from app.config import settings
 import structlog
 
-logger = structlog.get_logger()
+logger = structlog.get_logger(__name__)
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -33,9 +33,17 @@ class CacheManager:
                 decode_responses=True
             )
             await self._client.ping()
-            logger.info("redis_connected", url=settings.redis_url)
+            logger.info("redis_connected", 
+                url=settings.redis_url,
+                encoding="utf-8"
+            )
         except Exception as e:
-            logger.error("redis_connection_failed", error=str(e))
+            logger.error("redis_connection_failed", 
+                url=settings.redis_url,
+                error=str(e),
+                error_type=type(e).__name__,
+                exc_info=True
+            )
             raise
     
     async def disconnect(self):

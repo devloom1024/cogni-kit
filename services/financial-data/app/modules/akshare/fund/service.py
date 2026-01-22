@@ -13,7 +13,7 @@ from app.modules.akshare.fund.schemas import (
     FundHolding,
 )
 
-logger = structlog.get_logger()
+logger = structlog.get_logger(__name__)
 
 
 class FundService:

@@ -1,6 +1,7 @@
 """定时任务调度器 - 负责缓存预热和定时刷新"""
 
 import asyncio
+import time
 from typing import Awaitable, Callable, Literal
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -11,7 +12,7 @@ from app.modules.akshare.stock.service import stock_service
 from app.modules.akshare.etf.service import etf_service
 from app.modules.akshare.fund.service import fund_service
 
-logger = structlog.get_logger()
+logger = structlog.get_logger(__name__)
 
 # 市场类型
 StockMarket = Literal["CN", "HK", "US"]
@@ -131,12 +132,13 @@ class CacheRefreshScheduler:
         Args:
             category: 类型标识 (stock/etf/fund)
             market: 市场标识 (CN/HK/US 或 None)
-            refresh_fn: 刷新函数，返回刷新的数量
+            refresh_fn: 刷新函数,返回刷新的数量
         """
         retry_times = settings.cache_refresh_retry_times
         last_error: Exception | None = None
 
         market_info = f" market={market}" if market else ""
+        start_time = time.time()
 
         for attempt in range(1, retry_times + 1):
             try:
@@ -146,28 +148,39 @@ class CacheRefreshScheduler:
                     max_attempts=retry_times,
                 )
                 count = await refresh_fn()
+                duration_ms = int((time.time() - start_time) * 1000)
+                
                 logger.info(
                     f"{category}_refresh_success{market_info}",
                     attempt=attempt,
                     count=count,
+                    duration_ms=duration_ms
                 )
                 return
             except Exception as e:
                 last_error = e
+                duration_ms = int((time.time() - start_time) * 1000)
+                
                 logger.warning(
                     f"{category}_refresh_failed{market_info}",
                     attempt=attempt,
                     max_attempts=retry_times,
                     error=str(e),
+                    error_type=type(e).__name__,
+                    duration_ms=duration_ms
                 )
                 if attempt < retry_times:
                     await asyncio.sleep(5)  # 重试间隔 5 秒
 
         # 所有重试均失败
+        total_duration_ms = int((time.time() - start_time) * 1000)
         logger.error(
             f"{category}_refresh_all_attempts_failed{market_info}",
             attempts=retry_times,
             error=str(last_error),
+            error_type=type(last_error).__name__ if last_error else None,
+            total_duration_ms=total_duration_ms,
+            exc_info=True
         )
         # TODO: 后续可接入告警通知机制
         if last_error:

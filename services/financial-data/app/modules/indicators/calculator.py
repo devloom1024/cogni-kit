@@ -7,7 +7,7 @@ import structlog
 
 from app.core.exceptions import CalculationError, ValidationError
 
-logger = structlog.get_logger()
+logger = structlog.get_logger(__name__)
 
 
 class IndicatorCalculator:

@@ -11,7 +11,7 @@ from app.modules.akshare.etf.schemas import (
     EtfListItem, EtfSpot, KLinePoint, KLineMeta, KLineResponse
 )
 
-logger = structlog.get_logger()
+logger = structlog.get_logger(__name__)
 
 
 class EtfClient:

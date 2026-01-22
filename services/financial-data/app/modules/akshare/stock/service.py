@@ -26,7 +26,7 @@ from app.modules.akshare.stock.schemas import (
     StockListResponse,
 )
 
-logger = structlog.get_logger()
+logger = structlog.get_logger(__name__)
 
 
 class StockService:
@@ -52,7 +52,7 @@ class StockService:
         # 1. 尝试从缓存获取
         cached = await cache.get(cache_key)
         if cached:
-            logger.info("stock_list_cache_hit", market=market)
+            logger.info("stock_list_cache_hit", market=market, cache_key=cache_key)
             return [StockListItem(**item) for item in cached]
 
         # 2. 从数据源获取
@@ -65,7 +65,7 @@ class StockService:
                 [stock.model_dump() for stock in stocks],
                 ttl=settings.cache_ttl_stock_list,
             )
-            logger.info("stock_list_fetched", market=market, count=len(stocks))
+            logger.info("stock_list_fetched", market=market, count=len(stocks), cached=True)
 
         return stocks
 

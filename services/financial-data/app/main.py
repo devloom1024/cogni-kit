@@ -11,24 +11,23 @@ from app.core.cache import cache
 from app.core.scheduler import cache_refresh_scheduler
 from app.core.exceptions import BaseServiceError
 from app.core.schemas import HealthResponse, ErrorResponse
+from app.core.logging_config import configure_logging
 
-# 配置结构化日志
-structlog.configure(
-    processors=[
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.add_log_level,
-        structlog.processors.JSONRenderer(),
-    ]
-)
+# 配置日志系统(根据环境自动选择格式和输出)
+configure_logging(env=settings.node_env)
 
-logger = structlog.get_logger()
+logger = structlog.get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时
-    logger.info("service_starting", port=settings.port)
+    logger.info("service_starting", 
+        port=settings.port,
+        env=settings.node_env,
+        log_level=settings.log_level
+    )
     await cache.connect()
 
     # 启动定时调度器并注册各类缓存刷新任务
@@ -37,12 +36,18 @@ async def lifespan(app: FastAPI):
     cache_refresh_scheduler.add_etf_list_refresh_job()
     cache_refresh_scheduler.add_fund_list_refresh_job()
 
+    logger.info("service_started",
+        port=settings.port,
+        env=settings.node_env
+    )
+
     yield
 
     # 关闭时
     logger.info("service_stopping")
     await cache_refresh_scheduler.stop()
     await cache.disconnect()
+    logger.info("service_stopped")
 
 
 # 创建 FastAPI 应用

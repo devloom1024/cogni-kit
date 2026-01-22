@@ -9,7 +9,7 @@ from app.core.cache import cache
 from app.modules.indicators.calculator import indicator_calculator
 from app.modules.indicators.schemas import IndicatorRequest, IndicatorMeta
 
-logger = structlog.get_logger()
+logger = structlog.get_logger(__name__)
 
 
 class IndicatorService:
