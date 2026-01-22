@@ -339,7 +339,12 @@ class StockClient:
                     high=float(row['最高']),
                     low=float(row['最低']),
                     close=float(row['收盘']),
-                    volume=float(row['成交量'])
+                    volume=float(row['成交量']),
+                    amount=float(row['成交额']) if '成交额' in row else None,
+                    change=float(row['涨跌额']) if '涨跌额' in row else None,
+                    change_percent=float(row['涨跌幅']) if '涨跌幅' in row else None,
+                    amplitude=float(row['振幅']) if '振幅' in row else None,
+                    turnover_rate=float(row['换手率']) if '换手率' in row else None
                 ))
 
             # 构建元数据

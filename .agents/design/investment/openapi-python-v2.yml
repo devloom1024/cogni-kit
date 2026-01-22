@@ -1240,7 +1240,27 @@ components:
           description: 收盘价
         volume:
           type: number
-          description: 成交量
+          description: 成交量 (手)
+        amount:
+          type: number
+          nullable: true
+          description: 成交额 (元)
+        change:
+          type: number
+          nullable: true
+          description: 涨跌额 (元)
+        changePercent:
+          type: number
+          nullable: true
+          description: 涨跌幅 (%)
+        amplitude:
+          type: number
+          nullable: true
+          description: 振幅 (%)
+        turnoverRate:
+          type: number
+          nullable: true
+          description: 换手率 (%)
 
     KLineMeta:
       type: object

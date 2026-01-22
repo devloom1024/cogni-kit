@@ -90,7 +90,15 @@ class KLinePoint(BaseModel):
     high: float = Field(..., description="最高价")
     low: float = Field(..., description="最低价")
     close: float = Field(..., description="收盘价")
-    volume: float = Field(..., description="成交量")
+    volume: float = Field(..., description="成交量 (手)")
+    amount: float | None = Field(None, description="成交额 (元)")
+    change: float | None = Field(None, description="涨跌额 (元)")
+    change_percent: float | None = Field(None, description="涨跌幅 (%)", alias="changePercent")
+    amplitude: float | None = Field(None, description="振幅 (%)")
+    turnover_rate: float | None = Field(None, description="换手率 (%)", alias="turnoverRate")
+
+    class Config:
+        populate_by_name = True
 
 
 class KLineMeta(BaseModel):
