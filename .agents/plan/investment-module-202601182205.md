@@ -1,7 +1,7 @@
 # Implementation Plan: Investment Module (Revised v2)
 
 > Created at: 2026-01-18 22:15
-> Last Updated: 2026-01-20 21:49
+> Last Updated: 2026-01-22 21:00
 > Feature: Investment Module (Watchlist & Market Data)
 
 ## 目标
@@ -69,27 +69,33 @@ services/financial-data/
 - [x] `GET /{symbol}/spot` - 实时行情
 - [x] `GET /{symbol}/kline` - K线数据
 - [x] `GET /{symbol}/profile` - 公司信息 (F10)
-- [x] `GET /{symbol}/valuation` - 估值数据
 - [x] `GET /{symbol}/financial` - 财务摘要
 - [x] `GET /{symbol}/shareholders` - 股东信息 (仅A股)
 - [x] `GET /{symbol}/fund-flow` - 资金流向 (仅A股)
-- [x] `GET /{symbol}/bid-ask` - 五档盘口 (仅A股)
 - [x] `POST /spot/batch` - 批量行情
 
-### 1.3 ETF 接口 (`/akshare/etf/*`)
+**已删除接口：**
+- `GET /{symbol}/valuation` - 估值数据 (已合并到 /profile)
+- `GET /{symbol}/bid-ask` - 五档盘口 (已合并到 /spot)
+
+### 1.3 ETF 接口 (`/akshare/etf/*`) ✅ (部分实现)
 - [x] `GET /list` - 全量 ETF 列表
 - [x] `GET /{symbol}/spot` - 实时行情
+
+**待实现接口：**
 - [ ] `GET /{symbol}/info` - 基金信息
 - [ ] `GET /{symbol}/holdings` - 十大重仓
 - [ ] `GET /{symbol}/fund-flow` - 资金流向
 - [ ] `GET /{symbol}/dividend` - 分红记录
 - [ ] `GET /{symbol}/kline` - K线数据
 
-### 1.4 场外基金接口 (`/akshare/fund/*`)
+### 1.4 场外基金接口 (`/akshare/fund/*`) ✅ (部分实现)
 - [x] `GET /list` - 全量基金列表
 - [x] `GET /{symbol}/nav` - 最新净值
 - [x] `GET /{symbol}/info` - 基金信息
 - [x] `GET /{symbol}/holdings` - 十大重仓
+
+**待实现接口：**
 - [ ] `GET /{symbol}/performance` - 收益表现
 - [ ] `GET /{symbol}/allocation` - 资产配置
 - [ ] `GET /{symbol}/estimation` - 盘中估值

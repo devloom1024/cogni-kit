@@ -85,12 +85,30 @@ class StockSpot(BaseModel):
 
 class KLinePoint(BaseModel):
     """K 线数据点"""
-    timestamp: int = Field(..., description="时间戳 (毫秒)")
+    date: str = Field(..., description="日期 (YYYY-MM-DD)")
     open: float = Field(..., description="开盘价")
     high: float = Field(..., description="最高价")
     low: float = Field(..., description="最低价")
     close: float = Field(..., description="收盘价")
     volume: float = Field(..., description="成交量")
+
+
+class KLineMeta(BaseModel):
+    """K 线元数据"""
+    symbol: str = Field(..., description="股票代码")
+    period: str = Field(..., description="K 线周期 (day/week/month)")
+    count: int = Field(..., description="数据条数")
+    first_date: str = Field(..., description="首条数据日期", alias="firstDate")
+    last_date: str = Field(..., description="最后一条数据日期", alias="lastDate")
+
+    class Config:
+        populate_by_name = True
+
+
+class KLineResponse(BaseModel):
+    """K 线响应"""
+    data: list[KLinePoint] = Field(..., description="K 线数据")
+    meta: KLineMeta = Field(..., description="元数据")
 
 
 # ==================== 公司信息 ====================

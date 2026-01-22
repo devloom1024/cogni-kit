@@ -12,6 +12,8 @@ from app.modules.akshare.stock.schemas import (
     StockListItem,
     StockSpot,
     KLinePoint,
+    KLineMeta,
+    KLineResponse,
     MarketType,
     StockProfile,
     StockValuation,
@@ -159,28 +161,42 @@ class StockService:
         market: MarketType | None = None,
         period: str = "day",
         adjust: str = "qfq",
-        limit: int = 250,
-    ) -> List[KLinePoint]:
-        """获取 K 线数据（带缓存）"""
-        cache_key = f"stock:kline:{market or 'AUTO'}:{symbol}:{period}:{adjust}"
+        limit: int | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None
+    ) -> KLineResponse:
+        """获取 K 线数据（带缓存）
+
+        缓存策略:
+        - 无日期范围时使用缓存 (limit 模式)
+        - 指定日期范围时不使用缓存 (增量获取)
+        """
+        # 有日期范围时不使用缓存
+        if start_date:
+            logger.info("stock_kline_fetch_no_cache", symbol=symbol, start_date=start_date, end_date=end_date)
+            return await self.client.get_kline(symbol, market, period, adjust, limit, start_date, end_date)
+
+        # 缓存 key (不含日期范围)
+        cache_key = f"stock:kline:{market or 'AUTO'}:{symbol}:{period}:{adjust}:{limit or 250}"
 
         # 尝试从缓存获取
         cached = await cache.get(cache_key)
         if cached:
             logger.info("stock_kline_cache_hit", symbol=symbol, period=period)
-            return [KLinePoint(**item) for item in cached]
+            # 从缓存恢复响应结构
+            return KLineResponse(**cached)
 
         # 从数据源获取
-        klines = await self.client.get_kline(symbol, market, period, adjust, limit)
+        result = await self.client.get_kline(symbol, market, period, adjust, limit, start_date, end_date)
 
-        # 缓存结果
+        # 缓存结果 (仅缓存 data 部分)
         await cache.set(
             cache_key,
-            [kline.model_dump() for kline in klines],
+            {"data": [k.model_dump() for k in result.data], "meta": result.meta.model_dump()},
             ttl=settings.cache_ttl_kline,
         )
 
-        return klines
+        return result
 
     async def get_profile(
         self, symbol: str, market: MarketType | None = None

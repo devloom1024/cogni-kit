@@ -240,6 +240,11 @@ paths:
       summary: 获取股票 K 线数据
       description: |
         获取历史 K 线数据 (OHLCV)，不包含技术指标计算。
+
+        支持两种查询模式:
+        - **limit 模式**: 仅指定 limit，返回最近 N 条数据（使用缓存）
+        - **日期范围模式**: 指定 start_date/end_date，返回指定范围内的数据（不使用缓存）
+
         **AkShare**:
         - A股: `stock_zh_a_hist()`
         - 港股: `stock_hk_hist()`
@@ -251,15 +256,15 @@ paths:
         - $ref: "#/components/parameters/Period"
         - $ref: "#/components/parameters/Adjust"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
       responses:
         "200":
           description: K 线数据
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/KLinePoint"
+                $ref: "#/components/schemas/KLineResponse"
 
   # ==================== ETF 数据 ====================
   /api/v1/akshare/etf/list:
@@ -385,6 +390,7 @@ paths:
       summary: 获取 ETF K 线数据
       description: |
         获取 ETF 历史 K 线数据。
+
         **AkShare**: `fund_etf_hist_em()`
       tags: [ETF]
       parameters:
@@ -392,15 +398,15 @@ paths:
         - $ref: "#/components/parameters/Period"
         - $ref: "#/components/parameters/Adjust"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
       responses:
         "200":
           description: K 线数据
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/KLinePoint"
+                $ref: "#/components/schemas/KLineResponse"
 
   # ==================== 场外基金数据 ====================
   /api/v1/akshare/fund/list:
@@ -666,7 +672,24 @@ components:
         type: integer
         default: 250
         maximum: 1000
-      description: 数据点数量
+      description: 数据点数量 (与 start_date 二选一)
+
+    StartDate:
+      name: start_date
+      in: query
+      schema:
+        type: string
+        pattern: "^[0-9]{8}$"
+      description: 开始日期 (YYYYMMDD，与 limit 二选一)
+
+    EndDate:
+      name: end_date
+      in: query
+      schema:
+        type: string
+        pattern: "^[0-9]{8}$"
+        default: 当前日期
+      description: 结束日期 (YYYYMMDD)
 
   responses:
     NotFound:
@@ -1140,14 +1163,20 @@ components:
           nullable: true
           description: 小单净流入 (万元)
 
+    # ==================== K 线 ====================
     KLinePoint:
       type: object
       description: K 线数据点
-      required: [timestamp, open, high, low, close, volume]
+      required: [date, open, high, low, close, volume]
       properties:
-        timestamp:
-          type: number
-          description: 时间戳 (毫秒)
+        date:
+          type: string
+          format: date
+          description: |
+            交易日日期 (YYYY-MM-DD)
+            - 日线: 交易日日期
+            - 周线: 周最后一个交易日
+            - 月线: 月最后一个交易日
         open:
           type: number
           description: 开盘价
@@ -1163,6 +1192,40 @@ components:
         volume:
           type: number
           description: 成交量
+
+    KLineMeta:
+      type: object
+      description: K 线元数据
+      properties:
+        symbol:
+          type: string
+          description: 股票代码
+        period:
+          type: string
+          enum: [day, week, month]
+          description: K 线周期
+        count:
+          type: integer
+          description: 数据条数
+        firstDate:
+          type: string
+          format: date
+          description: 首条数据日期
+        lastDate:
+          type: string
+          format: date
+          description: 最后一条数据日期
+
+    KLineResponse:
+      type: object
+      description: K 线响应
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/KLinePoint"
+        meta:
+          $ref: "#/components/schemas/KLineMeta"
 
     # ==================== ETF ====================
     EtfListItem:

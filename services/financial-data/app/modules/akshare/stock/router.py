@@ -4,7 +4,7 @@ from typing import List, Literal
 
 from app.modules.akshare.stock.service import stock_service
 from app.modules.akshare.stock.schemas import (
-    StockListItem, StockSpot, KLinePoint, MarketType,
+    StockListItem, StockSpot, KLinePoint, KLineResponse, MarketType,
     StockProfile, StockFinancial,
     StockShareholders, FundFlow,
     BatchSpotRequest, StockListResponse
@@ -38,16 +38,23 @@ async def get_stock_spot(
     return await stock_service.get_spot(symbol, market)
 
 
-@router.get("/{symbol}/kline", response_model=List[KLinePoint])
+@router.get("/{symbol}/kline", response_model=KLineResponse)
 async def get_stock_kline(
     symbol: str = Path(..., description="股票代码"),
     market: MarketType | None = Query(None, description="市场类型"),
     period: str = Query("day", description="K线周期", pattern="^(day|week|month)$"),
     adjust: str = Query("qfq", description="复权类型", pattern="^(|qfq|hfq)$"),
-    limit: int = Query(250, description="数据条数", ge=1, le=1000)
+    limit: int | None = Query(None, description="数据条数 (默认250)", ge=1, le=1000),
+    start_date: str | None = Query(None, description="开始日期 (YYYYMMDD)", pattern="^[0-9]{8}$"),
+    end_date: str | None = Query(None, description="结束日期 (YYYYMMDD)", pattern="^[0-9]{8}$")
 ):
-    """获取股票 K 线数据 (纯 OHLCV)"""
-    return await stock_service.get_kline(symbol, market, period, adjust, limit)
+    """获取股票 K 线数据
+
+    支持两种查询模式:
+    1. limit 模式: 仅指定 limit,返回最近 N 条数据
+    2. 日期范围模式: 指定 start_date/end_date,返回指定范围内的数据
+    """
+    return await stock_service.get_kline(symbol, market, period, adjust, limit, start_date, end_date)
 
 
 @router.get("/{symbol}/profile", response_model=StockProfile)

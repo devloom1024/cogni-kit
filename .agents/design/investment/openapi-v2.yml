@@ -177,12 +177,20 @@ paths:
   /api/v1/investment/stocks/{id}/kline:
     get:
       summary: 获取 K 线数据
-      description: 获取历史 K 线数据和技术指标
+      description: |
+        获取历史 K 线数据和技术指标（指标计算由 Node.js 服务完成）。
+        **注意**: 原始 K 线数据由 Python 服务提供，技术指标由 Node.js 服务计算。
+
+        支持两种查询模式:
+        - **limit 模式**: 仅指定 limit，返回最近 N 条数据
+        - **日期范围模式**: 指定 start_date/end_date，返回指定范围内的数据
       tags: [Stock]
       parameters:
         - $ref: "#/components/parameters/AssetId"
         - $ref: "#/components/parameters/KLinePeriod"
         - $ref: "#/components/parameters/KLineLimit"
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
         - $ref: "#/components/parameters/Indicators"
       responses:
         "200":
@@ -289,12 +297,19 @@ paths:
   /api/v1/investment/etfs/{id}/kline:
     get:
       summary: 获取 ETF K 线数据
-      description: 获取 ETF 历史 K 线数据和技术指标
+      description: |
+        获取 ETF 历史 K 线数据和技术指标（指标计算由 Node.js 服务完成）。
+
+        支持两种查询模式:
+        - **limit 模式**: 仅指定 limit，返回最近 N 条数据
+        - **日期范围模式**: 指定 start_date/end_date，返回指定范围内的数据
       tags: [ETF]
       parameters:
         - $ref: "#/components/parameters/AssetId"
         - $ref: "#/components/parameters/KLinePeriod"
         - $ref: "#/components/parameters/KLineLimit"
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
         - $ref: "#/components/parameters/Indicators"
       responses:
         "200":
@@ -684,7 +699,23 @@ components:
         type: integer
         default: 250
         maximum: 1000
-      description: 返回的数据点数量，最多 1000 条
+      description: 返回的数据点数量，最多 1000 条 (与 start_date 二选一)
+
+    StartDate:
+      name: start_date
+      in: query
+      schema:
+        type: string
+        pattern: "^[0-9]{8}$"
+      description: 开始日期 (YYYYMMDD，与 limit 二选一)
+
+    EndDate:
+      name: end_date
+      in: query
+      schema:
+        type: string
+        pattern: "^[0-9]{8}$"
+      description: 结束日期 (YYYYMMDD)
 
     Indicators:
       name: indicators
@@ -1609,34 +1640,19 @@ components:
           description: 变动 (新进/增持/减持/不变)
 
     # ==================== K 线 ====================
-    KLineResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/KLinePoint"
-        indicators:
-          type: object
-          nullable: true
-          additionalProperties: true
-          description: 技术指标计算结果
-        meta:
-          type: object
-          properties:
-            symbol:
-              type: string
-            period:
-              type: string
-
     KLinePoint:
       type: object
       description: K 线数据点
-      required: [timestamp, open, high, low, close, volume]
+      required: [date, open, high, low, close, volume]
       properties:
-        timestamp:
-          type: number
-          description: 时间戳 (毫秒)
+        date:
+          type: string
+          format: date
+          description: |
+            交易日日期 (YYYY-MM-DD)
+            - 日线: 交易日日期
+            - 周线: 周最后一个交易日
+            - 月线: 月最后一个交易日
         open:
           type: number
           description: 开盘价
@@ -1652,6 +1668,45 @@ components:
         volume:
           type: number
           description: 成交量
+
+    KLineMeta:
+      type: object
+      description: K 线元数据
+      properties:
+        symbol:
+          type: string
+          description: 股票代码
+        period:
+          type: string
+          enum: [day, week, month]
+          description: K 线周期
+        count:
+          type: integer
+          description: 数据条数
+        firstDate:
+          type: string
+          format: date
+          description: 首条数据日期
+        lastDate:
+          type: string
+          format: date
+          description: 最后一条数据日期
+
+    KLineResponse:
+      type: object
+      description: K 线响应
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/KLinePoint"
+        indicators:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: 技术指标计算结果（由 Node.js 服务计算）
+        meta:
+          $ref: "#/components/schemas/KLineMeta"
 
     # ==================== 自选列表 ====================
     WatchlistGroup:
