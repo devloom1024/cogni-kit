@@ -1,17 +1,18 @@
 """FastAPI 应用入口"""
 
 from contextlib import asynccontextmanager
+
+import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import structlog
 
 from app.config import settings
 from app.core.cache import cache
-from app.core.scheduler import cache_refresh_scheduler
 from app.core.exceptions import BaseServiceError
-from app.core.schemas import HealthResponse, ErrorResponse
 from app.core.logging_config import configure_logging
+from app.core.scheduler import cache_refresh_scheduler
+from app.core.schemas import HealthResponse, ErrorResponse
 
 # 配置日志系统(根据环境自动选择格式和输出)
 configure_logging(env=settings.node_env)
@@ -23,18 +24,16 @@ logger = structlog.get_logger(__name__)
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时
-    logger.info("service_starting", 
+    logger.info("service_starting",
         port=settings.port,
         env=settings.node_env,
         log_level=settings.log_level
     )
     await cache.connect()
 
-    # 启动定时调度器并注册各类缓存刷新任务
+    # 启动定时调度器并注册各类任务
     await cache_refresh_scheduler.start()
-    cache_refresh_scheduler.add_stock_list_refresh_job()
-    cache_refresh_scheduler.add_etf_list_refresh_job()
-    cache_refresh_scheduler.add_fund_list_refresh_job()
+
 
     logger.info("service_started",
         port=settings.port,
@@ -54,7 +53,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="金融数据服务",
     version="1.0.0",
-    description="模块化金融数据微服务，封装 AkShare 和技术指标计算",
+    description="模块化金融数据微服务",
     lifespan=lifespan,
     # 生产环境禁用文档
     docs_url="/api-docs" if settings.node_env != "production" else None,
@@ -101,16 +100,4 @@ async def general_error_handler(request: Request, exc: Exception):
 @app.get("/api/v1/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
     """服务健康检查"""
-    return HealthResponse(status="ok", modules=["akshare", "indicators"])
-
-
-# 注册路由模块
-from app.modules.akshare.stock.router import router as stock_router
-from app.modules.akshare.etf.router import router as etf_router
-from app.modules.akshare.fund.router import router as fund_router
-from app.modules.indicators.router import router as indicators_router
-
-app.include_router(stock_router, prefix="/api/v1/akshare/stock", tags=["Stock"])
-app.include_router(etf_router, prefix="/api/v1/akshare/etf", tags=["ETF"])
-app.include_router(fund_router, prefix="/api/v1/akshare/fund", tags=["Fund"])
-app.include_router(indicators_router, prefix="/api/v1/indicators", tags=["Indicators"])
+    return HealthResponse(status="ok", modules=[])
