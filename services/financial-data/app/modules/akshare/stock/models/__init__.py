@@ -13,11 +13,9 @@ from .financial import (
     StockFinancialUSPeriod,
     StockFinancialUSResponse,
 )
-from .shareholders import ShareholderItem, StockShareholders
 from .fund_flow import FundFlowPeriod, FundFlowResponse
 from .batch import (
     BatchSymbolItem,
-    BatchSpotRequest,
     StockListItem,
     MarketFetchResult,
     StockListResponse,
@@ -47,15 +45,11 @@ __all__ = [
     "StockFinancialHKResponse",
     "StockFinancialUSPeriod",
     "StockFinancialUSResponse",
-    # 股东信息
-    "ShareholderItem",
-    "StockShareholders",
     # 资金流向
     "FundFlowPeriod",
     "FundFlowResponse",
     # 批量请求
     "BatchSymbolItem",
-    "BatchSpotRequest",
     "StockListItem",
     "MarketFetchResult",
     "StockListResponse",

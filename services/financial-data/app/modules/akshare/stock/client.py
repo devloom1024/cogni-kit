@@ -10,7 +10,7 @@ from app.core.exceptions import DataSourceError
 from app.modules.akshare.stock.models import (
     StockListItem, StockSpot, KLinePoint, KLineMeta, KLineResponse, MarketType,
     StockProfile, StockValuation, StockFinancial,
-    StockShareholders, ShareholderItem, FundFlowResponse, FundFlowPeriod,
+    FundFlowResponse, FundFlowPeriod,
     BidAsk, PriceLevel, BatchSymbolItem,
     StockFinancialCNResponse, StockFinancialCNPeriod,
     StockFinancialHKResponse, StockFinancialHKPeriod,
@@ -793,74 +793,7 @@ class StockClient:
             return float(value)
         except (ValueError, TypeError):
             return None
-    
-    async def get_shareholders(self, symbol: str) -> StockShareholders:
-        """获取股东信息（仅A股）
-        
-        Args:
-            symbol: 股票代码
-            
-        Returns:
-            股东信息
-        """
-        try:
-            # 需要带市场标识和日期参数
-            # 使用最近的季度末日期
-            from datetime import date
-            current_year = date.today().year
-            report_date = f"{current_year}0630"  # 先尝试当年6月30日
-            
-            # 确定市场标识
-            if symbol.startswith('6'):
-                market_symbol = f"sh{symbol}"
-            else:
-                market_symbol = f"sz{symbol}"
-            
-            # 获取十大股东，如果失败则尝试上一年的数据
-            df_top10 = None
-            for year_offset in [0, -1]:
-                try:
-                    test_date = f"{current_year + year_offset}1231" if year_offset < 0 else report_date
-                    df_top10 = await asyncio.to_thread(ak.stock_gdfx_top_10_em, symbol=market_symbol, date=test_date)
-                    if not df_top10.empty:
-                        break
-                except Exception as e:
-                    logger.warning("shareholders_fetch_attempt_failed", symbol=symbol, date=test_date, error=str(e))
-                    continue
-            
-            top10_shareholders = []
-            
-            if df_top10 is not None and not df_top10.empty:
-                # 直接使用文档中的列名，添加错误处理
-                for idx, row in df_top10.head(10).iterrows():
-                    try:
-                        top10_shareholders.append(ShareholderItem(
-                            name=str(row['股东名称']),
-                            shares=float(row['持股数']) / 10000,  # 转换为万股
-                            percentage=float(row['占总股本持股比例']),
-                            change=str(row.get('增减', ''))
-                        ))
-                    except (KeyError, ValueError, TypeError) as e:
-                        logger.warning("shareholder_item_parse_failed", index=idx, error=str(e))
-                        continue
-            
-            # 十大流通股东暂时返回空
-            top10_float_shareholders = []
-            
-            shareholders = StockShareholders(
-                symbol=symbol,
-                shareholder_count=None,
-                top10_shareholders=top10_shareholders,
-                top10_float_shareholders=top10_float_shareholders
-            )
-            
-            logger.info("stock_shareholders_fetched", symbol=symbol)
-            return shareholders
-            
-        except Exception as e:
-            logger.error("stock_shareholders_fetch_failed", error=str(e), symbol=symbol)
-            raise DataSourceError(f"获取股东信息失败: {str(e)}")
-    
+
     async def get_fund_flow(
         self,
         symbol: str,
@@ -997,39 +930,6 @@ class StockClient:
         except Exception as e:
             logger.error("stock_bid_ask_fetch_failed", error=str(e), symbol=symbol)
             raise DataSourceError(f"获取五档盘口失败: {str(e)}")
-    
-    async def get_spot_batch(self, symbols: List[BatchSymbolItem]) -> dict[str, StockSpot]:
-        """批量获取实时行情
-        
-        Args:
-            symbols: 股票列表（最多50只）
-            
-        Returns:
-            股票代码到行情的映射
-        """
-        try:
-            # 限制数量
-            if len(symbols) > 50:
-                symbols = symbols[:50]
-            
-            # 并发获取
-            tasks = [self.get_spot(item.symbol, item.market) for item in symbols]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            
-            # 构建结果字典
-            batch_result = {}
-            for item, result in zip(symbols, results):
-                if isinstance(result, Exception):
-                    logger.warning("batch_spot_item_failed", symbol=item.symbol, error=str(result))
-                    continue
-                batch_result[item.symbol] = result
-            
-            logger.info("stock_spot_batch_fetched", count=len(batch_result))
-            return batch_result
-            
-        except Exception as e:
-            logger.error("stock_spot_batch_failed", error=str(e))
-            raise DataSourceError(f"批量获取行情失败: {str(e)}")
 
 
 # 全局客户端实例

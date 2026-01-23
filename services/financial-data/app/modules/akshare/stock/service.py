@@ -18,9 +18,7 @@ from app.modules.akshare.stock.models import (
     StockProfile,
     StockValuation,
     StockFinancial,
-    StockShareholders,
     FundFlowResponse,
-    BidAsk,
     BatchSymbolItem,
     MarketFetchResult,
     StockListResponse,
@@ -291,26 +289,6 @@ class StockService:
 
         return financial
 
-    async def get_shareholders(self, symbol: str) -> StockShareholders:
-        """获取股东信息（带缓存，仅A股）"""
-        cache_key = f"stock:shareholders:{symbol}"
-
-        # 尝试从缓存获取
-        cached = await cache.get(cache_key)
-        if cached:
-            logger.info("stock_shareholders_cache_hit", symbol=symbol)
-            return StockShareholders(**cached)
-
-        # 从数据源获取
-        shareholders = await self.client.get_shareholders(symbol)
-
-        # 缓存结果 (1小时)
-        await cache.set(
-            cache_key, shareholders.model_dump(), ttl=settings.cache_ttl_shareholders
-        )
-
-        return shareholders
-
     async def get_fund_flow(
         self,
         symbol: str,
@@ -358,12 +336,6 @@ class StockService:
     # get_bid_ask 方法已废弃 - /bid-ask 接口已删除
     # 五档盘口数据现在包含在 /spot 接口的返回中
     # async def get_bid_ask(...):
-
-    async def get_spot_batch(
-        self, symbols: List[BatchSymbolItem]
-    ) -> dict[str, StockSpot]:
-        """批量获取实时行情（无缓存，直接调用单个接口的缓存）"""
-        return await self.client.get_spot_batch(symbols)
 
 
 # 全局服务实例

@@ -225,22 +225,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /api/v1/investment/stocks/{id}/shareholders:
-    get:
-      summary: 获取股东信息
-      description: 获取十大股东、股东人数等信息 (仅 A 股支持)
-      tags: [Stock]
-      parameters:
-        - $ref: "#/components/parameters/AssetId"
-      responses:
-        "200":
-          description: 股东信息
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/StockShareholders"
-        "404":
-          $ref: "#/components/responses/NotFound"
+  # /shareholders 接口已删除 - 股东信息暂不需要
 
   /api/v1/investment/stocks/{id}/fund-flow:
     get:
@@ -1514,48 +1499,6 @@ components:
           type: number
           nullable: true
           description: 净利润率 (%)
-
-    StockShareholders:
-      type: object
-      description: 股东信息
-      properties:
-        symbol:
-          type: string
-        shareholderCount:
-          type: integer
-          nullable: true
-          description: 股东人数
-        fundHoldingRatio:
-          type: number
-          nullable: true
-          description: 基金持股比例 (%)
-        top10Shareholders:
-          type: array
-          description: 十大股东
-          items:
-            $ref: "#/components/schemas/ShareholderItem"
-        top10FloatShareholders:
-          type: array
-          description: 十大流通股东
-          items:
-            $ref: "#/components/schemas/ShareholderItem"
-
-    ShareholderItem:
-      type: object
-      properties:
-        name:
-          type: string
-          description: 股东名称
-        shares:
-          type: number
-          description: 持股数 (万股)
-        percentage:
-          type: number
-          description: 持股比例 (%)
-        change:
-          type: string
-          nullable: true
-          description: 变动 (增持/减持/不变)
 
     BidAsk:
       type: object

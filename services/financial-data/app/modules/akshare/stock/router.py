@@ -5,8 +5,8 @@ from app.modules.akshare.stock.service import stock_service
 from app.modules.akshare.stock.models import (
     StockListItem, StockSpot, KLinePoint, KLineResponse, MarketType,
     StockProfile, StockFinancial,
-    StockShareholders, FundFlowResponse,
-    BatchSpotRequest, StockListResponse,
+    FundFlowResponse,
+    StockListResponse,
     StockFinancialCNResponse, StockFinancialHKResponse, StockFinancialUSResponse
 )
 
@@ -95,14 +95,6 @@ async def get_stock_financial_us(
     return await stock_service.get_financial_us(symbol, limit)
 
 
-@router.get("/{symbol}/shareholders", response_model=StockShareholders)
-async def get_stock_shareholders(
-    symbol: str = Path(..., description="股票代码")
-):
-    """获取股东信息（仅A股）"""
-    return await stock_service.get_shareholders(symbol)
-
-
 @router.get("/{symbol}/fund-flow", response_model=FundFlowResponse)
 async def get_stock_fund_flow(
     symbol: str = Path(..., description="股票代码"),
@@ -115,11 +107,3 @@ async def get_stock_fund_flow(
 
 
 # /bid-ask 接口已删除,五档盘口数据已包含在 /spot 接口中
-
-
-@router.post("/spot/batch", response_model=dict[str, StockSpot])
-async def get_stock_spot_batch(
-    request: BatchSpotRequest
-):
-    """批量获取股票实时行情（最多50只）"""
-    return await stock_service.get_spot_batch(request.symbols)

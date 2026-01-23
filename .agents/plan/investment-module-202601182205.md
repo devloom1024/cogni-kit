@@ -64,19 +64,23 @@ services/financial-data/
 │   └── core/
 ```
 
-### 1.2 股票接口 (`/akshare/stock/*`) ✅
+### 1.2 股票接口 (`/akshare/stock/*`) ✅ (部分重构)
 - [x] `GET /list` - 全量股票列表 (同步用)
 - [x] `GET /{symbol}/spot` - 实时行情
 - [x] `GET /{symbol}/kline` - K线数据
 - [x] `GET /{symbol}/profile` - 公司信息 (F10)
-- [x] `GET /{symbol}/financial` - 财务摘要
-- [x] `GET /{symbol}/shareholders` - 股东信息 (仅A股)
+- [x] `GET /{symbol}/financial/cn` - A股财务数据
+- [x] `GET /{symbol}/financial/hk` - 港股财务数据
+- [x] `GET /{symbol}/financial/us` - 美股财务数据
 - [x] `GET /{symbol}/fund-flow` - 资金流向 (仅A股)
-- [x] `POST /spot/batch` - 批量行情
 
-**已删除接口：**
-- `GET /{symbol}/valuation` - 估值数据 (已合并到 /profile)
-- `GET /{symbol}/bid-ask` - 五档盘口 (已合并到 /spot)
+**已删除接口:**
+- `GET /{symbol}/shareholders` - 股东信息 (暂不需要)
+- `POST /spot/batch` - 批量行情 (请使用 watchlist/quotes)
+
+**已合并接口:**
+- `GET /{symbol}/valuation` - 估值数据 → 已合并到 `/profile`
+- `GET /{symbol}/bid-ask` - 五档盘口 → 已合并到 `/spot`
 
 ### 1.3 ETF 接口 (`/akshare/etf/*`) ✅ (部分实现)
 - [x] `GET /list` - 全量 ETF 列表
@@ -117,8 +121,10 @@ services/financial-data/
 
 **股票**:
 - [ ] `StockQuoteSchema`, `StockProfileSchema`, `StockValuationSchema`
-- [ ] `StockFinancialSchema`, `StockShareholdersSchema`
-- [ ] `BidAskSchema`, `FundFlowSchema`
+- [ ] `StockFinancialSchema`, `BidAskSchema`, `FundFlowSchema`
+
+**已删除:**
+- `StockShareholdersSchema` - 股东信息 (暂不需要)
 
 **ETF**:
 - [ ] `EtfQuoteSchema`, `EtfInfoSchema`, `DividendHistorySchema`
@@ -155,14 +161,18 @@ apps/server/src/features/investment/
 ```
 
 ### 3.2 股票路由 (`/stocks/{id}/*`)
-- [ ] `GET /quote` - 实时行情
-- [ ] `GET /profile` - 公司信息
-- [ ] `GET /valuation` - 估值数据
-- [ ] `GET /financial` - 财务摘要
-- [ ] `GET /shareholders` - 股东信息
+- [ ] `GET /quote` - 实时行情 (含五档盘口)
+- [ ] `GET /profile` - 公司信息 (含估值数据)
+- [ ] `GET /financial/cn` - A股财务数据
+- [ ] `GET /financial/hk` - 港股财务数据
+- [ ] `GET /financial/us` - 美股财务数据
 - [ ] `GET /fund-flow` - 资金流向
-- [ ] `GET /bid-ask` - 五档盘口
 - [ ] `GET /kline` - K线+指标
+
+**已删除接口:**
+- `/shareholders` - 股东信息 (暂不需要)
+- `/bid-ask` - 五档盘口 (已合并到 `/quote`)
+- `/valuation` - 估值数据 (已合并到 `/profile`)
 
 ### 3.3 ETF 路由 (`/etfs/{id}/*`)
 - [ ] `GET /quote` - 实时行情 (含IOPV)

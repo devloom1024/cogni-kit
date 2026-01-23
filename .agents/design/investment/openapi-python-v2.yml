@@ -109,44 +109,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /api/v1/akshare/stock/spot/batch:
-    post:
-      summary: 批量获取股票实时行情
-      description: 批量获取多只股票的实时行情，最多 50 只
-      tags: [Stock]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [symbols]
-              properties:
-                symbols:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      symbol:
-                        type: string
-                      market:
-                        type: string
-                        enum: [CN, HK, US]
-                        description: |
-                          市场类型:
-                          - CN: A股
-                          - HK: 港股
-                          - US: 美股
-                  maxItems: 50
-      responses:
-        "200":
-          description: 批量行情
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties:
-                  $ref: "#/components/schemas/StockSpot"
+  # /spot/batch 接口已删除 - 批量行情请使用 watchlist/quotes 接口
 
   # ==================== 股票公司信息 ====================
   /api/v1/akshare/stock/{symbol}/profile:
@@ -290,29 +253,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/StockFinancialUSResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  # ==================== 股票股东信息 (仅A股) ====================
-  /api/v1/akshare/stock/{symbol}/shareholders:
-    get:
-      summary: 获取股东信息
-      description: |
-        获取十大股东、股东人数等信息。**仅 A 股支持**。
-        **AkShare**:
-        - `stock_gdfx_top_10_em()`: 十大股东
-        - `stock_gdfx_free_top_10_em()`: 十大流通股东
-        - `stock_zh_a_gdhs()`: 股东人数
-      tags: [Stock]
-      parameters:
-        - $ref: "#/components/parameters/Symbol"
-      responses:
-        "200":
-          description: 股东信息
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/StockShareholders"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -1481,45 +1421,6 @@ components:
           type: number
           nullable: true
           description: 净利润率 (%)
-
-    StockShareholders:
-      type: object
-      properties:
-        symbol:
-          type: string
-        shareholderCount:
-          type: integer
-          nullable: true
-        fundHoldingRatio:
-          type: number
-          nullable: true
-          description: 基金持股比例 (%)
-        top10Shareholders:
-          type: array
-          items:
-            $ref: "#/components/schemas/ShareholderItem"
-        top10FloatShareholders:
-          type: array
-          items:
-            $ref: "#/components/schemas/ShareholderItem"
-
-    ShareholderItem:
-      type: object
-      description: 股东信息项
-      properties:
-        name:
-          type: string
-          description: 股东名称
-        shares:
-          type: number
-          description: 持股数 (万股)
-        percentage:
-          type: number
-          description: 持股比例 (%)
-        change:
-          type: string
-          nullable: true
-          description: 变动情况 (增持/减持/不变)
 
     BidAsk:
       type: object
