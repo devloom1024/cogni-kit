@@ -176,34 +176,74 @@ model VerificationCode {
 
 // ==================== 投资模块枚举 ====================
 
+/// 资产类型枚举
 enum AssetType {
-  STOCK
-  ETF
-  FUND
+  STOCK   // A股
+  INDEX   // 指数
+  ETF     // ETF
+  LOF     // LOF基金
+  OFUND   // 场外基金 (Outdoor Fund)
 }
 
+/// 指数类型枚举
+enum IndexType {
+  BROAD     // 大盘指数 (如 上证指数、深证成指)
+  SECTOR    // 行业指数 (如 半导体指数、白酒指数)
+  THEME     // 主题指数 (如 新能源指数)
+  STRATEGY  // 策略指数 (如 红利指数、指数增强)
+}
+
+/// 交易所/板块枚举
+enum Exchange {
+  SSE   // 上海证券交易所
+  SZSE  // 深圳证券交易所
+  BJSE  // 北京证券交易所
+  HKEX  // 香港联合交易所
+}
+
+/// 场外基金类型枚举
+enum FundType {
+  MONEY   // 货币基金
+  BOND    // 债券基金
+  MIXED   // 混合基金
+  STOCK   // 股票基金
+  QDII    // QDII基金 (合格境内机构投资者)
+  REIT    // REITs基金 (不动产投资信托)
+}
+
+/// 市场枚举
 enum AssetMarket {
-  CN // A股/场内
-  HK // 港股
-  US // 美股
+  CN // 中国 (A股/场内)
+  HK // 香港
+  US // 美国
 }
 
 // ==================== 投资模块核心表 ====================
 
 /// 资产基础信息表 - 仅存储搜索和列表展示必需的静态信息
-/// 其他动态数据（行业、财务、持仓等）从 Python 服务实时获取
+/// 其他动态数据（行情、财务、持仓等）从 Python 服务实时获取
 model Asset {
   id              String      @id @default(uuid())
-  /// 标的代码 (如 600519, 00700, AAPL)
+  /// 标的代码 (如 600519 贵州茅台, 000001 上证指数, 005827 易方达蓝筹精选)
   symbol          String
   /// 标的名称
   name            String
-  /// 资产类型 (STOCK/ETF/FUND)
+  /// 资产类型 (STOCK/INDEX/ETF/LOF/OFUND)
   type            AssetType
   /// 所属市场 (CN/HK/US)
   market          AssetMarket
-  /// 拼音首字母 (用于搜索，如 "ZGPA" 为中国平安)
+  /// 交易所/板块 (SSE/SZSE/BJSE/HKEX)，指数和场内品种有值
+  exchange        Exchange?
+  /// 指数类型 (仅 INDEX 类型有值)
+  indexType       IndexType?
+  /// 基金公司 (ETF/LOF/场外基金有值)
+  fundCompany     String?     @map("fund_company")
+  /// 场外基金类型 (仅 OFUND 类型有值)
+  fundType        FundType?   @map("fund_type")
+  /// 拼音首字母 (用于搜索，如 "ZGMT" 为中国平安)
   pinyinInitial   String?     @map("pinyin_initial")
+  /// 完整拼音 (用于模糊搜索，如 "guizhoumaotai")
+  pinyinFull      String?     @map("pinyin_full")
   /// 上次数据同步时间
   lastSyncedAt    DateTime?   @map("last_synced_at")
 
@@ -217,6 +257,8 @@ model Asset {
   @@index([type])
   @@index([name]) // 支持名称搜索
   @@index([pinyinInitial]) // 支持拼音首字母搜索
+  @@index([pinyinFull]) // 支持拼音全拼搜索
+  @@index([fundCompany]) // 支持基金公司搜索
   @@map("assets")
 }
 
@@ -244,9 +286,7 @@ model WatchlistItem {
   id          String   @id @default(uuid())
   groupId     String   @map("group_id")
   assetId     String   @map("asset_id")
-  /// 排序权重
-  sortOrder   Int      @default(0) @map("sort_order")
-  
+
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

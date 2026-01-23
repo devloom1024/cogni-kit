@@ -1,0 +1,554 @@
+openapi: 3.0.3
+info:
+  title: 投资自选管理 API
+  description: 提供投资标的搜索、自选分组管理和自选标的管理功能
+  version: 1.0.0
+  contact:
+    name: CogniKit
+
+servers:
+  - url: http://localhost:3001
+    description: 开发环境
+  - url: https://api.cognikit.com
+    description: 生产环境
+
+tags:
+  - name: 标的搜索
+    description: 投资标的搜索相关接口
+  - name: 自选分组
+    description: 自选分组管理接口
+  - name: 自选标的
+    description: 自选标的添加/移除/排序接口
+
+paths:
+  # ==================== 标的搜索 ====================
+
+  /api/v1/assets/search:
+    get:
+      summary: 搜索投资标的
+      description: |
+        支持按代码、名称、拼音搜索投资标的。
+        **搜索方式**：
+        - 代码搜索：`symbol=600519`
+        - 名称搜索：`name=贵州茅台`
+        - 拼音首字母：`symbol=ZGMT`
+        - 拼音全拼：`symbol=guizhoumaotai`
+        - 基金公司：`fundCompany=易方达`
+      tags: [标的搜索]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 搜索关键词
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 50
+            example: "贵州"
+        - name: type
+          in: query
+          required: false
+          description: 资产类型过滤
+          schema:
+            type: string
+            enum: [STOCK, INDEX, ETF, LOF, OFUND]
+            example: "STOCK"
+        - name: market
+          in: query
+          required: false
+          description: 市场过滤
+          schema:
+            type: string
+            enum: [CN, HK, US]
+            example: "CN"
+        - name: limit
+          in: query
+          required: false
+          description: 返回结果数量限制，默认 20，最大 100
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: 搜索成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssetSearchResult'
+              examples:
+                success:
+                  summary: 搜索结果示例
+                  value:
+                    - id: "uuid-1"
+                      symbol: "600519"
+                      name: "贵州茅台"
+                      type: "STOCK"
+                      market: "CN"
+                      exchange: "SSE"
+                      pinyinInitial: "ZGMT"
+                    - id: "uuid-2"
+                      symbol: "000001"
+                      name: "上证指数"
+                      type: "INDEX"
+                      market: "CN"
+                      exchange: "SSE"
+                      indexType: "BROAD"
+                      pinyinInitial: "SZZS"
+
+  # ==================== 自选分组管理 ====================
+
+  /api/v1/watchlist/groups:
+    get:
+      summary: 获取我的自选分组列表
+      description: 返回用户所有自选分组，包含每个分组的标的数量
+      tags: [自选分组]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WatchlistGroup'
+              example:
+                - id: "group-1"
+                  name: "白酒板块"
+                  sortOrder: 0
+                  itemCount: 5
+                  createdAt: "2024-01-01T00:00:00Z"
+                  updatedAt: "2024-01-20T00:00:00Z"
+                - id: "group-2"
+                  name: "科技成长"
+                  sortOrder: 1
+                  itemCount: 8
+                  createdAt: "2024-01-05T00:00:00Z"
+                  updatedAt: "2024-01-18T00:00:00Z"
+
+    post:
+      summary: 创建自选分组
+      description: 创建新的自选分组
+      tags: [自选分组]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWatchlistGroupRequest'
+            example:
+              name: "新能源赛道"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchlistGroup'
+
+  /api/v1/watchlist/groups/{groupId}:
+    parameters:
+      - name: groupId
+        in: path
+        required: true
+        description: 分组 ID
+        schema:
+          type: string
+          format: uuid
+
+    put:
+      summary: 更新分组信息
+      description: 重命名分组
+      tags: [自选分组]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  description: 分组新名称
+                  minLength: 1
+                  maxLength: 50
+                  example: "白酒龙头"
+            example:
+              name: "白酒龙头"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchlistGroup'
+
+    delete:
+      summary: 删除分组
+      description: |
+        删除自选分组。
+        **注意**：删除分组会同时删除组内所有自选标的。
+      tags: [自选分组]
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: 删除成功
+
+    patch:
+      summary: 调整分组排序
+      description: 调整分组在列表中的显示顺序
+      tags: [自选分组]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sortOrder]
+              properties:
+                sortOrder:
+                  type: integer
+                  description: 新的排序权重（数值越小越靠前）
+                  example: 0
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchlistGroup'
+
+  /api/v1/watchlist/groups/reorder:
+    patch:
+      summary: 批量调整分组排序
+      description: 一次更新多个分组的排序
+      tags: [自选分组]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orders]
+              properties:
+                orders:
+                  type: array
+                  description: 分组排序列表
+                  items:
+                    type: object
+                    required: [id, sortOrder]
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: 分组 ID
+                      sortOrder:
+                        type: integer
+                        description: 排序权重
+            example:
+              orders:
+                - id: "group-1"
+                  sortOrder: 0
+                - id: "group-2"
+                  sortOrder: 1
+      responses:
+        "200":
+          description: 更新成功
+
+  # ==================== 自选标的 ====================
+
+  /api/v1/watchlist/groups/{groupId}/items:
+    get:
+      summary: 获取分组内的自选标的列表
+      description: 返回指定分组内的所有自选标的，按添加时间倒序排列
+      tags: [自选标的]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WatchlistItem'
+              example:
+                - id: "item-1"
+                  addedAt: "2024-01-23T10:00:00Z"
+                  asset:
+                    id: "uuid-1"
+                    symbol: "600519"
+                    name: "贵州茅台"
+                    type: "STOCK"
+                    market: "CN"
+                    exchange: "SSE"
+                    pinyinInitial: "ZGMT"
+
+    post:
+      summary: 添加标的到自选分组
+      description: 将指定标的添加到自选分组
+      tags: [自选标的]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assetId]
+              properties:
+                assetId:
+                  type: string
+                  format: uuid
+                  description: 标的 ID（从搜索结果获取）
+            example:
+              assetId: "uuid-1"
+      responses:
+        "201":
+          description: 添加成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchlistItem'
+
+  /api/v1/watchlist/items/{itemId}:
+    parameters:
+      - name: itemId
+        in: path
+        required: true
+        description: 自选记录 ID
+        schema:
+          type: string
+          format: uuid
+
+    delete:
+      summary: 从自选移除
+      description: 将标的从自选列表中移除
+      tags: [自选标的]
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: 移除成功
+
+# ==================== 组件定义 ====================
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # 资产搜索结果
+    AssetSearchResult:
+      type: object
+      required:
+        - id
+        - symbol
+        - name
+        - type
+        - market
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 资产唯一标识
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        symbol:
+          type: string
+          description: 标的代码
+          example: "600519"
+        name:
+          type: string
+          description: 标的名称
+          example: "贵州茅台"
+        type:
+          type: string
+          enum: [STOCK, INDEX, ETF, LOF, OFUND]
+          description: |
+            资产类型:
+            - STOCK: A股
+            - INDEX: 指数
+            - ETF: ETF
+            - LOF: LOF基金
+            - OFUND: 场外基金
+          example: "STOCK"
+        market:
+          type: string
+          enum: [CN, HK, US]
+          description: 市场
+          example: "CN"
+        exchange:
+          type: string
+          nullable: true
+          description: 交易所 (A股/指数/ETF/LOF 有值)
+          enum: [SSE, SZSE, BJSE, HKEX]
+          example: "SSE"
+        indexType:
+          type: string
+          nullable: true
+          description: 指数类型 (仅 INDEX 类型有值)
+          enum: [BROAD, SECTOR, THEME, STRATEGY]
+        fundCompany:
+          type: string
+          nullable: true
+          description: 基金公司 (ETF/LOF/场外基金有值)
+          example: "易方达基金"
+        fundType:
+          type: string
+          nullable: true
+          description: 场外基金类型 (仅 OFUND 类型有值)
+          enum: [MONEY, BOND, MIXED, STOCK, QDII, REIT]
+        pinyinInitial:
+          type: string
+          nullable: true
+          description: 拼音首字母
+          example: "ZGMT"
+
+    # 自选分组
+    WatchlistGroup:
+      type: object
+      required:
+        - id
+        - name
+        - sortOrder
+        - itemCount
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 分组唯一标识
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          description: 分组名称
+          minLength: 1
+          maxLength: 50
+          example: "白酒板块"
+        sortOrder:
+          type: integer
+          description: 排序权重
+          example: 0
+        itemCount:
+          type: integer
+          description: 分组内标的数量
+          example: 5
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间
+          example: "2024-01-01T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新时间
+          example: "2024-01-20T00:00:00Z"
+
+    CreateWatchlistGroupRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: 分组名称
+          minLength: 1
+          maxLength: 50
+          example: "新能源赛道"
+
+    # 自选标的
+    WatchlistItem:
+      type: object
+      required:
+        - id
+        - addedAt
+        - asset
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 记录唯一标识
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        addedAt:
+          type: string
+          format: date-time
+          description: 加入时间
+          example: "2024-01-01T00:00:00Z"
+        asset:
+          type: object
+          description: 资产详情
+          required:
+            - id
+            - symbol
+            - name
+            - type
+            - market
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: 资产 ID
+            symbol:
+              type: string
+              description: 标的代码
+            name:
+              type: string
+              description: 标的名称
+            type:
+              type: string
+              enum: [STOCK, INDEX, ETF, LOF, OFUND]
+              description: 资产类型
+            market:
+              type: string
+              enum: [CN, HK, US]
+              description: 市场
+            exchange:
+              type: string
+              nullable: true
+              enum: [SSE, SZSE, BJSE, HKEX]
+            indexType:
+              type: string
+              nullable: true
+              enum: [BROAD, SECTOR, THEME, STRATEGY]
+            fundCompany:
+              type: string
+              nullable: true
+            fundType:
+              type: string
+              nullable: true
+              enum: [MONEY, BOND, MIXED, STOCK, QDII, REIT]
