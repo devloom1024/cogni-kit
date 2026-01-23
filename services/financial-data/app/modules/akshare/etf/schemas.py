@@ -15,13 +15,15 @@ class EtfSpot(BaseModel):
     name: str = Field(..., description="ETF 名称")
     price: float = Field(..., description="最新价")
     open: float = Field(..., description="今开")
-    prevClose: float = Field(..., description="昨收", alias="prev_close")
+    prev_close: float = Field(..., description="昨收", alias="prevClose")
     high: float = Field(..., description="最高")
     low: float = Field(..., description="最低")
     volume: float = Field(..., description="成交量")
     amount: float = Field(..., description="成交额")
     change: float = Field(..., description="涨跌额")
-    changePercent: float = Field(..., description="涨跌幅 (%)", alias="change_percent")
+    change_percent: float = Field(..., description="涨跌幅 (%)", alias="changePercent")
+    iopv: float = Field(0, description="IOPV 实时估值", alias="iopv")
+    discount_rate: float = Field(0, description="基金折价率 (%)", alias="discountRate")
     timestamp: datetime = Field(..., description="数据更新时间")
 
     class Config:

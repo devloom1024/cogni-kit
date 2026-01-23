@@ -70,6 +70,8 @@ class EtfClient:
                 amount=float(row.get('成交额', 0)),
                 change=float(row.get('涨跌额', 0)),
                 change_percent=float(row.get('涨跌幅', 0)),
+                iopv=float(row.get('IOPV实时估值', 0) or 0),
+                discount_rate=float(row.get('基金折价率', 0) or 0),
                 timestamp=datetime.now()
             )
 
