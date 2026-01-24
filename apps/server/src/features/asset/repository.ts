@@ -91,41 +91,55 @@ export const assetRepository = {
     pinyinInitial?: string | null
     pinyinFull?: string | null
   }>) {
-    // 使用事务确保数据一致性
-    return prisma.$transaction(
-      assets.map(asset =>
-        prisma.asset.upsert({
-          where: {
-            market_symbol: {
-              market: asset.market,
-              symbol: asset.symbol,
-            },
-          },
-          update: {
-            name: asset.name,
-            exchange: asset.exchange ?? null,
-            indexType: asset.indexType ?? null,
-            fundCompany: asset.fundCompany,
-            fundType: asset.fundType ?? null,
-            pinyinInitial: asset.pinyinInitial,
-            pinyinFull: asset.pinyinFull,
-            lastSyncedAt: new Date(),
-          },
-          create: {
-            symbol: asset.symbol,
-            name: asset.name,
-            type: asset.type,
-            market: asset.market,
-            exchange: asset.exchange ?? null,
-            indexType: asset.indexType ?? null,
-            fundCompany: asset.fundCompany,
-            fundType: asset.fundType ?? null,
-            pinyinInitial: asset.pinyinInitial,
-            pinyinFull: asset.pinyinFull,
-          },
-        })
+    // 分批处理，每批 1000 条，避免事务超时
+    const BATCH_SIZE = 1000
+    const batches: Array<typeof assets> = []
+
+    for (let i = 0; i < assets.length; i += BATCH_SIZE) {
+      batches.push(assets.slice(i, i + BATCH_SIZE))
+    }
+
+    // 逐批写入
+    for (const batch of batches) {
+      await prisma.$transaction(
+        (tx) =>
+          Promise.all(
+            batch.map((asset) =>
+              tx.asset.upsert({
+                where: {
+                  market_symbol: {
+                    market: asset.market,
+                    symbol: asset.symbol,
+                  },
+                },
+                update: {
+                  name: asset.name,
+                  exchange: asset.exchange ?? null,
+                  indexType: asset.indexType ?? null,
+                  fundCompany: asset.fundCompany,
+                  fundType: asset.fundType ?? null,
+                  pinyinInitial: asset.pinyinInitial,
+                  pinyinFull: asset.pinyinFull,
+                  lastSyncedAt: new Date(),
+                },
+                create: {
+                  symbol: asset.symbol,
+                  name: asset.name,
+                  type: asset.type,
+                  market: asset.market,
+                  exchange: asset.exchange ?? null,
+                  indexType: asset.indexType ?? null,
+                  fundCompany: asset.fundCompany,
+                  fundType: asset.fundType ?? null,
+                  pinyinInitial: asset.pinyinInitial,
+                  pinyinFull: asset.pinyinFull,
+                },
+              })
+            )
+          ),
+        { timeout: 30000 } // 单个事务超时 30 秒
       )
-    )
+    }
   },
 
   /**
@@ -141,6 +155,15 @@ export const assetRepository = {
   async findAll() {
     return prisma.asset.findMany({
       orderBy: { symbol: 'asc' },
+    })
+  },
+
+  /**
+   * 获取最近同步的资产 (高效查询，只取 1 条)
+   */
+  async findLatestBySyncedAt() {
+    return prisma.asset.findFirst({
+      orderBy: { lastSyncedAt: 'desc' },
     })
   },
 }

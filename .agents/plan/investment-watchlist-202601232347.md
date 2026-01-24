@@ -108,6 +108,24 @@ packages/shared/src/schemas/
 - [x] 实现分组排序功能
 - [x] 实现所有权验证
 
+### 2.3 Data Sync Service (数据同步)
+
+**任务**:
+- [x] 创建 `apps/server/src/features/data-sync/types.ts` - API 响应类型定义
+- [x] 创建 `apps/server/src/features/data-sync/client.ts` - financial-data API 客户端
+- [x] 创建 `apps/server/src/features/data-sync/service.ts` - 同步业务逻辑
+- [x] 创建 `apps/server/bin/sync-assets.ts` - 独立同步脚本
+- [x] 配置 `SERVER_FINANCIAL_DATA_URL` 环境变量
+
+**使用方式**:
+```bash
+# 手动执行同步
+bun run apps/server/bin/sync-assets.ts
+
+# 定时任务 (crontab) - 每日凌晨 2:00
+0 2 * * * cd /path/to/cogni-kit && bun run apps/server/bin/sync-assets.ts >> /var/log/sync-assets.log 2>&1
+```
+
 ---
 
 ## Phase 3: 后端 Controller/路由层 ✅ 已完成
@@ -147,7 +165,8 @@ packages/shared/src/schemas/
 ### 4.1 Shared 常量定义
 
 **任务**:
-- [ ] 在 `packages/shared/src/constants/index.ts` 添加投资相关 API_PATHS
+- [x] 在 `packages/shared/src/constants/index.ts` 添加投资相关 API_PATHS
+- [x] 添加 financial-data 服务 API_PATHS
 
 ```typescript
 // 示例

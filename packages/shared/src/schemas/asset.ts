@@ -46,9 +46,9 @@ export const AssetSearchResultSchema = z.object({
     description: '基金公司 (ETF/LOF/场外基金有值)',
     example: '易方达基金',
   }),
-  /// 场外基金类型 (仅 OFUND 类型有值)
+   /// 场外基金类型 (仅 OFUND 类型有值)
   fundType: z.nativeEnum(FundType).nullable().optional().openapi({
-    description: '场外基金类型 (MONEY: 货币基金, BOND: 债券基金, MIXED: 混合基金, STOCK: 股票基金, QDII: QDII基金, REIT: REITs基金)',
+    description: '场外基金类型 (MONEY_NORMAL: 货币型-普通货币, BOND_LONG: 债券型-长债, MIXED_STOCK: 混合型-偏股, STOCK: 股票型, QDII_STOCK: QDII-普通股票, REIT: REITs 等)',
     example: 'STOCK',
   }),
   /// 拼音首字母 (用于搜索，如 "ZGMT" 为中国平安)

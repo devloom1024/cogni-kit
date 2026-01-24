@@ -12,7 +12,9 @@ const adapter = new PrismaPg(pool)
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   adapter,
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  // 开发环境不打印查询日志（数据量大时会淹没控制台）
+  // 如需调试，可临时改为 ['query', 'error', 'warn']
+  log: ['error'],
 })
 
 if (process.env.NODE_ENV !== 'production') {

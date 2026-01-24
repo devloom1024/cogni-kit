@@ -95,15 +95,56 @@ export const Exchange = {
 export type Exchange = typeof Exchange[keyof typeof Exchange]
 
 /**
- * 场外基金类型枚举
+ * 场外基金类型枚举 (完整 32 种)
+ * 注意: 类型与 prisma/schema.prisma 的 enum FundType 保持一致
  */
 export const FundType = {
-  MONEY: 'MONEY',   // 货币基金
-  BOND: 'BOND',     // 债券基金
-  MIXED: 'MIXED',   // 混合基金
-  STOCK: 'STOCK',   // 股票基金
-  QDII: 'QDII',     // QDII基金 (合格境内机构投资者)
-  REIT: 'REIT',     // REITs基金 (不动产投资信托)
+  // 货币型 (2种)
+  MONEY_NORMAL: 'MONEY_NORMAL',        // 货币型-普通货币
+  MONEY_FLOATING: 'MONEY_FLOATING',    // 货币型-浮动净值
+
+  // 债券型 (4种)
+  BOND_LONG: 'BOND_LONG',              // 债券型-长债
+  BOND_SHORT: 'BOND_SHORT',            // 债券型-中短债
+  BOND_MIXED_1: 'BOND_MIXED_1',        // 债券型-混合一级
+  BOND_MIXED_2: 'BOND_MIXED_2',        // 债券型-混合二级
+
+  // 混合型 (5种)
+  MIXED_STOCK: 'MIXED_STOCK',          // 混合型-偏股
+  MIXED_BOND: 'MIXED_BOND',            // 混合型-偏债
+  MIXED_BALANCED: 'MIXED_BALANCED',    // 混合型-平衡
+  MIXED_FLEXIBLE: 'MIXED_FLEXIBLE',    // 混合型-灵活
+  MIXED_ABSOLUTE: 'MIXED_ABSOLUTE',    // 混合型-绝对收益
+
+  // 股票型 (1种)
+  STOCK: 'STOCK',                      // 股票型
+
+  // 指数型 (4种)
+  INDEX_STOCK: 'INDEX_STOCK',          // 指数型-股票
+  INDEX_BOND: 'INDEX_BOND',            // 指数型-固收
+  INDEX_OVERSEAS: 'INDEX_OVERSEAS',    // 指数型-海外股票
+  INDEX_OTHER: 'INDEX_OTHER',          // 指数型-其他
+
+  // QDII (9种)
+  QDII_STOCK: 'QDII_STOCK',            // QDII-普通股票
+  QDII_MIXED_STOCK: 'QDII_MIXED_STOCK',// QDII-混合偏股
+  QDII_MIXED_BOND: 'QDII_MIXED_BOND',  // QDII-混合债
+  QDII_MIXED_FLEXIBLE: 'QDII_MIXED_FLEXIBLE',  // QDII-混合灵活
+  QDII_MIXED_BALANCED: 'QDII_MIXED_BALANCED',  // QDII-混合平衡
+  QDII_BOND: 'QDII_BOND',              // QDII-纯债
+  QDII_COMMODITY: 'QDII_COMMODITY',    // QDII-商品
+  QDII_FOF: 'QDII_FOF',                // QDII-FOF
+  QDII_REIT: 'QDII_REIT',              // QDII-REITs
+
+  // FOF (3种)
+  FOF_CONSERVATIVE: 'FOF_CONSERVATIVE',// FOF-稳健型
+  FOF_BALANCED: 'FOF_BALANCED',        // FOF-均衡型
+  FOF_AGGRESSIVE: 'FOF_AGGRESSIVE',    // FOF-进取型
+
+  // 另类 (3种)
+  REIT: 'REIT',                        // Reits/REITs
+  COMMODITY: 'COMMODITY',              // 商品
+  OTHER: 'OTHER',                      // 其他/空值
 } as const
 
 export type FundType = typeof FundType[keyof typeof FundType]

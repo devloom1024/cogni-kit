@@ -20,6 +20,9 @@ const envSchema = z.object({
   GITHUB_CLIENT_SECRET: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+  /// Financial Data 服务地址
+  FINANCIAL_DATA_URL: z.string().url().default('http://localhost:8000'),
 })
 
 function validateEnv() {

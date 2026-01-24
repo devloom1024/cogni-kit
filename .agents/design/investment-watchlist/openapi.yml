@@ -78,7 +78,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AssetSearchResult'
+                  $ref: "#/components/schemas/AssetSearchResult"
               examples:
                 success:
                   summary: 搜索结果示例
@@ -116,7 +116,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/WatchlistGroup'
+                  $ref: "#/components/schemas/WatchlistGroup"
               example:
                 - id: "group-1"
                   name: "白酒板块"
@@ -142,7 +142,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateWatchlistGroupRequest'
+              $ref: "#/components/schemas/CreateWatchlistGroupRequest"
             example:
               name: "新能源赛道"
       responses:
@@ -151,7 +151,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WatchlistGroup'
+                $ref: "#/components/schemas/WatchlistGroup"
 
   /api/v1/watchlist/groups/{groupId}:
     parameters:
@@ -191,7 +191,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WatchlistGroup'
+                $ref: "#/components/schemas/WatchlistGroup"
 
     delete:
       summary: 删除分组
@@ -229,7 +229,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WatchlistGroup'
+                $ref: "#/components/schemas/WatchlistGroup"
 
   /api/v1/watchlist/groups/reorder:
     patch:
@@ -294,7 +294,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/WatchlistItem'
+                  $ref: "#/components/schemas/WatchlistItem"
               example:
                 - id: "item-1"
                   addedAt: "2024-01-23T10:00:00Z"
@@ -340,7 +340,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WatchlistItem'
+                $ref: "#/components/schemas/WatchlistItem"
 
   /api/v1/watchlist/items/{itemId}:
     parameters:
@@ -430,8 +430,48 @@ components:
         fundType:
           type: string
           nullable: true
-          description: 场外基金类型 (仅 OFUND 类型有值)
-          enum: [MONEY, BOND, MIXED, STOCK, QDII, REIT]
+          description: |
+            场外基金类型 (仅 OFUND 类型有值)
+            - 货币型: MONEY_NORMAL, MONEY_FLOATING
+            - 债券型: BOND_LONG, BOND_SHORT, BOND_MIXED_1, BOND_MIXED_2
+            - 混合型: MIXED_STOCK, MIXED_BOND, MIXED_BALANCED, MIXED_FLEXIBLE, MIXED_ABSOLUTE
+            - 股票型: STOCK
+            - 指数型: INDEX_STOCK, INDEX_BOND, INDEX_OVERSEAS, INDEX_OTHER
+            - QDII: QDII_STOCK, QDII_MIXED_STOCK, QDII_MIXED_BOND, QDII_MIXED_FLEXIBLE, QDII_MIXED_BALANCED, QDII_BOND, QDII_COMMODITY, QDII_FOF, QDII_REIT
+            - FOF: FOF_CONSERVATIVE, FOF_BALANCED, FOF_AGGRESSIVE
+            - 另类: REIT, COMMODITY, OTHER
+          enum:
+            - MONEY_NORMAL
+            - MONEY_FLOATING
+            - BOND_LONG
+            - BOND_SHORT
+            - BOND_MIXED_1
+            - BOND_MIXED_2
+            - MIXED_STOCK
+            - MIXED_BOND
+            - MIXED_BALANCED
+            - MIXED_FLEXIBLE
+            - MIXED_ABSOLUTE
+            - STOCK
+            - INDEX_STOCK
+            - INDEX_BOND
+            - INDEX_OVERSEAS
+            - INDEX_OTHER
+            - QDII_STOCK
+            - QDII_MIXED_STOCK
+            - QDII_MIXED_BOND
+            - QDII_MIXED_FLEXIBLE
+            - QDII_MIXED_BALANCED
+            - QDII_BOND
+            - QDII_COMMODITY
+            - QDII_FOF
+            - QDII_REIT
+            - FOF_CONSERVATIVE
+            - FOF_BALANCED
+            - FOF_AGGRESSIVE
+            - REIT
+            - COMMODITY
+            - OTHER
         pinyinInitial:
           type: string
           nullable: true
@@ -551,4 +591,35 @@ components:
             fundType:
               type: string
               nullable: true
-              enum: [MONEY, BOND, MIXED, STOCK, QDII, REIT]
+              enum:
+                - MONEY_NORMAL
+                - MONEY_FLOATING
+                - BOND_LONG
+                - BOND_SHORT
+                - BOND_MIXED_1
+                - BOND_MIXED_2
+                - MIXED_STOCK
+                - MIXED_BOND
+                - MIXED_BALANCED
+                - MIXED_FLEXIBLE
+                - MIXED_ABSOLUTE
+                - STOCK
+                - INDEX_STOCK
+                - INDEX_BOND
+                - INDEX_OVERSEAS
+                - INDEX_OTHER
+                - QDII_STOCK
+                - QDII_MIXED_STOCK
+                - QDII_MIXED_BOND
+                - QDII_MIXED_FLEXIBLE
+                - QDII_MIXED_BALANCED
+                - QDII_BOND
+                - QDII_COMMODITY
+                - QDII_FOF
+                - QDII_REIT
+                - FOF_CONSERVATIVE
+                - FOF_BALANCED
+                - FOF_AGGRESSIVE
+                - REIT
+                - COMMODITY
+                - OTHER

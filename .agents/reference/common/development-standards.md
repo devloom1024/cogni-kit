@@ -198,6 +198,109 @@ src/features/auth/
     *   业务逻辑错误应抛出自定义 `AppError`，包含 `ErrorCode` 和翻译键。
     *   由 `app.onError()` 全局异常处理器统一转换为多语言响应。
 
+### 4.4 类型定义与 Prisma 枚举 (types/ vs schemas/)
+
+**核心原则**: 根据是否需要运行时验证划分目录职责
+
+| 目录 | 用途 | 使用场景 |
+|------|------|----------|
+| `types/` | 纯枚举定义 (`as const` 模式) | 内部类型、不需要运行时验证 |
+| `schemas/` | Zod Schema + 推导类型 | 需要运行时验证的 API 数据结构 |
+
+#### 4.4.1 Prisma 枚举与 Zod Schema 的协同
+
+当枚举同时存在于数据库和 API 时，采用 **Prisma → types → Zod** 的链式结构：
+
+```
+┌─────────────────┐
+│ Prisma Schema   │  ← 数据来源（数据库真实类型）
+│ enum FundType   │
+└────────┬────────┘
+         ↓
+┌─────────────────┐
+│ types/models.ts │  ← 导出 as const 常量 + 类型推导
+│ FundType = {...}│
+└────────┬────────┘
+         ↓
+┌─────────────────┐
+│ schemas/*.ts    │  ← 使用 z.nativeEnum() 绑定 Prisma 类型
+│ z.nativeEnum()  │
+└─────────────────┘
+```
+
+**正确示例**:
+
+```typescript
+// ✅ prisma/schema.prisma (数据来源)
+enum FundType {
+  MONEY_NORMAL
+  STOCK
+  BOND_LONG
+  // ...
+}
+
+// ✅ types/models.ts (导出常量 + 类型)
+export const FundType = {
+  MONEY_NORMAL: 'MONEY_NORMAL',
+  STOCK: 'STOCK',
+  BOND_LONG: 'BOND_LONG',
+  // ...
+} as const
+
+export type FundType = typeof FundType[keyof typeof FundType]
+
+// ✅ schemas/asset.ts (使用 z.nativeEnum)
+import { FundType } from '../types/index.js'
+
+export const AssetSearchResultSchema = z.object({
+  fundType: z.nativeEnum(FundType).nullable().openapi({
+    description: '场外基金类型',
+  }),
+})
+```
+
+#### 4.4.2 types/ 适用场景
+
+*   **纯状态枚举**: `UserStatus`, `SocialProvider` 等不参与 API 验证的枚举
+*   **数据库枚举映射**: Prisma enum 的 TypeScript 类型映射
+*   **配置常量**: 不需要运行时验证的常量定义
+
+```typescript
+// ✅ 正确 - 纯枚举放 types/
+export const UserStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+} as const
+
+export type UserStatus = typeof UserStatus[keyof typeof UserStatus]
+```
+
+#### 4.4.3 schemas/ 适用场景
+
+*   **API 请求/响应**: 需要运行时验证的数据结构
+*   **跨层数据传输**: Service → Controller 传递的数据对象
+*   **外部接口契约**: 与前端共享的 API 类型定义
+
+```typescript
+// ✅ 正确 - API 数据结构放 schemas/
+export const UserSchema = z.object({
+  id: z.string().uuid(),
+  username: z.string().min(3),
+  email: z.string().email(),
+}).openapi('User')
+
+export type User = z.infer<typeof UserSchema>
+```
+
+#### 4.4.4 何时定义在 Schema
+
+| 场景 | 定义位置 | 原因 |
+|------|----------|------|
+| 数据库枚举用于 API 响应 | `types/` + `z.nativeEnum()` | 数据源是 Prisma |
+| 纯内部状态枚举 | `types/` | 不需要运行时验证 |
+| API 请求/响应 DTO | `schemas/` | 需要运行时验证 |
+| 复杂对象结构 | `schemas/` | 需要验证规则 |
+
 ---
 
 ## 5. Git 与代码质量

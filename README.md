@@ -87,6 +87,50 @@ bun run dev
 | `bun run --filter server db:push`     | 推送 Schema 到数据库 (开发环境推荐)    |
 | `bun run --filter server db:studio`   | 打开数据库管理界面 (Prisma Studio)     |
 | `bun run --filter server db:generate` | 重新生成 Prisma Client                 |
+| **定时任务**                          |                                        |
+| `bun run --cwd apps/server bin/sync-assets.ts` | 同步投资标的数据 (需先启动 financial-data 服务) |
+
+## 📈 投资自选模块
+
+### 数据同步
+
+投资标的 (Asset) 数据来自 `financial-data` Python 服务 (akshare)，需要定期同步到本地数据库。
+
+**前置条件**:
+```bash
+# 1. 确保数据库已启动
+docker-compose -f infra/docker/docker-compose.yml up -d
+
+# 2. 确保 financial-data 服务已启动 (端口 8000)
+cd services/financial-data && bun run dev
+```
+
+**同步命令**:
+```bash
+# 执行数据同步 (使用 --cwd 指定工作目录以加载环境变量)
+bun run --cwd apps/server bin/sync-assets.ts
+```
+
+**定时任务配置 (Crontab)**:
+```bash
+# 每日凌晨 2:00 自动同步
+0 2 * * * cd /path/to/cogni-kit && bun run --cwd apps/server bin/sync-assets.ts >> /var/log/sync-assets.log 2>&1
+```
+
+**日志查看**:
+```bash
+tail -f /var/log/sync-assets.log
+```
+
+### 数据来源
+
+| 类型 | 数据源 | 接口 |
+|------|--------|------|
+| A股 | akshare | `/api/v1/akshare/stock/list` |
+| 指数 | akshare | `/api/v1/akshare/index/list` |
+| ETF | akshare | `/api/v1/akshare/etf/list` |
+| LOF | akshare | `/api/v1/akshare/lof/list` |
+| 场外基金 | akshare | `/api/v1/akshare/fund/list` |
 
 ---
 Monorepo powered by [Turborepo](https://turbo.build/repo).

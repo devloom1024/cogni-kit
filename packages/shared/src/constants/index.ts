@@ -38,4 +38,19 @@ export const API_PATHS = {
   WATCHLIST_ITEM: (itemId: string) => `/api/v1/watchlist/items/${itemId}`,
   /// 批量调整分组排序
   WATCHLIST_GROUPS_REORDER: '/api/v1/watchlist/groups/reorder',
+
+  // ==================== Financial Data 服务 ====================
+
+  /// Financial Data 服务基础路径
+  FINANCIAL_DATA_BASE: '/api/v1/akshare',
+  /// A股列表
+  FINANCIAL_DATA_STOCK: '/api/v1/akshare/stock/list',
+  /// 指数列表
+  FINANCIAL_DATA_INDEX: '/api/v1/akshare/index/list',
+  /// ETF 列表
+  FINANCIAL_DATA_ETF: '/api/v1/akshare/etf/list',
+  /// LOF 列表
+  FINANCIAL_DATA_LOF: '/api/v1/akshare/lof/list',
+  /// 场外基金列表
+  FINANCIAL_DATA_FUND: '/api/v1/akshare/fund/list',
 } as const
