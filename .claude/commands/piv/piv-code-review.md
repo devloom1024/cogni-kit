@@ -9,9 +9,9 @@ description: 执行技术代码审查
 
 ## 参考标准
 **你必须依据以下文档进行审查**：
-- `@.agents/reference/common/*.md`
-- `@.agents/reference/design/*.md`
-- `@.agents/reference/implementation/*.md`
+- `.agents/reference/common/*.md`
+- `.agents/reference/design/*.md`
+- `.agents/reference/implementation/*.md`
 
 ## 关注领域
 

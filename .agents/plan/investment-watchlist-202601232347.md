@@ -21,24 +21,24 @@
 ### 0.1 akshare 依赖配置
 
 **任务**:
-- [ ] 确认 `services/financial-data` 目录结构
-- [ ] 安装 `akshare` 依赖
+- [x] 确认 `services/financial-data` 目录结构
+- [x] 安装 `akshare` 依赖
 
 ### 0.2 API 实现
 
 **任务**:
-- [ ] 实现 `/api/v1/akshare/stock/list` - A股列表 (symbol, name, market)
-- [ ] 实现 `/api/v1/akshare/index/list` - 指数列表 (symbol, name, market)
-- [ ] 实现 `/api/v1/akshare/etf/list` - ETF列表 (symbol, name, market)
-- [ ] 实现 `/api/v1/akshare/lof/list` - LOF列表 (symbol, name, market)
-- [ ] 实现 `/api/v1/akshare/fund/list` - 场外基金列表 (symbol, name, fundType, pinyinInitial, pinyinFull)
+- [x] 实现 `/api/v1/akshare/stock/list` - A股列表 (symbol, name, market)
+- [x] 实现 `/api/v1/akshare/index/list` - 指数列表 (symbol, name, market)
+- [x] 实现 `/api/v1/akshare/etf/list` - ETF列表 (symbol, name, market)
+- [x] 实现 `/api/v1/akshare/lof/list` - LOF列表 (symbol, name, market)
+- [x] 实现 `/api/v1/akshare/fund/list` - 场外基金列表 (symbol, name, fundType, pinyinInitial, pinyinFull)
 
 ### 0.3 数据处理
 
 **任务**:
-- [ ] 场外基金：中文 fundType 转枚举 (货币型→MONEY, 债券型→BOND, 等)
-- [ ] 场外基金：拼音缩写转 pinyinInitial
-- [ ] 场外基金：拼音全称转 pinyinFull
+- [x] 场外基金：中文 fundType 转枚举 (货币型→MONEY, 债券型→BOND, 等)
+- [x] 场外基金：拼音缩写转 pinyinInitial
+- [x] 场外基金：拼音全称转 pinyinFull
 
 ### 0.4 测试验证
 

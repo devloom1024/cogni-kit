@@ -10,8 +10,8 @@ description: 快速修复 Bug 或进行细微调整
 ## 上下文加载
 我们不需要加载所有的设计文档，但必须保持基本的代码规范。
 **阅读**：
-1.  `@README.md` (项目概览)
-2.  `@.agents/reference/common/*.md` (开发标准与最佳实践)
+1.  `README.md` (项目概览)
+2.  `.agents/reference/common/*.md` (开发标准与最佳实践)
 
 ## 执行流程
 

@@ -5,8 +5,9 @@ description = "金融数据微服务 - 封装 AkShare 和技术指标计算"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "akshare>=1.18.14",
+    "akshare>=1.18.19",
     "apscheduler>=3.11.0",
+    "colorama>=0.4.6",
     "fastapi>=0.128.0",
     "pandas>=2.3.3",
     "pandas-ta>=0.4.71b0",
