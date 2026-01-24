@@ -3,7 +3,6 @@ import { useUserStore } from '@/stores/useUserStore'
 import { API_PATHS } from 'shared'
 
 const api = axios.create({
-    baseURL: '/api',
     timeout: 10000,
 })
 

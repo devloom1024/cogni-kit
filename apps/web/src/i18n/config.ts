@@ -6,8 +6,25 @@ import webZh from './locales/zh.json'
 import webEn from './locales/en.json'
 
 // Merge web translations with shared validation translations
-const zhMerged = { ...webZh, ...i18nLocales.zh }
-const enMerged = { ...webEn, ...i18nLocales.en }
+const deepMerge = (target: any, source: any): any => {
+    if (typeof target !== 'object' || target === null) return source
+    if (typeof source !== 'object' || source === null) return target
+
+    const result = { ...target }
+    for (const key in source) {
+        if (key in target && typeof target[key] === 'object' && typeof source[key] === 'object') {
+            result[key] = deepMerge(target[key], source[key])
+        } else {
+            result[key] = source[key]
+        }
+    }
+    return result
+}
+
+const resources = {
+    zh: { translation: deepMerge(webZh, i18nLocales.zh) },
+    en: { translation: deepMerge(webEn, i18nLocales.en) },
+}
 
 i18n
     .use(LanguageDetector)
@@ -17,10 +34,7 @@ i18n
         supportedLngs: ['en', 'zh'],
         debug: import.meta.env.DEV,
 
-        resources: {
-            zh: { translation: zhMerged },
-            en: { translation: enMerged },
-        },
+        resources,
 
         interpolation: {
             escapeValue: false,

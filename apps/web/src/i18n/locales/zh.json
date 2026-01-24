@@ -39,5 +39,19 @@
         "oauth": {
             "continue_with": "或使用以下方式登录"
         }
+    },
+    "sidebar": {
+        "platform": "平台",
+        "investment": {
+            "title": "投资",
+            "watchlist": "自选"
+        },
+        "user": {
+            "account": "账户",
+            "billing": "账单",
+            "notifications": "通知",
+            "logout": "退出登录",
+            "upgrade": "升级到 Pro"
+        }
     }
 }

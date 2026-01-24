@@ -39,5 +39,19 @@
         "oauth": {
             "continue_with": "Or continue with"
         }
+    },
+    "sidebar": {
+        "platform": "Platform",
+        "investment": {
+            "title": "Investment",
+            "watchlist": "Watchlist"
+        },
+        "user": {
+            "account": "Account",
+            "billing": "Billing",
+            "notifications": "Notifications",
+            "logout": "Log out",
+            "upgrade": "Upgrade to Pro"
+        }
     }
 }

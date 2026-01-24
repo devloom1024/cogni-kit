@@ -1,40 +1,59 @@
-import { BrowserRouter, Route, Routes, Outlet, Link } from "react-router-dom"
+import { BrowserRouter, Route, Routes, Outlet, Link, Navigate } from "react-router-dom"
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
 import { ThemeSwitch } from "@/components/theme/ThemeSwitch"
 import { LanguageSwitch } from "@/components/theme/LanguageSwitch"
 import { LoginPage } from "@/pages/auth/LoginPage"
 import { RegisterPage } from "@/pages/auth/RegisterPage"
 import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage"
 import { OAuthCallbackPage } from "@/pages/auth/OAuthCallbackPage"
-import { Button } from "@/components/ui/button"
 import { useUserStore } from "@/stores/useUserStore"
-import { useLogout } from "@/features/auth/queries"
-import { useTranslation } from "react-i18next"
 
-function Layout() {
+function DashboardLayout() {
   const { user } = useUserStore()
-  const { mutate: logout } = useLogout()
-  const { t } = useTranslation()
+
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      <header className="flex h-16 items-center justify-between border-b px-6">
-        <Link to="/" className="text-xl font-bold">CogniKit</Link>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset className="bg-background text-foreground transition-colors duration-300">
+        <header className="flex h-16 items-center justify-between border-b px-6">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger />
+            <Link to="/" className="text-xl font-bold">CogniKit</Link>
+          </div>
+          <div className="flex items-center gap-4">
+            <ThemeSwitch />
+            <LanguageSwitch />
+          </div>
+        </header>
+        <main className="container mx-auto py-8">
+          <Outlet />
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  )
+}
+
+function AuthLayout() {
+  const { user } = useUserStore()
+
+  if (user) {
+    return <Navigate to="/" replace />
+  }
+
+  return (
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 flex flex-col">
+      <header className="flex h-16 items-center justify-end px-6 absolute top-0 right-0 w-full">
         <div className="flex items-center gap-4">
-          {user ? (
-            <div className="flex items-center gap-4">
-              <span className="text-sm">{user.nickname || user.username}</span>
-              <Button variant="ghost" onClick={() => logout()}>Logout</Button>
-            </div>
-          ) : (
-            <Button variant="ghost" asChild>
-              <Link to="/login">{t('auth.login.submit')}</Link>
-            </Button>
-          )}
           <ThemeSwitch />
           <LanguageSwitch />
         </div>
       </header>
-      <main className="container mx-auto py-8">
+      <main className="flex-1 flex flex-col items-center justify-center p-4">
         <Outlet />
       </main>
     </div>
@@ -66,8 +85,11 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
+        <Route element={<DashboardLayout />}>
+          <Route path="/" element={<Home />} />
+        </Route>
+
+        <Route element={<AuthLayout />}>
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
