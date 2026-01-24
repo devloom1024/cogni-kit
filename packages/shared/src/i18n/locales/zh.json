@@ -52,7 +52,13 @@
         "session_revoked": "会话已撤销",
         "account_banned": "账号已被封禁，请联系客服",
         "account_inactive": "请先验证邮箱后再登录",
-        "account_deleted": "账号已被删除"
+        "account_deleted": "账号已被删除",
+        "code_sent": "验证码已发送",
+        "register_success": "注册成功",
+        "login_success": "登录成功",
+        "logout_success": "退出登录成功",
+        "password_reset_success": "密码重置成功",
+        "token_refreshed": "Token 已刷新"
     },
     "rate_limit": {
         "exceeded": "请求过于频繁，请稍后再试",

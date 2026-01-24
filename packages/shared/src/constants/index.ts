@@ -25,4 +25,17 @@ export const API_PATHS = {
   OAUTH_CALLBACK: (provider: OAuthProvider) => `/api/v1/auth/${provider}/callback`,
 
   USER_ME: '/api/v1/users/me',
+
+  // ==================== 投资自选模块 ====================
+
+  /// 资产搜索
+  ASSET_SEARCH: '/api/v1/assets/search',
+  /// 获取自选分组列表
+  WATCHLIST_GROUPS: '/api/v1/watchlist/groups',
+  /// 获取分组内的标的列表
+  WATCHLIST_GROUP_ITEMS: (groupId: string) => `/api/v1/watchlist/groups/${groupId}/items`,
+  /// 获取单个自选标的
+  WATCHLIST_ITEM: (itemId: string) => `/api/v1/watchlist/items/${itemId}`,
+  /// 批量调整分组排序
+  WATCHLIST_GROUPS_REORDER: '/api/v1/watchlist/groups/reorder',
 } as const

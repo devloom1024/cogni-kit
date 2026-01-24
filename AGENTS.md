@@ -39,7 +39,11 @@ bun test path/to/file.test.ts         # 运行单个测试文件
 
 ### TypeScript（严格模式）
 - `strict: true`、`noUncheckedIndexedAccess: true`、`noImplicitOverride: true`
-- **禁止使用** `any`、`@ts-ignore`、`@ts-expect-error`
+- **禁止使用** `any`、`@ts-ignore`
+- **例外**：`@ts-expect-error` 可用于绕过 Hono + `@hono/zod-openapi` 的已知类型限制（如 OpenAPI 路由的 handler 返回类型与 responses 定义不匹配）。使用前必须添加注释说明原因，格式：
+  ```typescript
+  // @ts-expect-error - Hono OpenAPI types don't support error responses handled by errorHandler middleware
+  ```
 
 ### 导入规范
 

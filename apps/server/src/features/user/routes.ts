@@ -1,5 +1,4 @@
 import { OpenAPIHono, createRoute } from '@hono/zod-openapi'
-import { authMiddleware } from '../../middleware/auth.js'
 import { UserSchema } from 'shared'
 
 const user = new OpenAPIHono()
@@ -21,9 +20,6 @@ const getMeRoute = createRoute({
     },
   },
 })
-
-// Apply auth middleware to the /me route
-user.use('/me', authMiddleware)
 
 user.openapi(getMeRoute, async (c) => {
   const currentUser = c.get('user')

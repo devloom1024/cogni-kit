@@ -87,7 +87,30 @@ src/features/auth/
     *   职责：数据持久化。
 
 ### 3.2 错误处理与日志
+
 *   **统一异常处理**: 业务错误应抛出自定义 Error（或 Hono 的 `HTTPException`），由全局中间件捕获。
+*   **Service 层错误处理**:
+    *   **必须**使用 `AppError` 类抛出业务错误，而非直接抛出 Error。
+    *   **必须**使用 `ErrorCode` 枚举定义错误码，禁止使用字符串字面量（如 `'auth.unauthorized'`）。
+    *   **必须**导入 `ErrorCode`：`import { ErrorCode } from 'shared'`。
+    *   **禁止**使用 `as any` 类型断言绕过类型检查。
+
+    ```typescript
+    // ✅ 正确示例
+    import { AppError } from '../../shared/error.js'
+    import { ErrorCode } from 'shared'
+
+    if (!isOwner) {
+      throw new AppError(ErrorCode.WATCHLIST_FORBIDDEN, 403)
+    }
+
+    // ❌ 错误示例
+    if (!isOwner) {
+      throw new AppError('auth.unauthorized' as any, 403)  // 禁止使用 as any
+    }
+    ```
+
+*   **新增业务模块的错误码**: 在 `packages/shared/src/types/codes.ts` 的 `ErrorCode` 中添加模块专属错误码（如 `WATCHLIST_FORBIDDEN`），并在 `apps/server/src/shared/i18n/locales/*.json` 中添加对应的翻译键。
 *   **结构化日志**: 使用 `pino`。
     *   生产环境**严禁**使用 `console.log`。
     *   关键操作（登录、支付、修改）**必须**记录日志。
@@ -160,8 +183,10 @@ src/features/auth/
 *   **详细指南**: 请参考 **[后端 API 开发工作流](./backend-api-workflow.md#step-1-在-shared-中定义-schema)**。
 
 ### 4.3 国际化 (i18n)
-*   **共享翻译架构**:
-    *   `packages/shared/src/i18n/` 存放共享的 validation 翻译。
+
+*   **翻译文件职责划分**:
+    *   `packages/shared/src/i18n/`: 存放共享的 **validation 翻译**（如 `validation.password.min`）。
+    *   `apps/server/src/shared/i18n/`: 存放后端 **业务模块翻译**（如 `auth.*`, `watchlist.*`, `oauth.*`）。
     *   前后端在初始化 i18next 时，合并 shared 翻译与本地翻译。
     *   **禁止**在前后端重复定义相同的翻译键。
 *   **Shared Schema**: Zod Schema 中的 `message` 必须是 **Translation Key**，禁止硬编码自然语言。

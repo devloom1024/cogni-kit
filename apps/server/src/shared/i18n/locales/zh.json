@@ -41,5 +41,12 @@
     "update_success": "更新成功",
     "delete_success": "删除成功",
     "create_success": "创建成功"
+  },
+  "watchlist": {
+    "forbidden": "无权访问该自选分组",
+    "group_not_found": "分组不存在",
+    "item_not_found": "自选记录不存在",
+    "asset_not_found": "标的资产不存在",
+    "item_exists": "该标的已存在于分组中"
   }
 }

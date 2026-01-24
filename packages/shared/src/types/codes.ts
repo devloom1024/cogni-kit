@@ -32,6 +32,13 @@ export const ErrorCode = {
   OAUTH_INVALID_PROVIDER: 'oauth.invalid_provider',
   OAUTH_NOT_CONFIGURED: 'oauth.not_configured',
 
+  // ========== 自选相关 ==========
+  WATCHLIST_FORBIDDEN: 'watchlist.forbidden',       // 无权访问该自选分组
+  WATCHLIST_GROUP_NOT_FOUND: 'watchlist.group_not_found', // 分组不存在
+  WATCHLIST_ITEM_NOT_FOUND: 'watchlist.item_not_found',   // 标的记录不存在
+  WATCHLIST_ASSET_NOT_FOUND: 'watchlist.asset_not_found', // 标的资产不存在
+  WATCHLIST_ITEM_EXISTS: 'watchlist.item_exists',         // 标的已存在
+
   // ========== 限流 ==========
   RATE_LIMIT_EXCEEDED: 'rate_limit.exceeded',
   TOO_MANY_REQUESTS: 'rate_limit.too_many_requests',

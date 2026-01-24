@@ -5,9 +5,12 @@ import { logger as honoLogger } from 'hono/logger'
 import { env } from './config/env.js'
 import { errorHandler } from './middleware/error-handler.js'
 import { i18nMiddleware } from './middleware/i18n.js'
+import { authMiddleware } from './middleware/auth.js'
 import { auth } from './features/auth/routes.js'
 import { oauth } from './features/oauth/routes.js'
 import { user } from './features/user/routes.js'
+import { asset } from './features/asset/routes.js'
+import { watchlist } from './features/watchlist/routes.js'
 import { logger } from './shared/logger.js'
 
 const app = new OpenAPIHono()
@@ -52,9 +55,21 @@ app.openapi(healthRoute, (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+// ==================== 公开 API ====================
+// 认证相关接口（部分需要认证，部分公开）
 app.route('/api/v1/auth', auth)
 app.route('/api/v1/auth', oauth)
-app.route('/api/v1/users', user)
+
+// ==================== 受保护 API ====================
+// 需要认证的接口统一注册到 protectedApi
+const protectedApi = new OpenAPIHono()
+protectedApi.use('*', authMiddleware) // 所有子路由都需要认证
+
+protectedApi.route('/users', user)        // /api/v1/users/*
+protectedApi.route('/watchlist', watchlist) // /api/v1/watchlist/*
+protectedApi.route('/assets', asset)      // /api/v1/assets/* (标的搜索)
+
+app.route('/api/v1', protectedApi)
 
 // OpenAPI documentation - 仅在非生产环境启用
 if (env.NODE_ENV !== 'production') {
@@ -62,8 +77,8 @@ if (env.NODE_ENV !== 'production') {
     openapi: '3.0.0',
     info: {
       version: '1.0.0',
-      title: '认证 API',
-      description: '提供用户注册、登录、个人信息管理等功能',
+      title: 'CogniKit API',
+      description: '提供用户认证、投资自选管理等功能',
     },
     servers: [
       {
@@ -90,7 +105,7 @@ if (env.NODE_ENV !== 'production') {
 
   // Swagger UI
   app.get('/api-docs', swaggerUI({ url: '/api-docs/openapi.json' }))
-  
+
   logger.info('📚 API Documentation enabled at /api-docs')
 } else {
   // 生产环境返回 404

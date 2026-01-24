@@ -41,5 +41,12 @@
     "update_success": "Update successful",
     "delete_success": "Delete successful",
     "create_success": "Create successful"
+  },
+  "watchlist": {
+    "forbidden": "You don't have permission to access this watchlist",
+    "group_not_found": "Watchlist group not found",
+    "item_not_found": "Watchlist item not found",
+    "asset_not_found": "Asset not found",
+    "item_exists": "This asset already exists in the group"
   }
 }

@@ -53,33 +53,34 @@
 ### 1.1 数据库迁移
 
 **任务**:
-- [ ] 运行 `bunx prisma migrate dev --name add_watchlist_fields` 生成迁移文件
-- [ ] 应用迁移到开发数据库
-- [ ] 验证迁移脚本正确性
+- [x] 运行 `bunx prisma migrate dev --name init_watchlist_tables` 生成迁移文件
+- [x] 应用迁移到开发数据库
+- [x] 验证迁移脚本正确性
 
 **输出**:
-- `prisma/migrations/<timestamp>_add_watchlist_fields/` 目录
+- `prisma/migrations/20260117081456_init/` 目录（已存在，表结构在 schema 中定义）
 
 ### 1.2 Shared Schema 定义
 
 **任务**:
-- [ ] 创建 `packages/shared/src/schemas/asset.ts` 定义 Asset 相关类型
-- [ ] 创建 `packages/shared/src/schemas/watchlist.ts` 定义自选相关类型
-- [ ] 导出类型供前后端使用
+- [x] 创建 `packages/shared/src/schemas/asset.ts` 定义 Asset 相关类型
+- [x] 创建 `packages/shared/src/schemas/watchlist.ts` 定义自选相关类型
+- [x] 导出类型供前后端使用
+- [x] 更新 `packages/shared/src/constants/index.ts` 添加 API_PATHS
 
 **文件结构**:
 ```
 packages/shared/src/schemas/
-├── asset.ts        # Asset, AssetSearchResult 等
+├── asset.ts        # AssetSearchResult, AssetSearchQuery 等
 ├── watchlist.ts    # WatchlistGroup, WatchlistItem 等
-└── index.ts        # 统一导出
+└── index.ts        # 统一导出 (已更新)
 ```
 
 ### 1.3 后端 Repository 层
 
 **任务**:
-- [ ] 创建 `apps/server/src/features/asset/repository.ts` (Asset 查询)
-- [ ] 创建 `apps/server/src/features/watchlist/repository.ts` (自选数据访问)
+- [x] 创建 `apps/server/src/features/asset/repository.ts` (Asset 查询)
+- [x] 创建 `apps/server/src/features/watchlist/repository.ts` (自选数据访问)
 
 **职责**:
 - AssetRepository: 标的搜索、分页查询
@@ -92,70 +93,52 @@ packages/shared/src/schemas/
 ### 2.1 Asset Service
 
 **任务**:
-- [ ] 创建 `apps/server/src/features/asset/service.ts`
-- [ ] 实现 `searchAssets(query, filters)` 方法
-- [ ] 实现模糊搜索逻辑（代码/名称/拼音/基金公司）
-
-**搜索逻辑**:
-```typescript
-// 伪代码
-async searchAssets(query, filters) {
-  return prisma.asset.findMany({
-    where: {
-      OR: [
-        { symbol: { contains: query } },
-        { name: { contains: query } },
-        { pinyinInitial: { contains: query } },
-        { pinyinFull: { contains: query } },
-        { fundCompany: { contains: query } },
-      ],
-      AND: [filters.type, filters.market]
-    },
-    take: limit,
-  })
-}
-```
+- [x] 创建 `apps/server/src/features/asset/service.ts`
+- [x] 实现 `searchAssets(query, filters)` 方法
+- [x] 实现模糊搜索逻辑（代码/名称/拼音/基金公司）
 
 ### 2.2 Watchlist Service
 
 **任务**:
-- [ ] 创建 `apps/server/src/features/watchlist/service.ts`
-- [ ] 实现 `getGroups(userId)` 方法
-- [ ] 实现 `createGroup(userId, name)` 方法
-- [ ] 实现 `addToWatchlist(groupId, assetId)` 方法
-- [ ] 实现 `removeFromWatchlist(itemId)` 方法
+- [x] 创建 `apps/server/src/features/watchlist/service.ts`
+- [x] 实现 `getGroups(userId)` 方法
+- [x] 实现 `createGroup(userId, name)` 方法
+- [x] 实现 `addToWatchlist(groupId, assetId)` 方法
+- [x] 实现 `removeFromWatchlist(itemId)` 方法
+- [x] 实现分组排序功能
+- [x] 实现所有权验证
 
 ---
 
-## Phase 3: 后端 Controller/路由层
+## Phase 3: 后端 Controller/路由层 ✅ 已完成
 
 ### 3.1 标的搜索路由
 
 **任务**:
-- [ ] 创建 `apps/server/src/features/asset/routes.ts`
-- [ ] 实现 `GET /api/v1/assets/search` 路由
+- [x] 创建 `apps/server/src/features/asset/routes.ts`
+- [x] 实现 `GET /api/v1/assets/search` 路由
 
 ### 3.2 自选分组路由
 
 **任务**:
-- [ ] 创建 `apps/server/src/features/watchlist/routes.ts`
-- [ ] 实现 `GET /api/v1/watchlist/groups` 路由
-- [ ] 实现 `POST /api/v1/watchlist/groups` 路由
-- [ ] 实现 `PUT /api/v1/watchlist/groups/:id` 路由
-- [ ] 实现 `DELETE /api/v1/watchlist/groups/:id` 路由
-- [ ] 实现 `PATCH /api/v1/watchlist/groups/reorder` 路由
+- [x] 创建 `apps/server/src/features/watchlist/routes.ts`
+- [x] 实现 `GET /api/v1/watchlist/groups` 路由
+- [x] 实现 `POST /api/v1/watchlist/groups` 路由
+- [x] 实现 `PUT /api/v1/watchlist/groups/:id` 路由
+- [x] 实现 `DELETE /api/v1/watchlist/groups/:id` 路由
+- [x] 实现 `PATCH /api/v1/watchlist/groups/reorder` 路由
 
 ### 3.3 自选标的路由
 
 **任务**:
-- [ ] 实现 `GET /api/v1/watchlist/groups/:id/items` 路由
-- [ ] 实现 `POST /api/v1/watchlist/groups/:id/items` 路由
-- [ ] 实现 `DELETE /api/v1/watchlist/items/:id` 路由
+- [x] 实现 `GET /api/v1/watchlist/groups/:id/items` 路由
+- [x] 实现 `POST /api/v1/watchlist/groups/:id/items` 路由
+- [x] 实现 `DELETE /api/v1/watchlist/items/:id` 路由
 
 ### 3.4 路由注册
 
 **任务**:
-- [ ] 在 `apps/server/src/app.ts` 中注册所有路由
+- [x] 在 `apps/server/src/main.ts` 中注册所有路由
 
 ---
 

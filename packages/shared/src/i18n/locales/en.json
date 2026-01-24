@@ -52,7 +52,13 @@
         "session_revoked": "Session revoked",
         "account_banned": "Account has been banned, please contact support",
         "account_inactive": "Please verify your email before logging in",
-        "account_deleted": "Account has been deleted"
+        "account_deleted": "Account has been deleted",
+        "code_sent": "Verification code sent",
+        "register_success": "Registration successful",
+        "login_success": "Login successful",
+        "logout_success": "Logout successful",
+        "password_reset_success": "Password reset successful",
+        "token_refreshed": "Token refreshed"
     },
     "rate_limit": {
         "exceeded": "Rate limit exceeded, please try again later",
