@@ -92,7 +92,13 @@
             "remove_confirm": "Confirm Remove?",
             "move_to": "Move to...",
             "move_to_title": "Move Item to Group",
-            "create_new_group": "Create New Group"
+            "create_new_group": "Create New Group",
+            "add_success": "Added [{{asset}}] to [{{group}}]",
+            "add_error": "Failed to add to watchlist",
+            "added_all": "Added to all",
+            "in_groups": "{{count}} groups",
+            "added_to_name": "Added to [{{name}}]",
+            "no_group_available": "No group available"
         },
         "types": {
             "STOCK": "Stock",
