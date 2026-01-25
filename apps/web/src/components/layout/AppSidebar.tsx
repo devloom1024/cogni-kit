@@ -10,9 +10,9 @@ import {
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
-import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { NavMain } from "@/components/layout/NavMain"
+import { NavUser } from "@/components/layout/NavUser"
+import { TeamSwitcher } from "@/components/layout/TeamSwitcher"
 import {
   Sidebar,
   SidebarContent,

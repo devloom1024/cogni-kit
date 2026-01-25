@@ -20,7 +20,7 @@ import { forgotPasswordSchema, type ForgotPasswordRequest, VerificationCodeType 
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { useState, useEffect } from "react"
-import { FormError } from "@/components/form-error"
+import { FormError } from "@/components/forms/FormError"
 
 export function ForgotPasswordPage({
     className,

@@ -121,3 +121,115 @@ class StockSpot(BaseModel):
 *   **API 防护**:
     *   非公开接口必须校验 JWT。
     *   登录、短信等关键接口必须在 Redis 层实现 **Rate Limit (限流)**。
+
+---
+
+## 6. React 最佳实践
+
+**适用范围**: `apps/web`
+
+### 6.1 目录结构
+
+遵循 React 官方推荐的 "按功能分组" 模式：
+
+```
+src/
+├── pages/                   # 页面组件（路由入口）
+│   ├── Home.tsx
+│   └── auth/
+│       ├── LoginPage.tsx
+│       └── RegisterPage.tsx
+├── features/                # 业务功能模块（组件 + 业务逻辑）
+│   └── auth/
+│       ├── components/      # auth 专用组件
+│       │   └── SocialAuth.tsx
+│       ├── queries.ts       # TanStack Query hooks
+│       └── index.ts         # barrel export
+├── components/              # 可复用组件
+│   ├── ui/                  # shadcn/ui 基础组件（原子化）
+│   ├── forms/               # 通用表单组件
+│   │   └── FormError.tsx
+│   ├── layout/              # 布局组件
+│   │   ├── AppLayout.tsx    # 主应用布局（需登录）
+│   │   └── AuthLayout.tsx   # 认证布局
+│   └── theme/               # 主题相关
+├── hooks/                   # 全局自定义 Hooks
+├── context/                 # 全局 Context
+├── lib/                     # 工具函数
+└── stores/                  # Zustand 状态管理
+```
+
+### 6.2 组件设计原则
+
+*   **单一职责**: 每个组件只做一件事，保持短小精悍。
+*   **组件拆分时机**:
+    *   组件代码超过 80 行
+    *   逻辑可被多个地方复用
+    *   JSX 分支（条件渲染）过多
+*   **命名规范**:
+    *   组件文件: **PascalCase** (`LoginPage.tsx`, `FormError.tsx`)
+    *   工具文件: **kebab-case** (`utils.ts`, `api.ts`)
+    *   Hook 文件: **camelCase** 以 `use` 开头 (`useAuth.ts`)
+
+### 6.3 状态管理策略
+
+| 状态类型 | 方案 | 说明 |
+|----------|------|------|
+| 服务端数据 | TanStack Query | 缓存、轮询、乐观更新 |
+| 全局 UI 状态 | Zustand | 主题、侧边栏开关 |
+| 页面状态 | `useState` / `useReducer` | 本地表单、局部 UI |
+| URL 状态 | React Router | 路由参数、查询字符串 |
+
+### 6.4 性能优化
+
+*   **路由懒加载**: 非首屏页面使用 `React.lazy()` + `Suspense`
+
+```typescript
+// ✅ Good
+const LoginPage = lazy(() => import("@/pages/auth/LoginPage").then(m => ({ default: m.LoginPage })))
+
+function App() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <Routes>...</Routes>
+    </Suspense>
+  )
+}
+
+// ❌ Bad (同步加载所有页面)
+import { LoginPage } from "@/pages/auth/LoginPage"
+```
+
+*   **组件记忆化**:
+    *   父组件重渲染导致子组件不必要更新时，使用 `React.memo()`
+    *   稳定 props 的组件通常不需要 memo
+*   **避免深层嵌套**: 目录层级不超过 3 层，避免 `components/forms/auth/...`
+
+### 6.5 代码组织模式
+
+*   **页面组件 (`pages/`)**: 组合 features 和 components，负责路由和数据获取
+*   **功能模块 (`features/`)**: 包含业务逻辑、专用组件、API hooks
+*   **可复用组件 (`components/`)**: 纯 UI，与业务无关，可跨功能使用
+
+### 6.6 样式与 UI 组件
+
+*   **shadcn/ui**: 所有基础组件从 `@/components/ui/` 导入
+*   **Tailwind CSS**: 优先使用工具类，保持组件自包含
+*   **避免样式泄漏**: 使用 `cns`/`clsx` 管理条件类名
+
+```typescript
+import { cn } from "@/lib/utils"
+
+function Button({ className, variant, ...props }) {
+  return (
+    <button
+      className={cn(
+        "px-4 py-2 rounded",
+        variant === "primary" && "bg-blue-500 text-white",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+```

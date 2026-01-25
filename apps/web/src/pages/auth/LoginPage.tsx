@@ -21,7 +21,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { loginSchema, type LoginRequest } from "shared"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
-import { FormError } from "@/components/form-error"
+import { FormError } from "@/components/forms/FormError"
 
 export function LoginPage({
     className,
