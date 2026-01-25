@@ -34,8 +34,12 @@ export const API_PATHS = {
   WATCHLIST_GROUPS: '/api/v1/watchlist/groups',
   /// 获取分组内的标的列表
   WATCHLIST_GROUP_ITEMS: (groupId: string) => `/api/v1/watchlist/groups/${groupId}/items`,
+  /// 获取所有自选标的
+  WATCHLIST_ITEMS: '/api/v1/watchlist/items',
   /// 获取单个自选标的
   WATCHLIST_ITEM: (itemId: string) => `/api/v1/watchlist/items/${itemId}`,
+  /// 移动自选标的分组
+  WATCHLIST_ITEM_MOVE: (itemId: string) => `/api/v1/watchlist/items/${itemId}/move`,
   /// 批量调整分组排序
   WATCHLIST_GROUPS_REORDER: '/api/v1/watchlist/groups/reorder',
 

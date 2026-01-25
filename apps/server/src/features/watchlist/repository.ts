@@ -189,6 +189,19 @@ export const watchlistRepository = {
   },
 
   /**
+   * 更新标的所属分组
+   */
+  async updateItemGroupId(itemId: string, newGroupId: string) {
+    return prisma.watchlistItem.update({
+      where: { id: itemId },
+      data: { groupId: newGroupId },
+      include: {
+        asset: true,
+      },
+    })
+  },
+
+  /**
    * 获取用户的所有自选标的（跨分组）
    */
   async getAllItemsByUserId(userId: string) {

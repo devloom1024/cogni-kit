@@ -53,5 +53,53 @@
             "logout": "退出登录",
             "upgrade": "升级到 Pro"
         }
+    },
+    "watchlist": {
+        "title": "自选列表",
+        "subtitle": "管理和监控您关注的投资标的",
+        "search": {
+            "placeholder": "搜索代码/名称/拼音...",
+            "empty": "未找到相关标的",
+            "add": "添加",
+            "added": "已添加",
+            "start_typing": "输入关键词开始搜索..."
+        },
+        "groups": {
+            "all": "全部",
+            "manage": "管理分组",
+            "create": "新建分组",
+            "create_placeholder": "输入分组名称",
+            "edit": "重命名",
+            "delete": "删除",
+            "delete_confirm_title": "删除分组",
+            "delete_confirm_desc": "确定要删除分组 {name} 吗？组内的标的也将被移除。",
+            "reorder": "拖拽排序"
+        },
+        "table": {
+            "symbol": "代码",
+            "name": "名称",
+            "asset": "标的",
+            "type": "类型",
+            "market": "市场",
+            "added_at": "加入时间",
+            "actions": "操作"
+        },
+        "columns": {
+            "select": "选择"
+        },
+        "actions": {
+            "remove": "移除",
+            "remove_confirm": "确定移除？",
+            "move_to": "移动到...",
+            "move_to_title": "移动标的到分组",
+            "create_new_group": "创建新分组"
+        },
+        "types": {
+            "STOCK": "股票",
+            "INDEX": "指数",
+            "ETF": "ETF",
+            "LOF": "LOF",
+            "OFUND": "场外基金"
+        }
     }
 }

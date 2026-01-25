@@ -53,5 +53,53 @@
             "logout": "Log out",
             "upgrade": "Upgrade to Pro"
         }
+    },
+    "watchlist": {
+        "title": "Watchlist",
+        "subtitle": "Manage and monitor your favorite investment assets",
+        "search": {
+            "placeholder": "Search symbol/name/pinyin...",
+            "empty": "No assets found",
+            "add": "Add",
+            "added": "Added",
+            "start_typing": "Type to search..."
+        },
+        "groups": {
+            "all": "All",
+            "manage": "Manage Groups",
+            "create": "New Group",
+            "create_placeholder": "Group Name",
+            "edit": "Rename",
+            "delete": "Delete",
+            "delete_confirm_title": "Delete Group",
+            "delete_confirm_desc": "Are you sure you want to delete group {name}? Items in this group will also be removed.",
+            "reorder": "Reorder"
+        },
+        "table": {
+            "symbol": "Symbol",
+            "name": "Name",
+            "asset": "Asset",
+            "type": "Type",
+            "market": "Market",
+            "added_at": "Added At",
+            "actions": "Actions"
+        },
+        "columns": {
+            "select": "Select"
+        },
+        "actions": {
+            "remove": "Remove",
+            "remove_confirm": "Confirm Remove?",
+            "move_to": "Move to...",
+            "move_to_title": "Move Item to Group",
+            "create_new_group": "Create New Group"
+        },
+        "types": {
+            "STOCK": "Stock",
+            "INDEX": "Index",
+            "ETF": "ETF",
+            "LOF": "LOF",
+            "OFUND": "Funds"
+        }
     }
 }

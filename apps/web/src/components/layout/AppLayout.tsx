@@ -22,7 +22,7 @@ export function AppLayout() {
           </div>
           <Header />
         </header>
-        <main className="container mx-auto py-8">
+        <main className="container mx-auto py-4">
           <Outlet />
         </main>
       </SidebarInset>

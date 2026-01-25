@@ -54,7 +54,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         {
           title: t('sidebar.investment.watchlist'),
-          url: "#",
+          url: "/watchlist",
           icon: Star,
         },
       ],

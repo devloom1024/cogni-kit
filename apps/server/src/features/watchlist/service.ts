@@ -186,6 +186,7 @@ export const watchlistService = {
         fundType: item.asset.fundType,
         pinyinInitial: item.asset.pinyinInitial,
       },
+      groupId: item.groupId,
     }))
   },
 
@@ -233,6 +234,7 @@ export const watchlistService = {
         fundType: item.asset.fundType,
         pinyinInitial: item.asset.pinyinInitial,
       },
+      groupId: item.groupId,
     }
   },
 
@@ -257,6 +259,58 @@ export const watchlistService = {
   },
 
   /**
+   * 移动标的到其他分组
+   */
+  async moveItem(itemId: string, targetGroupId: string, userId: string): Promise<WatchlistItem> {
+    // 1. 验证目标分组归属
+    const isTargetOwner = await watchlistRepository.verifyGroupOwnership(targetGroupId, userId)
+    if (!isTargetOwner) {
+      throw new AppError(ErrorCode.WATCHLIST_FORBIDDEN, 403)
+    }
+
+    // 2. 获取标的详情并验证归属
+    const item = await watchlistRepository.getItemById(itemId)
+    if (!item) {
+      throw new AppError(ErrorCode.WATCHLIST_ITEM_NOT_FOUND, 404)
+    } else {
+      const isItemOwner = await watchlistRepository.verifyGroupOwnership(item.groupId, userId)
+      if (!isItemOwner) {
+        throw new AppError(ErrorCode.WATCHLIST_FORBIDDEN, 403)
+      }
+    }
+
+    // 3. 检查目标分组是否已存在该标的
+    // 注意：item.assetId 是标的的 assetId
+    const exists = await watchlistRepository.isItemExists(targetGroupId, item.assetId)
+    if (exists) {
+      throw new AppError(ErrorCode.WATCHLIST_ITEM_EXISTS, 409)
+    }
+
+    // 4. 执行移动
+    const movedItem = await watchlistRepository.updateItemGroupId(itemId, targetGroupId)
+
+    logger.info({ itemId, fromGroup: item.groupId, toGroup: targetGroupId }, 'Watchlist item moved')
+
+    return {
+      id: movedItem.id,
+      addedAt: movedItem.createdAt.toISOString(),
+      asset: {
+        id: movedItem.asset.id,
+        symbol: movedItem.asset.symbol,
+        name: movedItem.asset.name,
+        type: movedItem.asset.type,
+        market: movedItem.asset.market,
+        exchange: movedItem.asset.exchange,
+        indexType: movedItem.asset.indexType,
+        fundCompany: movedItem.asset.fundCompany,
+        fundType: movedItem.asset.fundType,
+        pinyinInitial: movedItem.asset.pinyinInitial,
+      },
+      groupId: movedItem.groupId,
+    }
+  },
+
+  /**
    * 获取用户的所有自选标的（跨分组）
    */
   async getAllItems(userId: string): Promise<WatchlistItem[]> {
@@ -277,6 +331,7 @@ export const watchlistService = {
         fundType: item.asset.fundType,
         pinyinInitial: item.asset.pinyinInitial,
       },
+      groupId: item.groupId,
       groupName: item.group.name,
     }))
   },

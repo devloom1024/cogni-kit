@@ -117,6 +117,19 @@ export const AddWatchlistItemSchema = z.object({
 export type AddWatchlistItemRequest = z.infer<typeof AddWatchlistItemSchema>
 
 /**
+ * 移动标的到其他分组请求 Schema
+ */
+export const MoveWatchlistItemSchema = z.object({
+  /// 目标分组 ID
+  targetGroupId: z.string().uuid().openapi({
+    description: '目标分组 ID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  }),
+}).openapi('MoveWatchlistItemRequest')
+
+export type MoveWatchlistItemRequest = z.infer<typeof MoveWatchlistItemSchema>
+
+/**
  * 自选标的详情 Schema (嵌套 Asset 信息)
  */
 export const WatchlistAssetSchema = AssetSearchResultSchema
@@ -137,6 +150,11 @@ export const WatchlistItemSchema = z.object({
   }),
   /// 资产详情
   asset: WatchlistAssetSchema,
+  /// 分组 ID
+  groupId: z.string().uuid().openapi({
+    description: '分组 ID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  }),
 }).openapi('WatchlistItem')
 
 export type WatchlistItem = z.infer<typeof WatchlistItemSchema>

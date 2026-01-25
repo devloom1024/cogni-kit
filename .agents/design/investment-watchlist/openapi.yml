@@ -270,6 +270,25 @@ paths:
         "200":
           description: 更新成功
 
+  /api/v1/watchlist/items:
+    get:
+      summary: 获取所有自选标的
+      description: |
+        返回用户所有自选标的，包含分组信息。
+        此接口用于获取"全部"分组的数据，或者客户端需要全量数据时使用。
+      tags: [自选标的]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WatchlistItem"
+
   # ==================== 自选标的 ====================
 
   /api/v1/watchlist/groups/{groupId}/items:
@@ -361,6 +380,40 @@ paths:
       responses:
         "204":
           description: 移除成功
+
+  /api/v1/watchlist/items/{itemId}/move:
+    parameters:
+      - name: itemId
+        in: path
+        required: true
+        description: 自选记录 ID
+        schema:
+          type: string
+          format: uuid
+
+    patch:
+      summary: 移动标的到其他分组
+      description: 将标的从当前分组移动到目标分组
+      tags: [自选标的]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MoveWatchlistItemRequest"
+            example:
+              targetGroupId: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        "200":
+          description: 移动成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistItem"
+        "409":
+          description: 目标分组已存在该标的
 
 # ==================== 组件定义 ====================
 
@@ -530,6 +583,17 @@ components:
           minLength: 1
           maxLength: 50
           example: "新能源赛道"
+
+    MoveWatchlistItemRequest:
+      type: object
+      required:
+        - targetGroupId
+      properties:
+        targetGroupId:
+          type: string
+          format: uuid
+          description: 目标分组 ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
 
     # 自选标的
     WatchlistItem:

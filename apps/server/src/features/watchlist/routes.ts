@@ -7,6 +7,7 @@ import {
   WatchlistGroupSchema,
   WatchlistItemSchema,
   AddWatchlistItemSchema,
+  MoveWatchlistItemSchema,
   ErrorSchema,
 } from 'shared'
 import { watchlistService } from './service.js'
@@ -273,6 +274,32 @@ watchlist.openapi(getItemsRoute, async (c) => {
   return c.json(items)
 })
 
+// 获取用户所有自选标的 (跨分组)
+const getAllItemsRoute = createRoute({
+  method: 'get',
+  path: '/items',
+  tags: ['自选标的'],
+  summary: '获取所有自选标的',
+  description: '返回用户所有自选标的，包含分组信息',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: z.array(WatchlistItemSchema),
+        },
+      },
+      description: '获取成功',
+    },
+  },
+})
+
+watchlist.openapi(getAllItemsRoute, async (c) => {
+  const userId = c.get('userId')
+  const items = await watchlistService.getAllItems(userId)
+  return c.json(items)
+})
+
 // 添加标的到自选分组
 const addItemRoute = createRoute({
   method: 'post',
@@ -350,6 +377,53 @@ watchlist.openapi(removeItemRoute, async (c) => {
   const { itemId } = c.req.param()
   await watchlistService.removeFromWatchlist(itemId, userId)
   return c.body(null, 204)
+})
+
+// 移动标的到其他分组
+const moveItemRoute = createRoute({
+  method: 'patch',
+  path: '/items/{itemId}/move',
+  tags: ['自选标的'],
+  summary: '移动标的到其他分组',
+  description: '将标的从当前分组移动到目标分组',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      itemId: z.string().uuid().openapi({ description: '自选记录 ID' }),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: MoveWatchlistItemSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: WatchlistItemSchema,
+        },
+      },
+      description: '移动成功',
+    },
+    409: {
+      content: {
+        'application/json': { schema: ErrorSchema },
+      },
+      description: '目标分组已存在该标的',
+    },
+  },
+})
+
+// @ts-expect-error - Hono OpenAPI types don't support error responses handled by errorHandler middleware
+watchlist.openapi(moveItemRoute, async (c) => {
+  const userId = c.get('userId')
+  const { itemId } = c.req.param()
+  const data = c.req.valid('json')
+  const item = await watchlistService.moveItem(itemId, data.targetGroupId, userId)
+  return c.json(item)
 })
 
 export { watchlist }
