@@ -30,8 +30,8 @@ export function WatchlistPage() {
     )
 
     return (
-        <div className="w-full space-y-2">
-            <div className="flex items-center justify-between">
+        <div className="flex flex-col h-full w-full px-6">
+            <div className="flex items-center justify-between mb-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{t('watchlist.title')}</h1>
                     <p className="text-muted-foreground mt-1">
@@ -47,9 +47,9 @@ export function WatchlistPage() {
                 </AssetSearchDialog>
             </div>
 
-            <div className="flex flex-col space-y-4">
-                <GroupTabs value={currentGroupId} onValueChange={setCurrentGroupId} />
+            <GroupTabs value={currentGroupId} onValueChange={setCurrentGroupId} />
 
+            <div className="flex-1 min-h-0 mt-4">
                 {isLoading ? (
                     <div className="flex items-center justify-center p-8">
                         {t('common.loading')}
