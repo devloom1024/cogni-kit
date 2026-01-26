@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useLocation } from "react-router-dom"
 import {
   AudioWaveform,
   Command,
@@ -25,6 +26,7 @@ import { useUserStore } from "@/stores/useUserStore"
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { t } = useTranslation()
   const { user } = useUserStore()
+  const location = useLocation()
 
   // Sample teams data (kept static for now as per previous request)
   const teams = [
@@ -50,12 +52,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: t('sidebar.investment.title'),
       url: "#",
       icon: PieChart,
-      isActive: true,
+      isActive: false,
       items: [
         {
           title: t('sidebar.investment.watchlist'),
           url: "/watchlist",
           icon: Star,
+          isActive: location.pathname === '/watchlist',
         },
       ],
     },
