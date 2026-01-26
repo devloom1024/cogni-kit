@@ -163,6 +163,8 @@ dump.rdb
 
 # 数据库备份
 *.sql
+!apps/server/prisma/migrations/*.sql
+!apps/server/prisma/migrations/**/*.sql
 *.sqlite
 *.db
 
