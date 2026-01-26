@@ -42,6 +42,7 @@
     },
     "sidebar": {
         "platform": "Platform",
+        "home": "Home",
         "investment": {
             "title": "Investment",
             "watchlist": "Watchlist"

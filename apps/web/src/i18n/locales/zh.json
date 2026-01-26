@@ -42,6 +42,7 @@
     },
     "sidebar": {
         "platform": "平台",
+        "home": "首页",
         "investment": {
             "title": "投资",
             "watchlist": "自选"

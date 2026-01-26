@@ -6,6 +6,7 @@ import {
   AudioWaveform,
   Command,
   GalleryVerticalEnd,
+  Home,
   PieChart,
   Star,
 } from "lucide-react"
@@ -18,7 +19,11 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { useUserStore } from "@/stores/useUserStore"
@@ -76,6 +81,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher teams={teams} />
       </SidebarHeader>
       <SidebarContent>
+        <SidebarGroup>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={location.pathname === '/'} tooltip={t('sidebar.home')}>
+                <a href="/">
+                  <Home />
+                  <span>{t('sidebar.home')}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
         <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>
