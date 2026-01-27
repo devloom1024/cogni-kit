@@ -9,10 +9,29 @@ import {
   AddWatchlistItemSchema,
   MoveWatchlistItemSchema,
   ErrorSchema,
+  PaginationMetaSchema,
 } from 'shared'
 import { watchlistService } from './service.js'
 
 const watchlist = new OpenAPIHono()
+
+// 分页参数 Schema
+const paginationQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1).openapi({
+    description: '页码，从 1 开始',
+    example: 1,
+  }),
+  limit: z.coerce.number().int().min(1).max(100).default(10).openapi({
+    description: '每页数量',
+    example: 10,
+  }),
+})
+
+// 分页响应 Schema
+const paginatedItemsResponseSchema = z.object({
+  data: z.array(WatchlistItemSchema),
+  meta: PaginationMetaSchema,
+}).openapi('PaginatedWatchlistItemsResponse')
 
 // ==================== 自选分组管理 ====================
 
@@ -248,18 +267,19 @@ const getItemsRoute = createRoute({
   path: '/groups/{groupId}/items',
   tags: ['自选标的'],
   summary: '获取分组内的自选标的列表',
-  description: '返回指定分组内的所有自选标的，按添加时间倒序排列',
+  description: '返回指定分组内的自选标的，按添加时间倒序排列。支持分页查询。',
   security: [{ bearerAuth: [] }],
   request: {
     params: z.object({
       groupId: z.string().uuid().openapi({ description: '分组 ID' }),
     }),
+    query: paginationQuerySchema,
   },
   responses: {
     200: {
       content: {
         'application/json': {
-          schema: z.array(WatchlistItemSchema),
+          schema: paginatedItemsResponseSchema,
         },
       },
       description: '获取成功',
@@ -270,8 +290,9 @@ const getItemsRoute = createRoute({
 watchlist.openapi(getItemsRoute, async (c) => {
   const userId = c.get('userId')
   const { groupId } = c.req.param()
-  const items = await watchlistService.getItemsByGroupId(groupId, userId)
-  return c.json(items)
+  const { page, limit } = c.req.valid('query')
+  const result = await watchlistService.getItemsByGroupId(groupId, userId, page, limit)
+  return c.json(result)
 })
 
 // 获取用户所有自选标的 (跨分组)
@@ -280,13 +301,16 @@ const getAllItemsRoute = createRoute({
   path: '/items',
   tags: ['自选标的'],
   summary: '获取所有自选标的',
-  description: '返回用户所有自选标的，包含分组信息',
+  description: '返回用户所有自选标的，包含分组信息。支持分页查询。',
   security: [{ bearerAuth: [] }],
+  request: {
+    query: paginationQuerySchema,
+  },
   responses: {
     200: {
       content: {
         'application/json': {
-          schema: z.array(WatchlistItemSchema),
+          schema: paginatedItemsResponseSchema,
         },
       },
       description: '获取成功',
@@ -296,8 +320,53 @@ const getAllItemsRoute = createRoute({
 
 watchlist.openapi(getAllItemsRoute, async (c) => {
   const userId = c.get('userId')
-  const items = await watchlistService.getAllItems(userId)
-  return c.json(items)
+  const { page, limit } = c.req.valid('query')
+  const result = await watchlistService.getAllItems(userId, page, limit)
+  return c.json(result)
+})
+
+// 批量查询标的所在分组
+const checkAssetGroupsRoute = createRoute({
+  method: 'post',
+  path: '/items/check-groups',
+  tags: ['自选标的'],
+  summary: '批量查询标的所在分组',
+  description: '根据资产 ID 批量查询这些资产已被添加到哪些分组。用于搜索弹窗中显示标的的添加状态。',
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            assetIds: z.array(z.string().uuid()).max(100).openapi({
+              description: '资产 ID 列表',
+              example: ['550e8400-e29b-41d4-a716-446655440000', '660e8400-e29b-41d4-a716-446655440001'],
+            }),
+          }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: z.array(z.object({
+            assetId: z.string().uuid().openapi({ description: '资产 ID' }),
+            groupIds: z.array(z.string().uuid()).openapi({ description: '该资产已被添加到的分组 ID 列表' }),
+          })),
+        },
+      },
+      description: '查询成功',
+    },
+  },
+})
+
+watchlist.openapi(checkAssetGroupsRoute, async (c) => {
+  const userId = c.get('userId')
+  const data = c.req.valid('json')
+  const result = await watchlistService.checkAssetGroups(userId, data.assetIds)
+  return c.json(result)
 })
 
 // 添加标的到自选分组

@@ -11,33 +11,38 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-    useWatchlistGroups,
-    useCreateWatchlistGroup,
-    useUpdateWatchlistGroup,
-    useDeleteWatchlistGroup,
-} from '../queries'
+import { watchlistClient } from '../api/client'
 import { toast } from 'sonner'
+import type { WatchlistGroup } from 'shared'
 
-export function GroupManagerDialog({ children }: { children: React.ReactNode }) {
+interface GroupManagerDialogProps {
+    children: React.ReactNode
+    groups: WatchlistGroup[]
+    onGroupsChange: (groups: WatchlistGroup[]) => void
+    onRefresh: () => void
+}
+
+export function GroupManagerDialog({ children, groups, onGroupsChange, onRefresh }: GroupManagerDialogProps) {
     const { t } = useTranslation()
-    const { data: groups } = useWatchlistGroups()
-    const createMutation = useCreateWatchlistGroup()
-    const updateMutation = useUpdateWatchlistGroup()
-    const deleteMutation = useDeleteWatchlistGroup()
-
+    const [open, setOpen] = useState(false)
     const [newGroupName, setNewGroupName] = useState('')
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editName, setEditName] = useState('')
+    const [loading, setLoading] = useState(false)
 
-    const handleCreate = () => {
+    const handleCreate = async () => {
         if (!newGroupName.trim()) return
-        createMutation.mutate(
-            { name: newGroupName.trim() },
-            {
-                onSuccess: () => setNewGroupName(''),
-            }
-        )
+        setLoading(true)
+        try {
+            const newGroup = await watchlistClient.createGroup({ name: newGroupName.trim() })
+            onGroupsChange([...groups, newGroup])
+            onRefresh()
+            setNewGroupName('')
+        } catch {
+            toast.error(t('watchlist.actions.create_error'))
+        } finally {
+            setLoading(false)
+        }
     }
 
     const startEdit = (id: string, name: string) => {
@@ -50,24 +55,32 @@ export function GroupManagerDialog({ children }: { children: React.ReactNode }) 
         setEditName('')
     }
 
-    const saveEdit = (id: string) => {
+    const saveEdit = async (id: string) => {
         if (!editName.trim()) return
-        updateMutation.mutate(
-            { id, name: editName.trim() },
-            {
-                onSuccess: () => setEditingId(null),
-            }
-        )
+        try {
+            const updated = await watchlistClient.updateGroup(id, editName.trim())
+            onGroupsChange(groups.map(g => g.id === id ? updated : g))
+            onRefresh()
+            setEditingId(null)
+        } catch {
+            toast.error(t('watchlist.actions.update_error'))
+        }
     }
 
-    const handleDelete = (group: { id: string; name: string }) => {
+    const handleDelete = async (group: WatchlistGroup) => {
         if (confirm(t('watchlist.groups.delete_confirm_desc', { name: group.name }))) {
-            deleteMutation.mutate(group.id)
+            try {
+                await watchlistClient.deleteGroup(group.id)
+                onGroupsChange(groups.filter(g => g.id !== group.id))
+                onRefresh()
+            } catch {
+                toast.error(t('watchlist.actions.delete_error'))
+            }
         }
     }
 
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
@@ -81,14 +94,14 @@ export function GroupManagerDialog({ children }: { children: React.ReactNode }) 
                         onChange={(e) => setNewGroupName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                     />
-                    <Button onClick={handleCreate} disabled={!newGroupName.trim()}>
+                    <Button onClick={handleCreate} disabled={!newGroupName.trim() || loading}>
                         <Plus className="h-4 w-4" />
                     </Button>
                 </div>
 
                 <ScrollArea className="h-[300px] w-full rounded-md border p-4">
                     <div className="flex flex-col gap-2">
-                        {groups?.map((group) => (
+                        {groups.map((group) => (
                             <div
                                 key={group.id}
                                 className="flex items-center justify-between p-2 rounded-lg border bg-card text-card-foreground shadow-sm"

@@ -1,17 +1,20 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { ArrowUpDown } from 'lucide-react'
-// import { Button } from '@/components/ui/button' // Removed
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { WatchlistItem } from 'shared'
 import { WatchlistRowActions } from './row-actions'
 
-// We need a wrapper to use hooks like useTranslation inside columns?
-// Actually columns is usually a static array or a function.
-// If we want translation, we can make it a function that receives t, or use a component for the header.
+interface UseWatchlistColumnsProps {
+    onRemove: (itemId: string, groupId: string) => void
+    onMoveClick: (itemId: string) => void
+}
 
-export const useWatchlistColumns = (): ColumnDef<WatchlistItem>[] => {
+export const useWatchlistColumns = ({
+    onRemove,
+    onMoveClick,
+}: UseWatchlistColumnsProps): ColumnDef<WatchlistItem>[] => {
     const { t } = useTranslation()
 
     return [
@@ -104,7 +107,13 @@ export const useWatchlistColumns = (): ColumnDef<WatchlistItem>[] => {
         },
         {
             id: 'actions',
-            cell: ({ row }) => <WatchlistRowActions row={row} />
+            cell: ({ row }) => (
+                <WatchlistRowActions
+                    row={row}
+                    onRemove={onRemove}
+                    onMoveClick={onMoveClick}
+                />
+            )
         },
     ]
 }

@@ -4,7 +4,6 @@ import {
     Empty,
     EmptyMedia,
 } from '@/components/ui/empty'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import {
     type ColumnFiltersState,
     type SortingState,
@@ -24,21 +23,39 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-import type { WatchlistItem } from 'shared'
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from '@/components/ui/pagination'
+import type { PaginationMeta, WatchlistItem } from 'shared'
 import { useWatchlistColumns } from './columns'
 
 interface WatchlistTableProps {
     data: WatchlistItem[]
+    meta?: PaginationMeta
+    onPageChange: (page: number) => void
+    onMoveClick: (itemId: string) => void
+    onRemove: (itemId: string, groupId: string) => void
+    currentGroupId: string
 }
 
-export function WatchlistTable({ data }: WatchlistTableProps) {
+export function WatchlistTable({
+    data,
+    meta,
+    onPageChange,
+    onMoveClick,
+    onRemove,
+}: WatchlistTableProps) {
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = useState({})
 
-    // We get columns from hook to enable translation
-    const columns = useWatchlistColumns()
+    const columns = useWatchlistColumns({ onRemove, onMoveClick })
 
     const table = useReactTable({
         data,
@@ -51,11 +68,7 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
         getFilteredRowModel: getFilteredRowModel(),
         onColumnVisibilityChange: setColumnVisibility,
         onRowSelectionChange: setRowSelection,
-        initialState: {
-            pagination: {
-                pageSize: 1000,
-            },
-        },
+        pageCount: meta?.totalPages ?? -1,
         state: {
             sorting,
             columnFilters,
@@ -64,24 +77,50 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
         },
     })
 
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 1 && newPage <= (meta?.totalPages ?? 1)) {
+            onPageChange(newPage)
+        }
+    }
+
+    // Generate page numbers for pagination
+    const getPageNumbers = () => {
+        if (!meta) return []
+        const totalPages = meta.totalPages
+        const currentPage = meta.page
+        const pages: (number | 'ellipsis')[] = []
+
+        if (totalPages <= 7) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i)
+        } else {
+            if (currentPage <= 3) {
+                pages.push(1, 2, 3, 4, 'ellipsis', totalPages)
+            } else if (currentPage >= totalPages - 2) {
+                pages.push(1, 'ellipsis', totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+            } else {
+                pages.push(1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis', totalPages)
+            }
+        }
+
+        return pages
+    }
+
     return (
-        <ScrollArea className="h-full w-full rounded-md border [&_[data-slot=table-container]]:overflow-visible [&_[data-slot=scroll-area-viewport]]:!overflow-auto">
-            <Table>
-                <TableHeader className="sticky top-0 z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
+        <div className="flex flex-col h-full">
+            <Table className="border rounded-md">
+                <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
-                            {headerGroup.headers.map((header) => {
-                                return (
-                                    <TableHead key={header.id}>
-                                        {header.isPlaceholder
-                                            ? null
-                                            : flexRender(
-                                                header.column.columnDef.header,
-                                                header.getContext()
-                                            )}
-                                    </TableHead>
-                                )
-                            })}
+                            {headerGroup.headers.map((header) => (
+                                <TableHead key={header.id}>
+                                    {header.isPlaceholder
+                                        ? null
+                                        : flexRender(
+                                            header.column.columnDef.header,
+                                            header.getContext()
+                                        )}
+                                </TableHead>
+                            ))}
                         </TableRow>
                     ))}
                 </TableHeader>
@@ -120,7 +159,44 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
                     )}
                 </TableBody>
             </Table>
-            {/* Pagination Controls could be added here */}
-        </ScrollArea>
+            {/* Pagination Controls */}
+            {meta && meta.totalPages > 1 && (
+                <div className="flex items-center justify-end gap-4 py-4">
+                    <div className="text-sm text-muted-foreground">
+                        共 {meta.total} 条
+                    </div>
+                    <Pagination className="!mx-0 !justify-end">
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious
+                                    onClick={() => handlePageChange(meta.page - 1)}
+                                    disabled={meta.page <= 1}
+                                />
+                            </PaginationItem>
+                            {getPageNumbers().map((page, index) => (
+                                <PaginationItem key={index}>
+                                    {page === 'ellipsis' ? (
+                                        <span className="px-2">...</span>
+                                    ) : (
+                                        <PaginationLink
+                                            onClick={() => handlePageChange(page)}
+                                            isActive={page === meta.page}
+                                        >
+                                            {page}
+                                        </PaginationLink>
+                                    )}
+                                </PaginationItem>
+                            ))}
+                            <PaginationItem>
+                                <PaginationNext
+                                    onClick={() => handlePageChange(meta.page + 1)}
+                                    disabled={meta.page >= meta.totalPages}
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </div>
+            )}
+        </div>
     )
 }

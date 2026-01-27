@@ -1,5 +1,25 @@
 import { prisma } from '../../shared/db.js'
 import type { CreateWatchlistGroupRequest, ReorderGroupsRequest } from 'shared'
+import type { Prisma } from '@prisma/client'
+
+/**
+ * 分页参数
+ */
+export interface PaginationParams {
+  page: number
+  limit: number
+}
+
+/**
+ * 分页结果
+ */
+export interface PaginatedResult<T> {
+  data: T[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
 
 /**
  * 创建分组参数
@@ -136,16 +156,30 @@ export const watchlistRepository = {
   // ==================== 标的操作 ====================
 
   /**
-   * 获取分组内所有标的（按添加时间倒序）
+   * 获取分组内标的（分页，按添加时间倒序）
    */
-  async getItemsByGroupId(groupId: string) {
-    return prisma.watchlistItem.findMany({
-      where: { groupId },
-      include: {
-        asset: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    })
+  async getItemsByGroupId(groupId: string, pagination: PaginationParams): Promise<PaginatedResult<Prisma.WatchlistItemGetPayload<{ include: { asset: true } }>>> {
+    const { page, limit } = pagination
+    const skip = (page - 1) * limit
+
+    const [items, total] = await Promise.all([
+      prisma.watchlistItem.findMany({
+        where: { groupId },
+        include: { asset: true },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.watchlistItem.count({ where: { groupId } }),
+    ])
+
+    return {
+      data: items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    }
   },
 
   /**
@@ -202,21 +236,39 @@ export const watchlistRepository = {
   },
 
   /**
-   * 获取用户的所有自选标的（跨分组）
+   * 获取用户的所有自选标的（跨分组，分页）
    */
-  async getAllItemsByUserId(userId: string) {
-    return prisma.watchlistItem.findMany({
-      where: {
-        group: { userId },
-      },
-      include: {
-        asset: true,
-        group: {
-          select: { id: true, name: true },
+  async getAllItemsByUserId(userId: string, pagination: PaginationParams): Promise<PaginatedResult<Prisma.WatchlistItemGetPayload<{ include: { asset: true; group: { select: { id: true; name: true } } } }>>> {
+    const { page, limit } = pagination
+    const skip = (page - 1) * limit
+
+    const [items, total] = await Promise.all([
+      prisma.watchlistItem.findMany({
+        where: {
+          group: { userId },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
+        include: {
+          asset: true,
+          group: {
+            select: { id: true, name: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.watchlistItem.count({
+        where: { group: { userId } },
+      }),
+    ])
+
+    return {
+      data: items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    }
   },
 
   /**
@@ -232,5 +284,40 @@ export const watchlistRepository = {
         },
       },
     })
+  },
+
+  /**
+   * 批量查询标的所在分组
+   * 根据资产 ID 列表，返回每个资产已被添加到哪些分组
+   */
+  async checkAssetGroups(userId: string, assetIds: string[]) {
+    // 一次查询获取所有相关记录
+    const items = await prisma.watchlistItem.findMany({
+      where: {
+        assetId: { in: assetIds },
+        group: { userId },
+      },
+      select: {
+        assetId: true,
+        groupId: true,
+      },
+    })
+
+    // 内存中按 assetId 分组
+    const groupMap = items.reduce((acc, item) => {
+      const existing = acc[item.assetId]
+      if (existing) {
+        existing.push(item.groupId)
+      } else {
+        acc[item.assetId] = [item.groupId]
+      }
+      return acc
+    }, {} as Record<string, string[]>)
+
+    // 返回结果，保持输入顺序
+    return assetIds.map(assetId => ({
+      assetId,
+      groupIds: groupMap[assetId] || [],
+    }))
   },
 }

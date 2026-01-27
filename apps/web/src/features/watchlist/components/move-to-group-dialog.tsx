@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Check, FolderOpen } from 'lucide-react'
+import { Plus, FolderOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -11,65 +11,61 @@ import {
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
-import {
-    useWatchlistGroups,
-    useCreateWatchlistGroup,
-    useMoveWatchlistItem,
-} from '../queries'
+import { watchlistClient } from '../api/client'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
+import type { WatchlistGroup } from 'shared'
 
 interface MoveToGroupDialogProps {
     itemId: string
     currentGroupId: string
     open: boolean
     onOpenChange: (open: boolean) => void
+    groups: WatchlistGroup[]
+    onSuccess: () => void
 }
 
-export function MoveToGroupDialog({ itemId, currentGroupId, open, onOpenChange }: MoveToGroupDialogProps) {
+export function MoveToGroupDialog({
+    itemId,
+    currentGroupId,
+    open,
+    onOpenChange,
+    groups,
+    onSuccess,
+}: MoveToGroupDialogProps) {
     const { t } = useTranslation()
-    const { data: groups } = useWatchlistGroups()
-    const createMutation = useCreateWatchlistGroup()
-    const moveMutation = useMoveWatchlistItem()
-
     const [newGroupName, setNewGroupName] = useState('')
+    const [loading, setLoading] = useState<string | null>(null)
 
-    const handleCreate = () => {
+    const handleCreate = async () => {
         if (!newGroupName.trim()) return
-        createMutation.mutate(
-            { name: newGroupName.trim() },
-            {
-                onSuccess: (newGroup) => {
-                    // Auto move to new group or just clear input?
-                    // User probably wants to move to this new group immediately.
-                    moveMutation.mutate(
-                        { itemId, targetGroupId: newGroup.id },
-                        {
-                            onSuccess: () => {
-                                setNewGroupName('')
-                                onOpenChange(false)
-                            }
-                        }
-                    )
-                }
-            }
-        )
+        setLoading('create')
+        try {
+            const newGroup = await watchlistClient.createGroup({ name: newGroupName.trim() })
+            await handleMove(newGroup.id)
+        } catch {
+            toast.error(t('watchlist.actions.create_error'))
+        } finally {
+            setLoading(null)
+        }
     }
 
-    const handleMove = (groupId: string) => {
-        if (groupId === currentGroupId) return // Should not happen if filtered, but safe check
-
-        moveMutation.mutate(
-            { itemId, targetGroupId: groupId },
-            {
-                onSuccess: () => {
-                    onOpenChange(false)
-                }
-            }
-        )
+    const handleMove = async (groupId: string) => {
+        setLoading(groupId)
+        try {
+            await watchlistClient.moveItem(itemId, groupId)
+            toast.success(t('watchlist.actions.move_success'))
+            onOpenChange(false)
+            onSuccess()
+        } catch {
+            toast.error(t('watchlist.actions.move_error'))
+        } finally {
+            setLoading(null)
+        }
     }
 
     // Filter out current group from options
-    const availableGroups = groups?.filter(g => g.id !== currentGroupId) || []
+    const availableGroups = groups.filter(g => g.id !== currentGroupId)
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -85,7 +81,7 @@ export function MoveToGroupDialog({ itemId, currentGroupId, open, onOpenChange }
                         onChange={(e) => setNewGroupName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                     />
-                    <Button onClick={handleCreate} disabled={!newGroupName.trim() || createMutation.isPending}>
+                    <Button onClick={handleCreate} disabled={!newGroupName.trim() || loading !== null}>
                         <Plus className="h-4 w-4" />
                     </Button>
                 </div>
@@ -104,7 +100,7 @@ export function MoveToGroupDialog({ itemId, currentGroupId, open, onOpenChange }
                                 variant="ghost"
                                 className={cn(
                                     "justify-start h-10 px-2 font-normal",
-                                    moveMutation.isPending && "opacity-50 pointer-events-none"
+                                    loading !== null && "opacity-50 pointer-events-none"
                                 )}
                                 onClick={() => handleMove(group.id)}
                             >
@@ -113,7 +109,7 @@ export function MoveToGroupDialog({ itemId, currentGroupId, open, onOpenChange }
                                 <Badge variant="secondary" className="ml-auto text-xs font-normal">
                                     {group.itemCount}
                                 </Badge>
-                                {moveMutation.isPending && moveMutation.variables?.targetGroupId === group.id && (
+                                {loading === group.id && (
                                     <span className="ml-2 animate-spin">⏳</span>
                                 )}
                             </Button>

@@ -1,6 +1,46 @@
 import { z } from '@hono/zod-openapi'
 import { AssetSearchResultSchema } from './asset.js'
 
+// ==================== 分页相关 Schema ====================
+
+/**
+ * 分页元信息 Schema
+ */
+export const PaginationMetaSchema = z.object({
+  /// 总记录数
+  total: z.number().int().openapi({
+    description: '总记录数',
+    example: 100,
+  }),
+  /// 当前页码
+  page: z.number().int().min(1).openapi({
+    description: '当前页码',
+    example: 1,
+  }),
+  /// 每页数量
+  limit: z.number().int().min(1).max(100).openapi({
+    description: '每页数量',
+    example: 10,
+  }),
+  /// 总页数
+  totalPages: z.number().int().openapi({
+    description: '总页数',
+    example: 10,
+  }),
+}).openapi('PaginationMeta')
+
+export type PaginationMeta = z.infer<typeof PaginationMetaSchema>
+
+/**
+ * 分页响应类型（前端使用）
+ */
+export interface PaginatedResponse<T> {
+  /// 数据列表
+  data: T[]
+  /// 分页元信息
+  meta: PaginationMeta
+}
+
 // ==================== 分组相关 Schema ====================
 
 /**
@@ -158,3 +198,31 @@ export const WatchlistItemSchema = z.object({
 }).openapi('WatchlistItem')
 
 export type WatchlistItem = z.infer<typeof WatchlistItemSchema>
+
+// ==================== 批量查询相关 Schema ====================
+
+/**
+ * 批量查询标的所在分组请求
+ */
+export interface CheckAssetGroupsRequest {
+  /// 资产 ID 列表
+  assetIds: string[]
+}
+
+/**
+ * 标的所在分组检查结果
+ */
+export const AssetGroupCheckResultSchema = z.object({
+  /// 资产 ID
+  assetId: z.string().uuid().openapi({
+    description: '资产 ID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  }),
+  /// 该资产已被添加到的分组 ID 列表
+  groupIds: z.array(z.string().uuid()).openapi({
+    description: '该资产已被添加到的分组 ID 列表',
+    example: ['770e8400-e29b-41d4-a716-446655440002'],
+  }),
+}).openapi('AssetGroupCheckResult')
+
+export type AssetGroupCheckResult = z.infer<typeof AssetGroupCheckResultSchema>

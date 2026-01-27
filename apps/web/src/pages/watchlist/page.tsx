@@ -1,33 +1,90 @@
-import { useState } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { GroupTabs } from '@/features/watchlist/components/group-tabs'
 import { WatchlistTable } from '@/features/watchlist/components/watchlist-table'
 import { AssetSearchDialog } from '@/features/watchlist/components/asset-search-dialog'
-import { useWatchlistItems } from '@/features/watchlist/queries' // Removed useWatchlistGroups if only used there
+import { GroupManagerDialog } from '@/features/watchlist/components/group-manager-dialog'
+import { MoveToGroupDialog } from '@/features/watchlist/components/move-to-group-dialog'
+import { watchlistClient } from '@/features/watchlist/api/client'
+import type { PaginationMeta, WatchlistGroup, WatchlistItem } from 'shared'
+
+interface PaginatedResult {
+    data: WatchlistItem[]
+    meta: PaginationMeta
+}
 
 export function WatchlistPage() {
     const { t } = useTranslation()
     const [currentGroupId, setCurrentGroupId] = useState('all')
-    // const { data: groups } = useWatchlistGroups()
+    const [page, setPage] = useState(1)
+    const [result, setResult] = useState<PaginatedResult | null>(null)
+    const [groups, setGroups] = useState<WatchlistGroup[]>([])
+    const [loading, setLoading] = useState(false)
 
-    // Effectively handle default selection if needed, but 'all' is a good default
-    // If we want to default to the first group if 'all' is empty? No, 'all' is fine.
+    const pageSize = 10
 
-    // If 'all' is selected, we might want to show all items or just aggregate? 
-    // The backend doesn't support "get all items across groups" efficiently yet without a specially endpoint
-    // OR we loop through groups. 
-    // For MVP, let's Stick to specific group or handle 'all' by fetching all?
-    // Wait, backend `getItems` takes `groupId`. `all` is not a valid UUID.
-    // We should probably default to the first group if available, or handle 'all' specially.
-    // Let's default to the first group id if available, else empty.
+    // Load groups
+    const loadGroups = useCallback(async () => {
+        try {
+            const res = await watchlistClient.getGroups()
+            setGroups(res)
+        } catch (error) {
+            console.error('Failed to load groups:', error)
+        }
+    }, [])
 
-    // Removed useEffect that auto-selected first group, allowing 'all' to be selected.
+    // Load items
+    const loadItems = useCallback(async () => {
+        setLoading(true)
+        try {
+            const res = await watchlistClient.getItems(
+                currentGroupId !== 'all' ? currentGroupId : undefined,
+                page,
+                pageSize
+            )
+            setResult(res)
+        } finally {
+            setLoading(false)
+        }
+    }, [currentGroupId, page])
 
-    const { data: items, isLoading } = useWatchlistItems(
-        currentGroupId !== 'all' ? currentGroupId : undefined
-    )
+    useEffect(() => {
+        loadGroups()
+    }, [loadGroups])
+
+    useEffect(() => {
+        loadItems()
+    }, [loadItems])
+
+    const handleGroupChange = (groupId: string) => {
+        setCurrentGroupId(groupId)
+        setPage(1)
+    }
+
+    // For move dialog
+    const [moveDialogOpen, setMoveDialogOpen] = useState(false)
+    const [moveItemId, setMoveItemId] = useState<string | null>(null)
+
+    const handleMoveClick = (itemId: string) => {
+        setMoveItemId(itemId)
+        setMoveDialogOpen(true)
+    }
+
+    const handleRemove = (itemId: string, groupId: string) => {
+        // Remove from local result
+        if (result) {
+            setResult({
+                ...result,
+                data: result.data.filter(item => item.id !== itemId),
+                meta: {
+                    ...result.meta,
+                    total: result.meta.total - 1,
+                }
+            })
+        }
+    }
 
     return (
         <div className="flex flex-col h-full w-full px-6">
@@ -39,7 +96,12 @@ export function WatchlistPage() {
                     </p>
                 </div>
 
-                <AssetSearchDialog currentGroupId={currentGroupId}>
+                <AssetSearchDialog
+                    currentGroupId={currentGroupId}
+                    groups={groups}
+                    onItemAdded={loadItems}
+                    onItemRemoved={loadItems}
+                >
                     <Button>
                         <Plus className="mr-2 h-4 w-4" />
                         {t('watchlist.search.add')}
@@ -47,17 +109,42 @@ export function WatchlistPage() {
                 </AssetSearchDialog>
             </div>
 
-            <GroupTabs value={currentGroupId} onValueChange={setCurrentGroupId} />
+            <GroupTabs
+                value={currentGroupId}
+                onValueChange={handleGroupChange}
+                groups={groups}
+            />
 
-            <div className="flex-1 min-h-0 mt-4">
-                {isLoading ? (
-                    <div className="flex items-center justify-center p-8">
-                        {t('common.loading')}
-                    </div>
-                ) : (
-                    <WatchlistTable data={items || []} />
-                )}
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              {t('common.loading')}
             </div>
+          ) : (
+            <WatchlistTable
+              data={result?.data || []}
+              meta={result?.meta}
+              onPageChange={setPage}
+              onMoveClick={handleMoveClick}
+              onRemove={handleRemove}
+              currentGroupId={currentGroupId}
+            />
+          )}
+
+            {/* Dialogs */}
+            <GroupManagerDialog
+                groups={groups}
+                onGroupsChange={setGroups}
+                onRefresh={loadGroups}
+            />
+
+            <MoveToGroupDialog
+                itemId={moveItemId || ''}
+                currentGroupId={currentGroupId}
+                open={moveDialogOpen}
+                onOpenChange={setMoveDialogOpen}
+                groups={groups}
+                onSuccess={loadItems}
+            />
         </div>
     )
 }

@@ -67,7 +67,7 @@ paths:
           description: 返回结果数量限制，默认 20，最大 100
           schema:
             type: integer
-            default: 20
+            default: 10
             minimum: 1
             maximum: 100
       responses:
@@ -275,26 +275,71 @@ paths:
       summary: 获取所有自选标的
       description: |
         返回用户所有自选标的，包含分组信息。
-        此接口用于获取"全部"分组的数据，或者客户端需要全量数据时使用。
+        支持分页查询，默认每页 10 条，最多 100 条。
+        此接口用于获取"全部"分组的数据。
       tags: [自选标的]
       security:
         - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: 页码，从 1 开始
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          required: false
+          description: 每页数量，最大 100
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
       responses:
         "200":
           description: 获取成功
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/WatchlistItem"
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/WatchlistItem"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+              examples:
+                success:
+                  summary: 分页响应示例
+                  value:
+                    data:
+                      - id: "item-1"
+                        addedAt: "2024-01-23T10:00:00Z"
+                        asset:
+                          id: "uuid-1"
+                          symbol: "600519"
+                          name: "贵州茅台"
+                          type: "STOCK"
+                          market: "CN"
+                          exchange: "SSE"
+                    meta:
+                      total: 50
+                      page: 1
+                      limit: 10
+                      totalPages: 5
 
   # ==================== 自选标的 ====================
 
   /api/v1/watchlist/groups/{groupId}/items:
     get:
       summary: 获取分组内的自选标的列表
-      description: 返回指定分组内的所有自选标的，按添加时间倒序排列
+      description: |
+        返回指定分组内的自选标的，按添加时间倒序排列。
+        支持分页查询，默认每页 10 条，最多 100 条。
       tags: [自选标的]
       security:
         - bearerAuth: []
@@ -302,29 +347,106 @@ paths:
         - name: groupId
           in: path
           required: true
+          description: 分组 ID
           schema:
             type: string
             format: uuid
+        - name: page
+          in: query
+          required: false
+          description: 页码，从 1 开始
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          required: false
+          description: 每页数量，最大 100
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
       responses:
         "200":
           description: 获取成功
           content:
             application/json:
               schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/WatchlistItem"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+              examples:
+                success:
+                  summary: 分页响应示例
+                  value:
+                    data:
+                      - id: "item-1"
+                        addedAt: "2024-01-23T10:00:00Z"
+                        asset:
+                          id: "uuid-1"
+                          symbol: "600519"
+                          name: "贵州茅台"
+                          type: "STOCK"
+                          market: "CN"
+                          exchange: "SSE"
+                          pinyinInitial: "ZGMT"
+                    meta:
+                      total: 25
+                      page: 1
+                      limit: 10
+                      totalPages: 3
+
+  /api/v1/watchlist/items/check-groups:
+    post:
+      summary: 批量查询标的所在分组
+      description: |
+        根据资产 ID 批量查询这些资产已被添加到哪些分组。
+        用于搜索弹窗中显示标的的添加状态。
+      tags: [自选标的]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assetIds]
+              properties:
+                assetIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: 资产 ID 列表
+                  maxItems: 100
+              example:
+                assetIds:
+                  - "550e8400-e29b-41d4-a716-446655440000"
+                  - "660e8400-e29b-41d4-a716-446655440001"
+      responses:
+        "200":
+          description: 查询成功
+          content:
+            application/json:
+              schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/WatchlistItem"
+                  $ref: "#/components/schemas/AssetGroupCheckResult"
               example:
-                - id: "item-1"
-                  addedAt: "2024-01-23T10:00:00Z"
-                  asset:
-                    id: "uuid-1"
-                    symbol: "600519"
-                    name: "贵州茅台"
-                    type: "STOCK"
-                    market: "CN"
-                    exchange: "SSE"
-                    pinyinInitial: "ZGMT"
+                - assetId: "550e8400-e29b-41d4-a716-446655440000"
+                  groupIds:
+                    - "770e8400-e29b-41d4-a716-446655440002"
+                    - "880e8400-e29b-41d4-a716-446655440003"
+                - assetId: "660e8400-e29b-41d4-a716-446655440001"
+                  groupIds: []
 
     post:
       summary: 添加标的到自选分组
@@ -687,3 +809,51 @@ components:
                 - REIT
                 - COMMODITY
                 - OTHER
+
+    # 分页元信息
+    PaginationMeta:
+      type: object
+      description: 分页元信息
+      required:
+        - total
+        - page
+        - limit
+        - totalPages
+      properties:
+        total:
+          type: integer
+          description: 总记录数
+          example: 100
+        page:
+          type: integer
+          description: 当前页码
+          example: 1
+        limit:
+          type: integer
+          description: 每页数量
+          example: 20
+        totalPages:
+          type: integer
+          description: 总页数
+          example: 5
+
+    # 标的分组检查结果
+    AssetGroupCheckResult:
+      type: object
+      description: 标的所在分组检查结果
+      required:
+        - assetId
+        - groupIds
+      properties:
+        assetId:
+          type: string
+          format: uuid
+          description: 资产 ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        groupIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: 该资产已被添加到的分组 ID 列表
+          example: ["770e8400-e29b-41d4-a716-446655440002"]

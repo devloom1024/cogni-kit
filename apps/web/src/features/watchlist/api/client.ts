@@ -4,8 +4,18 @@ import type {
     AssetSearchResult,
     WatchlistGroup,
     WatchlistItem,
-    CreateWatchlistGroupRequest
+    CreateWatchlistGroupRequest,
+    PaginationMeta,
+    AssetGroupCheckResult,
 } from 'shared'
+
+/**
+ * 分页响应类型
+ */
+export interface PaginatedWatchlistResponse {
+    data: WatchlistItem[]
+    meta: PaginationMeta
+}
 
 export const watchlistClient = {
     // ==================== 标的搜索 ====================
@@ -48,12 +58,17 @@ export const watchlistClient = {
     },
 
     // ==================== 标的管理 ====================
-    getItems: async (groupId?: string) => {
+    getItems: async (groupId?: string, page: number = 1, limit: number = 10) => {
         const url = groupId && groupId !== 'all'
             ? API_PATHS.WATCHLIST_GROUP_ITEMS(groupId)
             : API_PATHS.WATCHLIST_ITEMS
 
-        const res = await api.get<WatchlistItem[]>(url)
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: limit.toString(),
+        })
+
+        const res = await api.get<PaginatedWatchlistResponse>(`${url}?${params}`)
         return res.data
     },
 
@@ -73,6 +88,15 @@ export const watchlistClient = {
         const res = await api.patch<WatchlistItem>(
             API_PATHS.WATCHLIST_ITEM_MOVE(itemId),
             { targetGroupId }
+        )
+        return res.data
+    },
+
+    // ==================== 批量查询 ====================
+    checkAssetGroups: async (assetIds: string[]): Promise<AssetGroupCheckResult[]> => {
+        const res = await api.post<AssetGroupCheckResult[]>(
+            `${API_PATHS.WATCHLIST_ITEMS}/check-groups`,
+            { assetIds }
         )
         return res.data
     },

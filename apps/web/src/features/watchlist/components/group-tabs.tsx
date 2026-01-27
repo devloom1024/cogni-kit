@@ -4,18 +4,18 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { GroupManagerDialog } from './group-manager-dialog'
-import { useWatchlistGroups } from '../queries'
+import type { WatchlistGroup } from 'shared'
 
 interface GroupTabsProps {
     value: string
     onValueChange: (value: string) => void
+    groups: WatchlistGroup[]
 }
 
-export function GroupTabs({ value, onValueChange }: GroupTabsProps) {
+export function GroupTabs({ value, onValueChange, groups }: GroupTabsProps) {
     const { t } = useTranslation()
-    const { data: groups } = useWatchlistGroups()
 
-    const totalCount = groups?.reduce((acc, curr) => acc + curr.itemCount, 0) || 0
+    const totalCount = groups.reduce((acc, curr) => acc + curr.itemCount, 0)
 
     return (
         <div className="w-full mb-2">
@@ -33,7 +33,7 @@ export function GroupTabs({ value, onValueChange }: GroupTabsProps) {
                                         {totalCount}
                                     </span>
                                 </TabsTrigger>
-                                {groups?.map(group => (
+                                {groups.map(group => (
                                     <TabsTrigger
                                         key={group.id}
                                         value={group.id}
@@ -51,7 +51,7 @@ export function GroupTabs({ value, onValueChange }: GroupTabsProps) {
                     </ScrollArea>
 
                     <div className="shrink-0 pb-2">
-                        <GroupManagerDialog>
+                        <GroupManagerDialog groups={groups}>
                             <Button variant="outline" size="icon" className="rounded-full h-9 w-9">
                                 <Settings className="h-4 w-4" />
                             </Button>

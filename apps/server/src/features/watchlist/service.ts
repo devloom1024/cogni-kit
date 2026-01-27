@@ -5,10 +5,20 @@ import type {
   WatchlistItem,
   CreateWatchlistGroupRequest,
   AddWatchlistItemRequest,
+  PaginationMeta,
+  AssetGroupCheckResult,
 } from 'shared'
 import { logger } from '../../shared/logger.js'
 import { AppError } from '../../shared/error.js'
 import { ErrorCode } from 'shared'
+
+/**
+ * 分页结果类型
+ */
+interface PaginatedWatchlistResult {
+  data: WatchlistItem[]
+  meta: PaginationMeta
+}
 
 /**
  * 自选服务层
@@ -160,34 +170,47 @@ export const watchlistService = {
   // ==================== 标的操作 ====================
 
   /**
-   * 获取分组内的所有标的
+   * 获取分组内的标的（分页）
    */
-  async getItemsByGroupId(groupId: string, userId: string): Promise<WatchlistItem[]> {
+  async getItemsByGroupId(
+    groupId: string,
+    userId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<PaginatedWatchlistResult> {
     // 验证分组归属
     const isOwner = await watchlistRepository.verifyGroupOwnership(groupId, userId)
     if (!isOwner) {
       throw new AppError(ErrorCode.WATCHLIST_FORBIDDEN, 403)
     }
 
-    const items = await watchlistRepository.getItemsByGroupId(groupId)
+    const result = await watchlistRepository.getItemsByGroupId(groupId, { page, limit })
 
-    return items.map(item => ({
-      id: item.id,
-      addedAt: item.createdAt.toISOString(),
-      asset: {
-        id: item.asset.id,
-        symbol: item.asset.symbol,
-        name: item.asset.name,
-        type: item.asset.type,
-        market: item.asset.market,
-        exchange: item.asset.exchange,
-        indexType: item.asset.indexType,
-        fundCompany: item.asset.fundCompany,
-        fundType: item.asset.fundType,
-        pinyinInitial: item.asset.pinyinInitial,
+    return {
+      data: result.data.map(item => ({
+        id: item.id,
+        addedAt: item.createdAt.toISOString(),
+        asset: {
+          id: item.asset.id,
+          symbol: item.asset.symbol,
+          name: item.asset.name,
+          type: item.asset.type,
+          market: item.asset.market,
+          exchange: item.asset.exchange,
+          indexType: item.asset.indexType,
+          fundCompany: item.asset.fundCompany,
+          fundType: item.asset.fundType,
+          pinyinInitial: item.asset.pinyinInitial,
+        },
+        groupId: item.groupId,
+      })),
+      meta: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.totalPages,
       },
-      groupId: item.groupId,
-    }))
+    }
   },
 
   /**
@@ -311,28 +334,51 @@ export const watchlistService = {
   },
 
   /**
-   * 获取用户的所有自选标的（跨分组）
+   * 获取用户的所有自选标的（跨分组，分页）
    */
-  async getAllItems(userId: string): Promise<WatchlistItem[]> {
-    const items = await watchlistRepository.getAllItemsByUserId(userId)
+  async getAllItems(
+    userId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<PaginatedWatchlistResult> {
+    const result = await watchlistRepository.getAllItemsByUserId(userId, { page, limit })
 
-    return items.map(item => ({
-      id: item.id,
-      addedAt: item.createdAt.toISOString(),
-      asset: {
-        id: item.asset.id,
-        symbol: item.asset.symbol,
-        name: item.asset.name,
-        type: item.asset.type,
-        market: item.asset.market,
-        exchange: item.asset.exchange,
-        indexType: item.asset.indexType,
-        fundCompany: item.asset.fundCompany,
-        fundType: item.asset.fundType,
-        pinyinInitial: item.asset.pinyinInitial,
+    return {
+      data: result.data.map(item => ({
+        id: item.id,
+        addedAt: item.createdAt.toISOString(),
+        asset: {
+          id: item.asset.id,
+          symbol: item.asset.symbol,
+          name: item.asset.name,
+          type: item.asset.type,
+          market: item.asset.market,
+          exchange: item.asset.exchange,
+          indexType: item.asset.indexType,
+          fundCompany: item.asset.fundCompany,
+          fundType: item.asset.fundType,
+          pinyinInitial: item.asset.pinyinInitial,
+        },
+        groupId: item.groupId,
+        groupName: item.group.name,
+      })),
+      meta: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.totalPages,
       },
-      groupId: item.groupId,
-      groupName: item.group.name,
-    }))
+    }
+  },
+
+  /**
+   * 批量查询标的所在分组
+   */
+  async checkAssetGroups(userId: string, assetIds: string[]): Promise<AssetGroupCheckResult[]> {
+    logger.info({ userId, assetCount: assetIds.length }, 'Checking asset groups')
+
+    const results = await watchlistRepository.checkAssetGroups(userId, assetIds)
+
+    return results
   },
 }
