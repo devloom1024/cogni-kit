@@ -7,6 +7,7 @@ import type {
   AddWatchlistItemRequest,
   PaginationMeta,
   AssetGroupCheckResult,
+  WatchlistFilterQuery,
 } from 'shared'
 import { logger } from '../../shared/logger.js'
 import { AppError } from '../../shared/error.js'
@@ -170,13 +171,14 @@ export const watchlistService = {
   // ==================== 标的操作 ====================
 
   /**
-   * 获取分组内的标的（分页）
+   * 获取分组内的标的（分页 + 过滤）
    */
   async getItemsByGroupId(
     groupId: string,
     userId: string,
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
+    filters?: WatchlistFilterQuery
   ): Promise<PaginatedWatchlistResult> {
     // 验证分组归属
     const isOwner = await watchlistRepository.verifyGroupOwnership(groupId, userId)
@@ -184,7 +186,7 @@ export const watchlistService = {
       throw new AppError(ErrorCode.WATCHLIST_FORBIDDEN, 403)
     }
 
-    const result = await watchlistRepository.getItemsByGroupId(groupId, { page, limit })
+    const result = await watchlistRepository.getItemsByGroupId(groupId, { page, limit }, filters)
 
     return {
       data: result.data.map(item => ({
@@ -334,14 +336,15 @@ export const watchlistService = {
   },
 
   /**
-   * 获取用户的所有自选标的（跨分组，分页）
+   * 获取用户的所有自选标的（跨分组，分页 + 过滤）
    */
   async getAllItems(
     userId: string,
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
+    filters?: WatchlistFilterQuery
   ): Promise<PaginatedWatchlistResult> {
-    const result = await watchlistRepository.getAllItemsByUserId(userId, { page, limit })
+    const result = await watchlistRepository.getAllItemsByUserId(userId, { page, limit }, filters)
 
     return {
       data: result.data.map(item => ({

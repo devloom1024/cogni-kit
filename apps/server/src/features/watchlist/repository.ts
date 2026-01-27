@@ -1,5 +1,5 @@
 import { prisma } from '../../shared/db.js'
-import type { CreateWatchlistGroupRequest, ReorderGroupsRequest } from 'shared'
+import type { CreateWatchlistGroupRequest, ReorderGroupsRequest, WatchlistFilterQuery } from 'shared'
 import type { Prisma } from '@prisma/client'
 
 /**
@@ -156,21 +156,42 @@ export const watchlistRepository = {
   // ==================== 标的操作 ====================
 
   /**
-   * 获取分组内标的（分页，按添加时间倒序）
+   * 获取分组内标的(分页 + 过滤,按添加时间倒序)
    */
-  async getItemsByGroupId(groupId: string, pagination: PaginationParams): Promise<PaginatedResult<Prisma.WatchlistItemGetPayload<{ include: { asset: true } }>>> {
+  async getItemsByGroupId(
+    groupId: string,
+    pagination: PaginationParams,
+    filters?: WatchlistFilterQuery
+  ): Promise<PaginatedResult<Prisma.WatchlistItemGetPayload<{ include: { asset: true } }>>> {
     const { page, limit } = pagination
     const skip = (page - 1) * limit
 
+    // 构建 where 条件
+    const where: Prisma.WatchlistItemWhereInput = {
+      groupId,
+      ...(filters?.search || filters?.types || filters?.markets ? {
+        asset: {
+          ...(filters.search ? {
+            OR: [
+              { name: { contains: filters.search, mode: 'insensitive' } },
+              { symbol: { contains: filters.search, mode: 'insensitive' } },
+            ],
+          } : {}),
+          ...(filters.types?.length ? { type: { in: filters.types } } : {}),
+          ...(filters.markets?.length ? { market: { in: filters.markets } } : {}),
+        },
+      } : {}),
+    }
+
     const [items, total] = await Promise.all([
       prisma.watchlistItem.findMany({
-        where: { groupId },
+        where,
         include: { asset: true },
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      prisma.watchlistItem.count({ where: { groupId } }),
+      prisma.watchlistItem.count({ where }),
     ])
 
     return {
@@ -236,17 +257,36 @@ export const watchlistRepository = {
   },
 
   /**
-   * 获取用户的所有自选标的（跨分组，分页）
+   * 获取用户的所有自选标的(跨分组,分页 + 过滤)
    */
-  async getAllItemsByUserId(userId: string, pagination: PaginationParams): Promise<PaginatedResult<Prisma.WatchlistItemGetPayload<{ include: { asset: true; group: { select: { id: true; name: true } } } }>>> {
+  async getAllItemsByUserId(
+    userId: string,
+    pagination: PaginationParams,
+    filters?: WatchlistFilterQuery
+  ): Promise<PaginatedResult<Prisma.WatchlistItemGetPayload<{ include: { asset: true; group: { select: { id: true; name: true } } } }>>> {
     const { page, limit } = pagination
     const skip = (page - 1) * limit
 
+    // 构建 where 条件
+    const where: Prisma.WatchlistItemWhereInput = {
+      group: { userId },
+      ...(filters?.search || filters?.types || filters?.markets ? {
+        asset: {
+          ...(filters.search ? {
+            OR: [
+              { name: { contains: filters.search, mode: 'insensitive' } },
+              { symbol: { contains: filters.search, mode: 'insensitive' } },
+            ],
+          } : {}),
+          ...(filters.types?.length ? { type: { in: filters.types } } : {}),
+          ...(filters.markets?.length ? { market: { in: filters.markets } } : {}),
+        },
+      } : {}),
+    }
+
     const [items, total] = await Promise.all([
       prisma.watchlistItem.findMany({
-        where: {
-          group: { userId },
-        },
+        where,
         include: {
           asset: true,
           group: {
@@ -257,9 +297,7 @@ export const watchlistRepository = {
         skip,
         take: limit,
       }),
-      prisma.watchlistItem.count({
-        where: { group: { userId } },
-      }),
+      prisma.watchlistItem.count({ where }),
     ])
 
     return {

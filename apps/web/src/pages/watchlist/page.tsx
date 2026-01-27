@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { GroupTabs } from '@/features/watchlist/components/group-tabs'
 import { WatchlistTable } from '@/features/watchlist/components/watchlist-table'
+import { WatchlistFiltersBar, type WatchlistFilters } from '@/features/watchlist/components/watchlist-filters'
 import { AssetSearchDialog } from '@/features/watchlist/components/asset-search-dialog'
 import { MoveToGroupDialog } from '@/features/watchlist/components/move-to-group-dialog'
 import { watchlistClient } from '@/features/watchlist/api/client'
@@ -21,6 +22,11 @@ export function WatchlistPage() {
     const [result, setResult] = useState<PaginatedResult | null>(null)
     const [groups, setGroups] = useState<WatchlistGroup[]>([])
     const [loading, setLoading] = useState(false)
+    const [filters, setFilters] = useState<WatchlistFilters>({
+        search: '',
+        types: [],
+        markets: [],
+    })
 
     const pageSize = 10
 
@@ -41,13 +47,18 @@ export function WatchlistPage() {
             const res = await watchlistClient.getItems(
                 currentGroupId !== 'all' ? currentGroupId : undefined,
                 page,
-                pageSize
+                pageSize,
+                {
+                    search: filters.search || undefined,
+                    types: filters.types.length > 0 ? filters.types : undefined,
+                    markets: filters.markets.length > 0 ? filters.markets : undefined,
+                }
             )
             setResult(res)
         } finally {
             setLoading(false)
         }
-    }, [currentGroupId, page])
+    }, [currentGroupId, page, filters])
 
     useEffect(() => {
         loadGroups()
@@ -57,9 +68,16 @@ export function WatchlistPage() {
         loadItems()
     }, [loadItems])
 
+    // Handle group change
     const handleGroupChange = (groupId: string) => {
         setCurrentGroupId(groupId)
-        setPage(1)
+        setPage(1) // 重置页码
+    }
+
+    // Handle filters change
+    const handleFiltersChange = (newFilters: WatchlistFilters) => {
+        setFilters(newFilters)
+        setPage(1) // 重置页码
     }
 
     // For move dialog
@@ -114,6 +132,12 @@ export function WatchlistPage() {
                 groups={groups}
                 onGroupsChange={setGroups}
                 onRefresh={loadGroups}
+            />
+
+            {/* 过滤器 */}
+            <WatchlistFiltersBar
+                filters={filters}
+                onFiltersChange={handleFiltersChange}
             />
 
             {loading ? (

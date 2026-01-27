@@ -58,7 +58,16 @@ export const watchlistClient = {
     },
 
     // ==================== 标的管理 ====================
-    getItems: async (groupId?: string, page: number = 1, limit: number = 10) => {
+    getItems: async (
+        groupId?: string,
+        page: number = 1,
+        limit: number = 10,
+        filters?: {
+            search?: string
+            types?: string[]
+            markets?: string[]
+        }
+    ) => {
         const url = groupId && groupId !== 'all'
             ? API_PATHS.WATCHLIST_GROUP_ITEMS(groupId)
             : API_PATHS.WATCHLIST_ITEMS
@@ -67,6 +76,19 @@ export const watchlistClient = {
             page: page.toString(),
             limit: limit.toString(),
         })
+
+        // 添加过滤参数
+        if (filters?.search) {
+            params.append('search', filters.search)
+        }
+
+        if (filters?.types?.length) {
+            filters.types.forEach(type => params.append('types', type))
+        }
+
+        if (filters?.markets?.length) {
+            filters.markets.forEach(market => params.append('markets', market))
+        }
 
         const res = await api.get<PaginatedWatchlistResponse>(`${url}?${params}`)
         return res.data

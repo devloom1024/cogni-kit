@@ -277,6 +277,11 @@ paths:
         返回用户所有自选标的，包含分组信息。
         支持分页查询，默认每页 10 条，最多 100 条。
         此接口用于获取"全部"分组的数据。
+        
+        **过滤功能**：
+        - 搜索：支持按标的代码或名称搜索
+        - 类型过滤：支持多选资产类型
+        - 市场过滤：支持多选市场
       tags: [自选标的]
       security:
         - bearerAuth: []
@@ -298,6 +303,39 @@ paths:
             default: 10
             minimum: 1
             maximum: 100
+        - name: search
+          in: query
+          required: false
+          description: 搜索关键词，支持按标的代码或名称模糊搜索
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 50
+            example: "茅台"
+        - name: types
+          in: query
+          required: false
+          description: 资产类型过滤，支持多选
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [STOCK, INDEX, ETF, LOF, OFUND]
+          style: form
+          explode: true
+          example: ["STOCK", "ETF"]
+        - name: markets
+          in: query
+          required: false
+          description: 市场过滤，支持多选
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [CN, HK, US]
+          style: form
+          explode: true
+          example: ["CN"]
       responses:
         "200":
           description: 获取成功
@@ -340,6 +378,11 @@ paths:
       description: |
         返回指定分组内的自选标的，按添加时间倒序排列。
         支持分页查询，默认每页 10 条，最多 100 条。
+        
+        **过滤功能**：
+        - 搜索：支持按标的代码或名称搜索
+        - 类型过滤：支持多选资产类型
+        - 市场过滤：支持多选市场
       tags: [自选标的]
       security:
         - bearerAuth: []
@@ -368,6 +411,39 @@ paths:
             default: 10
             minimum: 1
             maximum: 100
+        - name: search
+          in: query
+          required: false
+          description: 搜索关键词，支持按标的代码或名称模糊搜索
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 50
+            example: "茅台"
+        - name: types
+          in: query
+          required: false
+          description: 资产类型过滤，支持多选
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [STOCK, INDEX, ETF, LOF, OFUND]
+          style: form
+          explode: true
+          example: ["STOCK", "ETF"]
+        - name: markets
+          in: query
+          required: false
+          description: 市场过滤，支持多选
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [CN, HK, US]
+          style: form
+          explode: true
+          example: ["CN"]
       responses:
         "200":
           description: 获取成功

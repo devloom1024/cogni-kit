@@ -10,6 +10,7 @@ import {
   MoveWatchlistItemSchema,
   ErrorSchema,
   PaginationMetaSchema,
+  WatchlistFilterQuerySchema,
 } from 'shared'
 import { watchlistService } from './service.js'
 
@@ -27,11 +28,45 @@ const paginationQuerySchema = z.object({
   }),
 })
 
+// 过滤参数 Schema (需要 coerce 处理数组参数)
+const filterQuerySchema = z.object({
+  search: z.string().min(1).max(50).optional().openapi({
+    description: '搜索关键词，支持按标的代码或名称模糊搜索',
+    example: '茅台',
+  }),
+  types: z.preprocess(
+    (val) => {
+      if (typeof val === 'string') return [val]
+      if (Array.isArray(val)) return val
+      return undefined
+    },
+    z.array(z.enum(['STOCK', 'INDEX', 'ETF', 'LOF', 'OFUND'])).optional()
+  ).openapi({
+    description: '资产类型过滤，支持多选',
+    example: ['STOCK', 'ETF'],
+  }),
+  markets: z.preprocess(
+    (val) => {
+      if (typeof val === 'string') return [val]
+      if (Array.isArray(val)) return val
+      return undefined
+    },
+    z.array(z.enum(['CN', 'HK', 'US'])).optional()
+  ).openapi({
+    description: '市场过滤，支持多选',
+    example: ['CN'],
+  }),
+})
+
+// 合并分页和过滤参数
+const paginationWithFilterQuerySchema = paginationQuerySchema.merge(filterQuerySchema)
+
 // 分页响应 Schema
 const paginatedItemsResponseSchema = z.object({
   data: z.array(WatchlistItemSchema),
   meta: PaginationMetaSchema,
 }).openapi('PaginatedWatchlistItemsResponse')
+
 
 // ==================== 自选分组管理 ====================
 
@@ -267,13 +302,13 @@ const getItemsRoute = createRoute({
   path: '/groups/{groupId}/items',
   tags: ['自选标的'],
   summary: '获取分组内的自选标的列表',
-  description: '返回指定分组内的自选标的，按添加时间倒序排列。支持分页查询。',
+  description: '返回指定分组内的自选标的，按添加时间倒序排列。支持分页查询和过滤。',
   security: [{ bearerAuth: [] }],
   request: {
     params: z.object({
       groupId: z.string().uuid().openapi({ description: '分组 ID' }),
     }),
-    query: paginationQuerySchema,
+    query: paginationWithFilterQuerySchema,
   },
   responses: {
     200: {
@@ -290,8 +325,10 @@ const getItemsRoute = createRoute({
 watchlist.openapi(getItemsRoute, async (c) => {
   const userId = c.get('userId')
   const { groupId } = c.req.param()
-  const { page, limit } = c.req.valid('query')
-  const result = await watchlistService.getItemsByGroupId(groupId, userId, page, limit)
+  const { page, limit, search, types, markets } = c.req.valid('query')
+
+  const filters = { search, types, markets }
+  const result = await watchlistService.getItemsByGroupId(groupId, userId, page, limit, filters)
   return c.json(result)
 })
 
@@ -301,10 +338,10 @@ const getAllItemsRoute = createRoute({
   path: '/items',
   tags: ['自选标的'],
   summary: '获取所有自选标的',
-  description: '返回用户所有自选标的，包含分组信息。支持分页查询。',
+  description: '返回用户所有自选标的，包含分组信息。支持分页查询和过滤。',
   security: [{ bearerAuth: [] }],
   request: {
-    query: paginationQuerySchema,
+    query: paginationWithFilterQuerySchema,
   },
   responses: {
     200: {
@@ -320,8 +357,10 @@ const getAllItemsRoute = createRoute({
 
 watchlist.openapi(getAllItemsRoute, async (c) => {
   const userId = c.get('userId')
-  const { page, limit } = c.req.valid('query')
-  const result = await watchlistService.getAllItems(userId, page, limit)
+  const { page, limit, search, types, markets } = c.req.valid('query')
+
+  const filters = { search, types, markets }
+  const result = await watchlistService.getAllItems(userId, page, limit, filters)
   return c.json(result)
 })
 

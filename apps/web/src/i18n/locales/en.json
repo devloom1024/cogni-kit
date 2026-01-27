@@ -107,6 +107,21 @@
             "ETF": "ETF",
             "LOF": "LOF",
             "OFUND": "Funds"
+        },
+        "markets": {
+            "CN": "China A-Share",
+            "HK": "Hong Kong",
+            "US": "US"
+        },
+        "filters": {
+            "search_placeholder": "Search symbol or name...",
+            "type": "Type",
+            "market": "Market",
+            "select_types": "Select Types",
+            "select_markets": "Select Markets",
+            "reset": "Reset",
+            "clear": "Clear filters",
+            "no_results": "No results found"
         }
     }
 }

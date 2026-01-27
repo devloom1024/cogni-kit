@@ -226,3 +226,28 @@ export const AssetGroupCheckResultSchema = z.object({
 }).openapi('AssetGroupCheckResult')
 
 export type AssetGroupCheckResult = z.infer<typeof AssetGroupCheckResultSchema>
+
+// ==================== 过滤查询相关 Schema ====================
+
+/**
+ * 自选列表过滤查询参数 Schema
+ */
+export const WatchlistFilterQuerySchema = z.object({
+  /// 搜索关键词 (按标的代码或名称模糊搜索)
+  search: z.string().min(1).max(50).optional().openapi({
+    description: '搜索关键词，支持按标的代码或名称模糊搜索',
+    example: '茅台',
+  }),
+  /// 资产类型过滤 (多选)
+  types: z.array(z.enum(['STOCK', 'INDEX', 'ETF', 'LOF', 'OFUND'])).optional().openapi({
+    description: '资产类型过滤，支持多选',
+    example: ['STOCK', 'ETF'],
+  }),
+  /// 市场过滤 (多选)
+  markets: z.array(z.enum(['CN', 'HK', 'US'])).optional().openapi({
+    description: '市场过滤，支持多选',
+    example: ['CN'],
+  }),
+}).openapi('WatchlistFilterQuery')
+
+export type WatchlistFilterQuery = z.infer<typeof WatchlistFilterQuerySchema>

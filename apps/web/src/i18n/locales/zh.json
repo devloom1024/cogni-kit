@@ -107,6 +107,21 @@
             "ETF": "ETF",
             "LOF": "LOF",
             "OFUND": "场外基金"
+        },
+        "markets": {
+            "CN": "A股",
+            "HK": "港股",
+            "US": "美股"
+        },
+        "filters": {
+            "search_placeholder": "搜索代码或名称...",
+            "type": "类型",
+            "market": "市场",
+            "select_types": "选择类型",
+            "select_markets": "选择市场",
+            "reset": "重置",
+            "clear": "清除过滤条件",
+            "no_results": "无匹配结果"
         }
     }
 }
