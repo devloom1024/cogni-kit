@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { GroupTabs } from '@/features/watchlist/components/group-tabs'
 import { WatchlistTable } from '@/features/watchlist/components/watchlist-table'
-import { WatchlistFiltersBar, type WatchlistFilters } from '@/features/watchlist/components/watchlist-filters'
+import type { WatchlistFilters } from '@/features/watchlist/components/watchlist-filters'
 import { AssetSearchDialog } from '@/features/watchlist/components/asset-search-dialog'
 import { MoveToGroupDialog } from '@/features/watchlist/components/move-to-group-dialog'
 import { watchlistClient } from '@/features/watchlist/api/client'
@@ -134,26 +134,18 @@ export function WatchlistPage() {
                 onRefresh={loadGroups}
             />
 
-            {/* 过滤器 */}
-            <WatchlistFiltersBar
+            {/* 过滤器 & 表格 */}
+            <WatchlistTable
+                data={result?.data || []}
+                meta={result?.meta}
+                onPageChange={setPage}
+                onMoveClick={handleMoveClick}
+                onRemove={handleRemove}
+                currentGroupId={currentGroupId}
+                loading={loading}
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
             />
-
-            {loading ? (
-                <div className="flex items-center justify-center p-8">
-                    {t('common.loading')}
-                </div>
-            ) : (
-                <WatchlistTable
-                    data={result?.data || []}
-                    meta={result?.meta}
-                    onPageChange={setPage}
-                    onMoveClick={handleMoveClick}
-                    onRemove={handleRemove}
-                    currentGroupId={currentGroupId}
-                />
-            )}
 
             {/* Move Dialog */}
 

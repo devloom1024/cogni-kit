@@ -1,5 +1,15 @@
 import { useState } from 'react'
-import { Inbox } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Inbox, Settings2, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
     Empty,
     EmptyMedia,
@@ -33,6 +43,7 @@ import {
 } from '@/components/ui/pagination'
 import type { PaginationMeta, WatchlistItem } from 'shared'
 import { useWatchlistColumns } from './columns'
+import { WatchlistFiltersBar, type WatchlistFilters } from './watchlist-filters'
 
 interface WatchlistTableProps {
     data: WatchlistItem[]
@@ -41,6 +52,9 @@ interface WatchlistTableProps {
     onMoveClick: (itemId: string) => void
     onRemove: (itemId: string, groupId: string) => void
     currentGroupId: string
+    loading?: boolean
+    filters: WatchlistFilters
+    onFiltersChange: (filters: WatchlistFilters) => void
 }
 
 export function WatchlistTable({
@@ -49,7 +63,11 @@ export function WatchlistTable({
     onPageChange,
     onMoveClick,
     onRemove,
+    loading,
+    filters,
+    onFiltersChange,
 }: WatchlistTableProps) {
+    const { t } = useTranslation()
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -107,8 +125,54 @@ export function WatchlistTable({
 
     return (
         <div className="flex flex-col space-y-4">
+            <div className="flex items-center justify-between gap-4">
+                <WatchlistFiltersBar
+                    filters={filters}
+                    onFiltersChange={onFiltersChange}
+                    className="mb-0 flex-1"
+                />
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="shrink-0">
+                            <Settings2 className="mr-2 h-4 w-4" />
+                            {t('watchlist.table.columns')}
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>{t('watchlist.table.toggle_columns')}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {table
+                            .getAllColumns()
+                            .filter(
+                                (column) => column.getCanHide()
+                            )
+                            .map((column) => {
+                                return (
+                                    <DropdownMenuCheckboxItem
+                                        key={column.id}
+                                        className="capitalize"
+                                        checked={column.getIsVisible()}
+                                        onCheckedChange={(value) =>
+                                            column.toggleVisibility(!!value)
+                                        }
+                                    >
+                                        {column.columnDef.header && typeof column.columnDef.header === 'string'
+                                            ? column.columnDef.header
+                                            : t(`watchlist.table.${column.id === 'select' || column.id === 'actions' ? column.id : column.id}`)}
+                                    </DropdownMenuCheckboxItem>
+                                )
+                            })}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+
             {/* 表格区域 */}
-            <div className="border rounded-md">
+            <div className="border rounded-md relative">
+                {loading && (
+                    <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                )}
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -154,6 +218,7 @@ export function WatchlistTable({
                                             <EmptyMedia variant="icon" className="mb-4">
                                                 <Inbox className="h-6 w-6 text-muted-foreground" />
                                             </EmptyMedia>
+                                            <span className="text-sm text-muted-foreground">{t('watchlist.table.empty')}</span>
                                         </Empty>
                                     </div>
                                 </TableCell>
@@ -164,10 +229,10 @@ export function WatchlistTable({
             </div>
 
             {/* 分页控件 */}
-            {meta && meta.totalPages > 1 && (
+            {meta && meta.total > 0 && (
                 <div className="flex items-center justify-end gap-4 py-4">
                     <div className="text-sm text-muted-foreground whitespace-nowrap">
-                        共 {meta.total} 条
+                        {t('watchlist.table.total_count', { count: meta.total })}
                     </div>
                     <Pagination className="!mx-0 !justify-end">
                         <PaginationContent>
@@ -175,7 +240,10 @@ export function WatchlistTable({
                                 <PaginationPrevious
                                     onClick={meta.page <= 1 ? undefined : () => handlePageChange(meta.page - 1)}
                                     className={meta.page <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                                />
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                    <span className="hidden sm:block">{t('common.previous')}</span>
+                                </PaginationPrevious>
                             </PaginationItem>
                             {getPageNumbers().map((page, index) => (
                                 <PaginationItem key={index}>
@@ -196,7 +264,10 @@ export function WatchlistTable({
                                 <PaginationNext
                                     onClick={meta.page >= meta.totalPages ? undefined : () => handlePageChange(meta.page + 1)}
                                     className={meta.page >= meta.totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                                />
+                                >
+                                    <span className="hidden sm:block">{t('common.next')}</span>
+                                    <ChevronRight className="h-4 w-4" />
+                                </PaginationNext>
                             </PaginationItem>
                         </PaginationContent>
                     </Pagination>

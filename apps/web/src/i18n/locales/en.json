@@ -2,7 +2,9 @@
     "common": {
         "loading": "Loading...",
         "submit": "Submit",
-        "required": "Required field"
+        "required": "Required field",
+        "previous": "Previous",
+        "next": "Next"
     },
     "auth": {
         "login": {
@@ -83,7 +85,12 @@
             "type": "Type",
             "market": "Market",
             "added_at": "Added At",
-            "actions": "Actions"
+            "addedAt": "Added At",
+            "actions": "Actions",
+            "toggle_columns": "Toggle Columns",
+            "columns": "Columns",
+            "empty": "No assets in this list",
+            "total_count": "Total {{count}} items"
         },
         "columns": {
             "select": "Select"

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { cn } from '@/lib/utils'
 import { Search, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -14,6 +15,7 @@ export interface WatchlistFilters {
 interface WatchlistFiltersProps {
     filters: WatchlistFilters
     onFiltersChange: (filters: WatchlistFilters) => void
+    className?: string
 }
 
 const ASSET_TYPES = [
@@ -30,7 +32,7 @@ const MARKETS = [
     { value: 'US', label: 'watchlist.markets.US' },
 ]
 
-export function WatchlistFiltersBar({ filters, onFiltersChange }: WatchlistFiltersProps) {
+export function WatchlistFiltersBar({ filters, onFiltersChange, className }: WatchlistFiltersProps) {
     const { t } = useTranslation()
     const [searchInput, setSearchInput] = useState(filters.search)
 
@@ -64,7 +66,7 @@ export function WatchlistFiltersBar({ filters, onFiltersChange }: WatchlistFilte
     const hasActiveFilters = filters.search || filters.types.length > 0 || filters.markets.length > 0
 
     return (
-        <div className="flex items-center gap-2 mb-4">
+        <div className={cn("flex items-center gap-2 mb-4", className)}>
             {/* 搜索框 */}
             <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

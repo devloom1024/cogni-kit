@@ -2,7 +2,9 @@
     "common": {
         "loading": "加载中...",
         "submit": "提交",
-        "required": "必填项"
+        "required": "必填项",
+        "previous": "上一页",
+        "next": "下一页"
     },
     "auth": {
         "login": {
@@ -83,7 +85,12 @@
             "type": "类型",
             "market": "市场",
             "added_at": "加入时间",
-            "actions": "操作"
+            "addedAt": "加入时间",
+            "actions": "操作",
+            "toggle_columns": "显示列",
+            "columns": "列设置",
+            "empty": "暂无自选标的",
+            "total_count": "共 {{count}} 条"
         },
         "columns": {
             "select": "选择"
