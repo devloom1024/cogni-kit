@@ -25,10 +25,10 @@ export function GroupTabs({ value, onValueChange, groups, onGroupsChange, onRefr
                 <div className="flex items-center gap-2">
                     <ScrollArea className="flex-1 min-w-0">
                         <div className="pb-2">
-                            <TabsList className="bg-transparent p-0 h-auto gap-2 justify-start inline-flex">
+                            <TabsList className="h-10 p-1 gap-1 bg-muted rounded-md inline-flex items-center">
                                 <TabsTrigger
                                     value="all"
-                                    className="border border-border bg-background hover:bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4 h-9 whitespace-nowrap"
+                                    className="px-3 rounded-sm h-full"
                                 >
                                     {t('watchlist.groups.all')}
                                     <span className="ml-2 text-xs opacity-70">
@@ -39,7 +39,7 @@ export function GroupTabs({ value, onValueChange, groups, onGroupsChange, onRefr
                                     <TabsTrigger
                                         key={group.id}
                                         value={group.id}
-                                        className="border border-border bg-background hover:bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4 h-9 whitespace-nowrap"
+                                        className="px-3 rounded-sm h-full"
                                     >
                                         {group.name}
                                         <span className="ml-2 text-xs opacity-70">
@@ -58,7 +58,7 @@ export function GroupTabs({ value, onValueChange, groups, onGroupsChange, onRefr
                             onGroupsChange={onGroupsChange}
                             onRefresh={onRefresh}
                         >
-                            <Button variant="outline" size="icon" className="rounded-full h-9 w-9">
+                            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 text-muted-foreground hover:text-foreground">
                                 <Settings className="h-4 w-4" />
                             </Button>
                         </GroupManagerDialog>
