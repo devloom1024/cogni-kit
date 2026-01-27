@@ -106,71 +106,75 @@ export function WatchlistTable({
     }
 
     return (
-        <div className="flex flex-col h-full">
-            <Table className="border rounded-md">
-                <TableHeader>
-                    {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
-                            {headerGroup.headers.map((header) => (
-                                <TableHead key={header.id}>
-                                    {header.isPlaceholder
-                                        ? null
-                                        : flexRender(
-                                            header.column.columnDef.header,
-                                            header.getContext()
-                                        )}
-                                </TableHead>
-                            ))}
-                        </TableRow>
-                    ))}
-                </TableHeader>
-                <TableBody>
-                    {table.getRowModel().rows?.length ? (
-                        table.getRowModel().rows.map((row) => (
-                            <TableRow
-                                key={row.id}
-                                data-state={row.getIsSelected() && "selected"}
-                            >
-                                {row.getVisibleCells().map((cell) => (
-                                    <TableCell key={cell.id}>
-                                        {flexRender(
-                                            cell.column.columnDef.cell,
-                                            cell.getContext()
-                                        )}
-                                    </TableCell>
+        <div className="flex flex-col space-y-4">
+            {/* 表格区域 */}
+            <div className="border rounded-md">
+                <Table>
+                    <TableHeader>
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id}>
+                                {headerGroup.headers.map((header) => (
+                                    <TableHead key={header.id}>
+                                        {header.isPlaceholder
+                                            ? null
+                                            : flexRender(
+                                                header.column.columnDef.header,
+                                                header.getContext()
+                                            )}
+                                    </TableHead>
                                 ))}
                             </TableRow>
-                        ))
-                    ) : (
-                        <TableRow>
-                            <TableCell
-                                colSpan={columns.length}
-                                className="h-96 text-center"
-                            >
-                                <div className="flex justify-center items-center h-full">
-                                    <Empty>
-                                        <EmptyMedia variant="icon" className="mb-4">
-                                            <Inbox className="h-6 w-6 text-muted-foreground" />
-                                        </EmptyMedia>
-                                    </Empty>
-                                </div>
-                            </TableCell>
-                        </TableRow>
-                    )}
-                </TableBody>
-            </Table>
-            {/* Pagination Controls */}
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                            table.getRowModel().rows.map((row) => (
+                                <TableRow
+                                    key={row.id}
+                                    data-state={row.getIsSelected() && "selected"}
+                                >
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell key={cell.id}>
+                                            {flexRender(
+                                                cell.column.columnDef.cell,
+                                                cell.getContext()
+                                            )}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={columns.length}
+                                    className="h-96 text-center"
+                                >
+                                    <div className="flex justify-center items-center h-full">
+                                        <Empty>
+                                            <EmptyMedia variant="icon" className="mb-4">
+                                                <Inbox className="h-6 w-6 text-muted-foreground" />
+                                            </EmptyMedia>
+                                        </Empty>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+
+            {/* 分页控件 */}
             {meta && meta.totalPages > 1 && (
                 <div className="flex items-center justify-end gap-4 py-4">
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground whitespace-nowrap">
                         共 {meta.total} 条
                     </div>
                     <Pagination className="!mx-0 !justify-end">
                         <PaginationContent>
                             <PaginationItem>
                                 <PaginationPrevious
-                                    onClick={() => handlePageChange(meta.page - 1)}
-                                    disabled={meta.page <= 1}
+                                    onClick={meta.page <= 1 ? undefined : () => handlePageChange(meta.page - 1)}
+                                    className={meta.page <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                                 />
                             </PaginationItem>
                             {getPageNumbers().map((page, index) => (
@@ -181,6 +185,7 @@ export function WatchlistTable({
                                         <PaginationLink
                                             onClick={() => handlePageChange(page)}
                                             isActive={page === meta.page}
+                                            className="cursor-pointer"
                                         >
                                             {page}
                                         </PaginationLink>
@@ -189,8 +194,8 @@ export function WatchlistTable({
                             ))}
                             <PaginationItem>
                                 <PaginationNext
-                                    onClick={() => handlePageChange(meta.page + 1)}
-                                    disabled={meta.page >= meta.totalPages}
+                                    onClick={meta.page >= meta.totalPages ? undefined : () => handlePageChange(meta.page + 1)}
+                                    className={meta.page >= meta.totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                                 />
                             </PaginationItem>
                         </PaginationContent>

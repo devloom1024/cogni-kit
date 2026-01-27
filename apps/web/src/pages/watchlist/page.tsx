@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { GroupTabs } from '@/features/watchlist/components/group-tabs'
 import { WatchlistTable } from '@/features/watchlist/components/watchlist-table'
 import { AssetSearchDialog } from '@/features/watchlist/components/asset-search-dialog'
-import { GroupManagerDialog } from '@/features/watchlist/components/group-manager-dialog'
 import { MoveToGroupDialog } from '@/features/watchlist/components/move-to-group-dialog'
 import { watchlistClient } from '@/features/watchlist/api/client'
 import type { PaginationMeta, WatchlistGroup, WatchlistItem } from 'shared'
@@ -72,7 +71,7 @@ export function WatchlistPage() {
         setMoveDialogOpen(true)
     }
 
-    const handleRemove = (itemId: string, groupId: string) => {
+    const handleRemove = (itemId: string) => {
         // Remove from local result
         if (result) {
             setResult({
@@ -87,7 +86,7 @@ export function WatchlistPage() {
     }
 
     return (
-        <div className="flex flex-col h-full w-full px-6">
+        <div className="flex flex-col w-full px-6">
             <div className="flex items-center justify-between mb-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{t('watchlist.title')}</h1>
@@ -113,29 +112,26 @@ export function WatchlistPage() {
                 value={currentGroupId}
                 onValueChange={handleGroupChange}
                 groups={groups}
-            />
-
-          {loading ? (
-            <div className="flex items-center justify-center p-8">
-              {t('common.loading')}
-            </div>
-          ) : (
-            <WatchlistTable
-              data={result?.data || []}
-              meta={result?.meta}
-              onPageChange={setPage}
-              onMoveClick={handleMoveClick}
-              onRemove={handleRemove}
-              currentGroupId={currentGroupId}
-            />
-          )}
-
-            {/* Dialogs */}
-            <GroupManagerDialog
-                groups={groups}
                 onGroupsChange={setGroups}
                 onRefresh={loadGroups}
             />
+
+            {loading ? (
+                <div className="flex items-center justify-center p-8">
+                    {t('common.loading')}
+                </div>
+            ) : (
+                <WatchlistTable
+                    data={result?.data || []}
+                    meta={result?.meta}
+                    onPageChange={setPage}
+                    onMoveClick={handleMoveClick}
+                    onRemove={handleRemove}
+                    currentGroupId={currentGroupId}
+                />
+            )}
+
+            {/* Move Dialog */}
 
             <MoveToGroupDialog
                 itemId={moveItemId || ''}

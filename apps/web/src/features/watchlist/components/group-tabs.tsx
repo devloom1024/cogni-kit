@@ -10,9 +10,11 @@ interface GroupTabsProps {
     value: string
     onValueChange: (value: string) => void
     groups: WatchlistGroup[]
+    onGroupsChange: (groups: WatchlistGroup[]) => void
+    onRefresh: () => void
 }
 
-export function GroupTabs({ value, onValueChange, groups }: GroupTabsProps) {
+export function GroupTabs({ value, onValueChange, groups, onGroupsChange, onRefresh }: GroupTabsProps) {
     const { t } = useTranslation()
 
     const totalCount = groups.reduce((acc, curr) => acc + curr.itemCount, 0)
@@ -51,7 +53,11 @@ export function GroupTabs({ value, onValueChange, groups }: GroupTabsProps) {
                     </ScrollArea>
 
                     <div className="shrink-0 pb-2">
-                        <GroupManagerDialog groups={groups}>
+                        <GroupManagerDialog
+                            groups={groups}
+                            onGroupsChange={onGroupsChange}
+                            onRefresh={onRefresh}
+                        >
                             <Button variant="outline" size="icon" className="rounded-full h-9 w-9">
                                 <Settings className="h-4 w-4" />
                             </Button>
