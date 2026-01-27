@@ -27,14 +27,10 @@ import {
 } from '@/components/ui/empty'
 
 import {
-    type ColumnFiltersState,
     type SortingState,
     type VisibilityState,
     flexRender,
     getCoreRowModel,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table'
 import {
@@ -68,6 +64,8 @@ interface WatchlistTableProps {
     loading?: boolean
     filters: WatchlistFilters
     onFiltersChange: (filters: WatchlistFilters) => void
+    sorting?: SortingState
+    onSortingChange?: (sorting: SortingState) => void
 }
 
 export function WatchlistTable({
@@ -80,10 +78,27 @@ export function WatchlistTable({
     loading,
     filters,
     onFiltersChange,
+    sorting: externalSorting,
+    onSortingChange,
 }: WatchlistTableProps) {
     const { t } = useTranslation()
-    const [sorting, setSorting] = useState<SortingState>([])
-    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    // 使用受控或非受控的排序状态
+    const [internalSorting, setInternalSorting] = useState<SortingState>([])
+    const sorting = externalSorting ?? internalSorting
+
+    // 处理排序变化，支持 Updater 函数
+    const handleSortingChange = (updaterOrValue: SortingState | ((old: SortingState) => SortingState)) => {
+        const newSorting = typeof updaterOrValue === 'function'
+            ? updaterOrValue(sorting)
+            : updaterOrValue
+
+        if (onSortingChange) {
+            onSortingChange(newSorting)
+        } else {
+            setInternalSorting(newSorting)
+        }
+    }
+
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = useState({})
     const [showConfirmDialog, setShowConfirmDialog] = useState(false)
@@ -93,18 +108,20 @@ export function WatchlistTable({
     const table = useReactTable({
         data,
         columns,
-        onSortingChange: setSorting,
-        onColumnFiltersChange: setColumnFilters,
+        onSortingChange: handleSortingChange,
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
+        // 服务端分页，不需要客户端的分页、排序、过滤 row models
+        // getPaginationRowModel: getPaginationRowModel(),
+        // getSortedRowModel: getSortedRowModel(),
+        // getFilteredRowModel: getFilteredRowModel(),
         onColumnVisibilityChange: setColumnVisibility,
         onRowSelectionChange: setRowSelection,
+        manualPagination: true, // 启用手动分页模式
+        manualSorting: true, // 启用手动排序模式
+        manualFiltering: true, // 启用手动过滤模式
         pageCount: meta?.totalPages ?? -1,
         state: {
             sorting,
-            columnFilters,
             columnVisibility,
             rowSelection,
         },
