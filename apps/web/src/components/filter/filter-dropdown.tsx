@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react'
 import { PlusCircle, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
     DropdownMenu,
-    DropdownMenuCheckboxItem,
     DropdownMenuContent,
+    DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
@@ -190,17 +191,26 @@ export function FilterDropdown({
                 <div className="max-h-64 overflow-y-auto">
                     {filteredOptions.length > 0 ? (
                         filteredOptions.map((option) => (
-                            <DropdownMenuCheckboxItem
+                            <DropdownMenuItem
                                 key={option.value}
-                                checked={value.includes(option.value)}
-                                onCheckedChange={() => handleToggle(option.value)}
-                                onSelect={(e) => e.preventDefault()}
+                                onSelect={(e) => {
+                                    e.preventDefault()
+                                    handleToggle(option.value)
+                                }}
                             >
-                                {option.icon && (
-                                    <span className="mr-2">{option.icon}</span>
-                                )}
-                                {option.label}
-                            </DropdownMenuCheckboxItem>
+                                <div className="flex items-center gap-2 w-full">
+                                    <Checkbox
+                                        checked={value.includes(option.value)}
+                                        className="pointer-events-none data-[state=checked]:text-primary-foreground [&>span]:data-[state=checked]:text-primary-foreground [&_svg]:!text-primary-foreground"
+                                    />
+                                    {option.icon && (
+                                        <span className="text-muted-foreground">
+                                            {option.icon}
+                                        </span>
+                                    )}
+                                    <span>{option.label}</span>
+                                </div>
+                            </DropdownMenuItem>
                         ))
                     ) : (
                         <div className="px-2 py-6 text-center text-sm text-muted-foreground">
