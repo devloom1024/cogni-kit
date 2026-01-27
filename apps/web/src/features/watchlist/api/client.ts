@@ -106,6 +106,15 @@ export const watchlistClient = {
         await api.delete(API_PATHS.WATCHLIST_ITEM(itemId))
     },
 
+    batchRemoveItems: async (itemIds: string[]) => {
+        const res = await api.post<{ count: number }>(
+            API_PATHS.WATCHLIST_ITEMS_BATCH_REMOVE,
+            { itemIds }
+        )
+        return res.data
+    },
+
+
     moveItem: async (itemId: string, targetGroupId: string) => {
         const res = await api.patch<WatchlistItem>(
             API_PATHS.WATCHLIST_ITEM_MOVE(itemId),

@@ -251,3 +251,18 @@ export const WatchlistFilterQuerySchema = z.object({
 }).openapi('WatchlistFilterQuery')
 
 export type WatchlistFilterQuery = z.infer<typeof WatchlistFilterQuerySchema>
+
+// ==================== 批量操作相关 Schema ====================
+
+/**
+ * 批量移除标的请求 Schema
+ */
+export const BatchRemoveItemsSchema = z.object({
+  /// 自选记录 ID 列表
+  itemIds: z.array(z.string().uuid()).min(1).max(100).openapi({
+    description: '自选记录 ID 列表 (最多 100 条)',
+    example: ['550e8400-e29b-41d4-a716-446655440000', '660e8400-e29b-41d4-a716-446655440001'],
+  }),
+}).openapi('BatchRemoveItemsRequest')
+
+export type BatchRemoveItemsRequest = z.infer<typeof BatchRemoveItemsSchema>

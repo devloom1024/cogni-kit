@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Inbox, Settings2, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Inbox, Settings2, Loader2, ChevronLeft, ChevronRight, CheckSquare, Trash2, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import {
     DropdownMenu,
@@ -11,9 +12,20 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
     Empty,
     EmptyMedia,
 } from '@/components/ui/empty'
+
 import {
     type ColumnFiltersState,
     type SortingState,
@@ -51,6 +63,7 @@ interface WatchlistTableProps {
     onPageChange: (page: number) => void
     onMoveClick: (itemId: string) => void
     onRemove: (itemId: string, groupId: string) => void
+    onBatchRemove?: (itemIds: string[]) => void
     currentGroupId: string
     loading?: boolean
     filters: WatchlistFilters
@@ -63,6 +76,7 @@ export function WatchlistTable({
     onPageChange,
     onMoveClick,
     onRemove,
+    onBatchRemove,
     loading,
     filters,
     onFiltersChange,
@@ -72,6 +86,7 @@ export function WatchlistTable({
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = useState({})
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
     const columns = useWatchlistColumns({ onRemove, onMoveClick })
 
@@ -94,6 +109,26 @@ export function WatchlistTable({
             rowSelection,
         },
     })
+
+    // 获取选中的行
+    const selectedRows = table.getSelectedRowModel().rows
+    const hasSelection = selectedRows.length > 0
+
+    // 批量操作处理函数
+    const handleBatchRemoveClick = () => {
+        setShowConfirmDialog(true)
+    }
+
+    const handleConfirmBatchRemove = () => {
+        const itemIds = selectedRows.map(row => row.original.id)
+        onBatchRemove?.(itemIds)
+        setShowConfirmDialog(false)
+        table.resetRowSelection()
+    }
+
+    const handleClearSelection = () => {
+        table.resetRowSelection()
+    }
 
     const handlePageChange = (newPage: number) => {
         if (newPage >= 1 && newPage <= (meta?.totalPages ?? 1)) {
@@ -125,45 +160,133 @@ export function WatchlistTable({
 
     return (
         <div className="flex flex-col space-y-4">
-            <div className="flex items-center justify-between gap-4">
-                <WatchlistFiltersBar
-                    filters={filters}
-                    onFiltersChange={onFiltersChange}
-                    className="mb-0 flex-1"
-                />
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="shrink-0">
-                            <Settings2 className="mr-2 h-4 w-4" />
-                            {t('watchlist.table.columns')}
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>{t('watchlist.table.toggle_columns')}</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {table
-                            .getAllColumns()
-                            .filter(
-                                (column) => column.getCanHide()
-                            )
-                            .map((column) => {
-                                return (
-                                    <DropdownMenuCheckboxItem
-                                        key={column.id}
-                                        className="capitalize"
-                                        checked={column.getIsVisible()}
-                                        onCheckedChange={(value) =>
-                                            column.toggleVisibility(!!value)
-                                        }
+            {/* 工具栏区域 */}
+            <div className="relative min-h-12">
+                {/* 默认过滤栏 */}
+                <AnimatePresence mode="wait">
+                    {!hasSelection && (
+                        <motion.div
+                            key="filters"
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{
+                                duration: 0.2,
+                                ease: "easeInOut"
+                            }}
+                            className="absolute inset-0 flex items-center gap-4"
+                        >
+                            <WatchlistFiltersBar
+                                filters={filters}
+                                onFiltersChange={onFiltersChange}
+                                className="mb-0 flex-1"
+                            />
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="shrink-0">
+                                        <Settings2 className="mr-2 h-4 w-4" />
+                                        {t('watchlist.table.columns')}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>{t('watchlist.table.toggle_columns')}</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {table
+                                        .getAllColumns()
+                                        .filter(
+                                            (column) => column.getCanHide()
+                                        )
+                                        .map((column) => {
+                                            return (
+                                                <DropdownMenuCheckboxItem
+                                                    key={column.id}
+                                                    className="capitalize"
+                                                    checked={column.getIsVisible()}
+                                                    onCheckedChange={(value) =>
+                                                        column.toggleVisibility(!!value)
+                                                    }
+                                                >
+                                                    {column.columnDef.header && typeof column.columnDef.header === 'string'
+                                                        ? column.columnDef.header
+                                                        : t(`watchlist.table.${column.id === 'select' || column.id === 'actions' ? column.id : column.id}`)}
+                                                </DropdownMenuCheckboxItem>
+                                            )
+                                        })}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* 批量操作栏 */}
+                <AnimatePresence mode="wait">
+                    {hasSelection && (
+                        <motion.div
+                            key="batch-actions"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            transition={{
+                                duration: 0.2,
+                                ease: "easeInOut"
+                            }}
+                            className="absolute inset-0 flex items-center justify-between gap-4 bg-muted/50 px-4 py-2.5 rounded-md border border-border"
+                        >
+                            {/* 左侧：选中信息 */}
+                            <motion.div
+                                className="flex items-center gap-2 text-sm font-medium"
+                                initial={{ scale: 0.95 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: 0.1 }}
+                            >
+                                <CheckSquare className="h-4 w-4 text-primary" />
+                                <span>
+                                    {t('watchlist.table.selected_count', {
+                                        count: selectedRows.length
+                                    })}
+                                </span>
+                            </motion.div>
+
+                            {/* 右侧：操作按钮 */}
+                            <motion.div
+                                className="flex items-center gap-2"
+                                initial={{ scale: 0.95 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: 0.15 }}
+                            >
+                                {/* 取消选择 */}
+                                <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleClearSelection}
                                     >
-                                        {column.columnDef.header && typeof column.columnDef.header === 'string'
-                                            ? column.columnDef.header
-                                            : t(`watchlist.table.${column.id === 'select' || column.id === 'actions' ? column.id : column.id}`)}
-                                    </DropdownMenuCheckboxItem>
-                                )
-                            })}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                                        <X className="mr-2 h-4 w-4" />
+                                        {t('watchlist.table.clear_selection')}
+                                    </Button>
+                                </motion.div>
+
+                                {/* 批量移除 */}
+                                <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={handleBatchRemoveClick}
+                                    >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        {t('watchlist.table.batch_remove')}
+                                    </Button>
+                                </motion.div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* 表格区域 */}
@@ -230,7 +353,7 @@ export function WatchlistTable({
 
             {/* 分页控件 */}
             {meta && meta.total > 0 && (
-                <div className="flex items-center justify-end gap-4 py-4">
+                <div className="flex items-center justify-end gap-4">
                     <div className="text-sm text-muted-foreground whitespace-nowrap">
                         {t('watchlist.table.total_count', { count: meta.total })}
                     </div>
@@ -273,6 +396,31 @@ export function WatchlistTable({
                     </Pagination>
                 </div>
             )}
+
+            {/* 批量删除确认对话框 */}
+            <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {t('watchlist.table.batch_remove_confirm_title')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('watchlist.table.batch_remove_confirm_description', {
+                                count: selectedRows.length
+                            })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmBatchRemove}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {t('watchlist.table.batch_remove')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

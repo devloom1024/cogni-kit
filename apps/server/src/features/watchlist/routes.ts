@@ -487,6 +487,61 @@ watchlist.openapi(removeItemRoute, async (c) => {
   return c.body(null, 204)
 })
 
+// 批量移除标的
+const batchRemoveItemsRoute = createRoute({
+  method: 'post',
+  path: '/items/batch-remove',
+  tags: ['自选标的'],
+  summary: '批量移除标的',
+  description: '批量将标的从自选列表中移除',
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            itemIds: z.array(z.string().uuid()).min(1).max(100).openapi({
+              description: '自选记录 ID 列表 (最多 100 条)',
+              example: ['550e8400-e29b-41d4-a716-446655440000'],
+            }),
+          }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            count: z.number().int().openapi({
+              description: '成功移除的数量',
+              example: 3,
+            }),
+          }),
+        },
+      },
+      description: '移除成功',
+    },
+    404: {
+      content: {
+        'application/json': { schema: ErrorSchema },
+      },
+      description: '部分或全部记录不存在',
+    },
+  },
+})
+
+// @ts-expect-error - Hono OpenAPI types don't support error responses handled by errorHandler middleware
+watchlist.openapi(batchRemoveItemsRoute, async (c) => {
+  const userId = c.get('userId')
+  const { itemIds } = c.req.valid('json')
+  const count = await watchlistService.batchRemoveFromWatchlist(itemIds, userId)
+  return c.json({ count })
+})
+
+
+
 // 移动标的到其他分组
 const moveItemRoute = createRoute({
   method: 'patch',

@@ -4,7 +4,8 @@
         "submit": "Submit",
         "required": "Required field",
         "previous": "Previous",
-        "next": "Next"
+        "next": "Next",
+        "cancel": "Cancel"
     },
     "auth": {
         "login": {
@@ -63,6 +64,7 @@
         "search": {
             "placeholder": "Search symbol/name/pinyin...",
             "empty": "No assets found",
+            "empty_desc": "Try searching with a different keyword",
             "add": "Add",
             "added": "Added",
             "start_typing": "Type to search..."
@@ -90,7 +92,14 @@
             "toggle_columns": "Toggle Columns",
             "columns": "Columns",
             "empty": "No assets in this list",
-            "total_count": "Total {{count}} items"
+            "total_count": "Total {{count}} items",
+            "selected_count": "{{count}} selected",
+            "clear_selection": "Clear Selection",
+            "batch_remove": "Batch Remove",
+            "batch_move": "Batch Move",
+            "batch_remove_confirm_title": "Confirm Batch Remove",
+            "batch_remove_confirm_description": "Are you sure you want to remove {{count}} selected items? This action cannot be undone.",
+            "batch_remove_success": "Successfully removed {{count}} items"
         },
         "columns": {
             "select": "Select"
@@ -100,6 +109,7 @@
             "remove_confirm": "Confirm Remove?",
             "move_to": "Move to...",
             "move_to_title": "Move Item to Group",
+            "select_group": "Select Group",
             "create_new_group": "Create New Group",
             "add_success": "Added [{{asset}}] to [{{group}}]",
             "add_error": "Failed to add to watchlist",

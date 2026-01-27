@@ -244,6 +244,18 @@ export const watchlistRepository = {
   },
 
   /**
+   * 批量移除标的
+   */
+  async batchRemoveItems(itemIds: string[]) {
+    return prisma.watchlistItem.deleteMany({
+      where: {
+        id: { in: itemIds },
+      },
+    })
+  },
+
+
+  /**
    * 更新标的所属分组
    */
   async updateItemGroupId(itemId: string, newGroupId: string) {

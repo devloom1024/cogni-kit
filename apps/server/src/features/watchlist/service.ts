@@ -284,6 +284,43 @@ export const watchlistService = {
   },
 
   /**
+   * 批量移除标的
+   */
+  async batchRemoveFromWatchlist(itemIds: string[], userId: string): Promise<number> {
+    logger.info({ userId, count: itemIds.length }, 'Batch removing items from watchlist')
+
+    // 1. 获取所有标的详情并验证归属
+    const items = await Promise.all(
+      itemIds.map(itemId => watchlistRepository.getItemById(itemId))
+    )
+
+    // 2. 检查是否所有标的都存在
+    const notFoundIds = itemIds.filter((id, index) => !items[index])
+    if (notFoundIds.length > 0) {
+      logger.warn({ notFoundIds }, 'Some items not found')
+      throw new AppError(ErrorCode.WATCHLIST_ITEM_NOT_FOUND, 404)
+    }
+
+    // 3. 验证所有标的的分组归属
+    for (const item of items) {
+      if (item) {
+        const isOwner = await watchlistRepository.verifyGroupOwnership(item.groupId, userId)
+        if (!isOwner) {
+          logger.warn({ itemId: item.id, userId }, 'User does not own this item')
+          throw new AppError(ErrorCode.WATCHLIST_FORBIDDEN, 403)
+        }
+      }
+    }
+
+    // 4. 批量删除
+    const result = await watchlistRepository.batchRemoveItems(itemIds)
+    logger.info({ userId, removedCount: result.count }, 'Batch remove completed')
+
+    return result.count
+  },
+
+
+  /**
    * 移动标的到其他分组
    */
   async moveItem(itemId: string, targetGroupId: string, userId: string): Promise<WatchlistItem> {

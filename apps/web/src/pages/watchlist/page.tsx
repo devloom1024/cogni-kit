@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { GroupTabs } from '@/features/watchlist/components/group-tabs'
 import { WatchlistTable } from '@/features/watchlist/components/watchlist-table'
@@ -9,6 +10,7 @@ import { AssetSearchDialog } from '@/features/watchlist/components/asset-search-
 import { MoveToGroupDialog } from '@/features/watchlist/components/move-to-group-dialog'
 import { watchlistClient } from '@/features/watchlist/api/client'
 import type { PaginationMeta, WatchlistGroup, WatchlistItem } from 'shared'
+
 
 interface PaginatedResult {
     data: WatchlistItem[]
@@ -103,6 +105,30 @@ export function WatchlistPage() {
         }
     }
 
+    const handleBatchRemove = async (itemIds: string[]) => {
+        try {
+            const { count } = await watchlistClient.batchRemoveItems(itemIds)
+
+            // 如果删除的数量等于当前页的数据量，且不是第一页，则跳转到上一页
+            if (result && itemIds.length === result.data.length && page > 1) {
+                setPage(page - 1)
+            } else {
+                // 否则重新加载当前页数据
+                await loadItems()
+            }
+
+            // 刷新分组数据以更新条数统计
+            await loadGroups()
+
+            // Show success toast
+            toast.success(t('watchlist.table.batch_remove_success', { count }))
+        } catch (error) {
+            console.error('Failed to batch remove items:', error)
+            toast.error(t('watchlist.actions.add_error'))
+        }
+    }
+
+
     return (
         <div className="flex flex-col w-full px-6">
             <div className="flex items-center justify-between mb-4">
@@ -141,11 +167,13 @@ export function WatchlistPage() {
                 onPageChange={setPage}
                 onMoveClick={handleMoveClick}
                 onRemove={handleRemove}
+                onBatchRemove={handleBatchRemove}
                 currentGroupId={currentGroupId}
                 loading={loading}
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
             />
+
 
             {/* Move Dialog */}
 

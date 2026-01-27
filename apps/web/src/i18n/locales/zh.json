@@ -4,7 +4,8 @@
         "submit": "提交",
         "required": "必填项",
         "previous": "上一页",
-        "next": "下一页"
+        "next": "下一页",
+        "cancel": "取消"
     },
     "auth": {
         "login": {
@@ -63,6 +64,7 @@
         "search": {
             "placeholder": "搜索代码/名称/拼音...",
             "empty": "未找到相关标的",
+            "empty_desc": "尝试使用其他关键词搜索",
             "add": "添加",
             "added": "已添加",
             "start_typing": "输入关键词开始搜索..."
@@ -90,7 +92,14 @@
             "toggle_columns": "显示列",
             "columns": "列设置",
             "empty": "暂无自选标的",
-            "total_count": "共 {{count}} 条"
+            "total_count": "共 {{count}} 条",
+            "selected_count": "已选择 {{count}} 项",
+            "clear_selection": "清空选择",
+            "batch_remove": "批量移除",
+            "batch_move": "批量移动",
+            "batch_remove_confirm_title": "确认批量移除",
+            "batch_remove_confirm_description": "确定要移除选中的 {{count}} 个标的吗？此操作不可撤销。",
+            "batch_remove_success": "成功移除 {{count}} 个标的"
         },
         "columns": {
             "select": "选择"
@@ -100,6 +109,7 @@
             "remove_confirm": "确定移除？",
             "move_to": "移动到...",
             "move_to_title": "移动标的到分组",
+            "select_group": "选择分组",
             "create_new_group": "创建新分组",
             "add_success": "已将[{{asset}}]添加到[{{group}}]",
             "add_error": "添加失败",
