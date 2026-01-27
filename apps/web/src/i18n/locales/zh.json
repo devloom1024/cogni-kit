@@ -92,6 +92,7 @@
             "toggle_columns": "显示列",
             "columns": "列设置",
             "empty": "暂无自选标的",
+            "empty_description": "您可以点击右上角的添加按钮添加关注标的",
             "total_count": "共 {{count}} 条",
             "selected_count": "已选择 {{count}} 项",
             "clear_selection": "清空选择",

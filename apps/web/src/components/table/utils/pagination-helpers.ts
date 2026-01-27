@@ -39,17 +39,17 @@ export function calculatePageNumbers(
 /**
  * 计算分页范围
  * @param page 当前页码
- * @param pageSize 每页数量
+ * @param limit 每页数量
  * @param total 总数
  * @returns 当前页的数据范围
  */
 export function getPaginationRange(
     page: number,
-    pageSize: number,
+    limit: number,
     total: number
 ): { from: number; to: number } {
-    const from = (page - 1) * pageSize + 1
-    const to = Math.min(page * pageSize, total)
+    const from = (page - 1) * limit + 1
+    const to = Math.min(page * limit, total)
 
     return { from, to }
 }
@@ -64,11 +64,11 @@ export function isValidPaginationMeta(meta?: PaginationMeta): meta is Pagination
 
     return (
         typeof meta.page === 'number' &&
-        typeof meta.pageSize === 'number' &&
+        typeof meta.limit === 'number' &&
         typeof meta.total === 'number' &&
         typeof meta.totalPages === 'number' &&
         meta.page > 0 &&
-        meta.pageSize > 0 &&
+        meta.limit > 0 &&
         meta.total >= 0 &&
         meta.totalPages >= 0
     )
@@ -77,10 +77,10 @@ export function isValidPaginationMeta(meta?: PaginationMeta): meta is Pagination
 /**
  * 计算总页数
  * @param total 总数
- * @param pageSize 每页数量
+ * @param limit 每页数量
  * @returns 总页数
  */
-export function calculateTotalPages(total: number, pageSize: number): number {
-    if (pageSize <= 0) return 0
-    return Math.ceil(total / pageSize)
+export function calculateTotalPages(total: number, limit: number): number {
+    if (limit <= 0) return 0
+    return Math.ceil(total / limit)
 }

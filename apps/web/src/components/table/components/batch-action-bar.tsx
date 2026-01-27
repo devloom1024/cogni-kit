@@ -120,7 +120,9 @@ export function BatchActionBar<TData>({
                         <AlertDialogHeader>
                             <AlertDialogTitle>{confirmDialog.action.confirmDialog.title}</AlertDialogTitle>
                             <AlertDialogDescription>
-                                {confirmDialog.action.confirmDialog.description}
+                                {typeof confirmDialog.action.confirmDialog.description === 'function'
+                                    ? confirmDialog.action.confirmDialog.description(selectedCount)
+                                    : confirmDialog.action.confirmDialog.description}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

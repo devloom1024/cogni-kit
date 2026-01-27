@@ -66,6 +66,7 @@ export function useTableState<TData>(
     const table = useReactTable({
         data: config.data,
         columns: config.columns,
+        getRowId: config.getRowId || ((row: any, index: number) => row.id || String(index)),
         getCoreRowModel: getCoreRowModel(),
 
         // 排序

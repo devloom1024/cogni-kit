@@ -39,8 +39,8 @@ export function usePagination(
 
     const paginationRange = useMemo(() => {
         if (!isValid || !meta) return null
-        return getPaginationRange(meta.page, meta.pageSize, meta.total)
-    }, [meta?.page, meta?.pageSize, meta?.total, isValid])
+        return getPaginationRange(meta.page, meta.limit, meta.total)
+    }, [meta?.page, meta?.limit, meta?.total, isValid])
 
     return {
         pageNumbers,

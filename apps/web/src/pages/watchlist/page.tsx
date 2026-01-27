@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
+import type { SortingState } from '@tanstack/react-table'
 import { Button } from '@/components/ui/button'
 import { GroupTabs } from '@/features/watchlist/components/group-tabs'
 import { WatchlistTable } from '@/features/watchlist/components/watchlist-table'
@@ -24,6 +25,7 @@ export function WatchlistPage() {
     const [result, setResult] = useState<PaginatedResult | null>(null)
     const [groups, setGroups] = useState<WatchlistGroup[]>([])
     const [loading, setLoading] = useState(false)
+    const [sorting, setSorting] = useState<SortingState>([])
     const [filters, setFilters] = useState<WatchlistFilters>({
         search: '',
         types: [],
@@ -54,13 +56,16 @@ export function WatchlistPage() {
                     search: filters.search || undefined,
                     types: filters.types.length > 0 ? filters.types : undefined,
                     markets: filters.markets.length > 0 ? filters.markets : undefined,
+                    // TODO: 添加排序参数到 API
+                    // sortBy: sorting[0]?.id,
+                    // sortOrder: sorting[0]?.desc ? 'desc' : 'asc',
                 }
             )
             setResult(res)
         } finally {
             setLoading(false)
         }
-    }, [currentGroupId, page, filters])
+    }, [currentGroupId, page, filters, sorting])
 
     useEffect(() => {
         loadGroups()
@@ -172,6 +177,8 @@ export function WatchlistPage() {
                 loading={loading}
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
+                sorting={sorting}
+                onSortingChange={setSorting}
             />
 
 

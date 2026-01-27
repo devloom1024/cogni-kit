@@ -81,6 +81,7 @@ export function EnhancedTable<TData>(config: EnhancedTableConfig<TData>) {
                                         {/* 过滤器组件需要由使用者提供 */}
                                     </div>
                                 )}
+                                {config.toolbarContent}
                             </TableToolbar>
 
                             {/* 列可见性菜单 */}

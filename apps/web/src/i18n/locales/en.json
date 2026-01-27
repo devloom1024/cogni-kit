@@ -92,6 +92,7 @@
             "toggle_columns": "Toggle Columns",
             "columns": "Columns",
             "empty": "No assets in this list",
+            "empty_description": "Use the Add button in the top right to add assets.",
             "total_count": "Total {{count}} items",
             "selected_count": "{{count}} selected",
             "clear_selection": "Clear Selection",

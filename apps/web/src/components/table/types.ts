@@ -6,7 +6,7 @@ import type { ReactNode } from 'react'
  */
 export interface PaginationMeta {
     page: number
-    pageSize: number
+    limit: number
     total: number
     totalPages: number
 }
@@ -22,7 +22,7 @@ export interface BatchAction<TData> {
     onClick: (selectedRows: TData[]) => void | Promise<void>
     confirmDialog?: {
         title: string
-        description: string
+        description: string | ((selectedCount: number) => ReactNode)
         confirmText?: string
         cancelText?: string
     }
@@ -137,6 +137,12 @@ export interface EnhancedTableConfig<TData> {
 
     // 列可见性配置
     columnVisibility?: ColumnVisibilityConfig
+
+    // 自定义工具栏内容
+    toolbarContent?: ReactNode
+
+    // 行 ID 获取函数
+    getRowId?: (originalRow: TData, index: number, parent?: any) => string
 
     // 状态配置
     loading?: boolean
