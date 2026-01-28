@@ -10,11 +10,13 @@ import {
 } from '@/components/ui/table'
 import { TableEmpty } from './table-empty'
 import type { EmptyStateConfig } from '../types'
+import { Spinner } from '@/components/ui/spinner'
 
 export interface TableContentProps<TData> {
     table: Table<TData>
     emptyState?: EmptyStateConfig
     className?: string
+    loading?: boolean
 }
 
 /**
@@ -25,9 +27,11 @@ export function TableContent<TData>({
     table,
     emptyState,
     className,
+    loading,
 }: TableContentProps<TData>) {
     const rows = table.getRowModel().rows
     const hasData = rows && rows.length > 0
+    const columns = table.getAllColumns()
 
     return (
         <div className="border rounded-md">
@@ -46,7 +50,15 @@ export function TableContent<TData>({
                     ))}
                 </TableHeader>
                 <TableBody>
-                    {hasData ? (
+                    {loading ? (
+                        <TableRow>
+                            <TableCell colSpan={columns.length} className="h-24 text-center">
+                                <div className="flex justify-center items-center">
+                                    <Spinner className="size-6 text-muted-foreground" />
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    ) : hasData ? (
                         rows.map((row) => (
                             <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
                                 {row.getVisibleCells().map((cell) => (
@@ -57,7 +69,7 @@ export function TableContent<TData>({
                             </TableRow>
                         ))
                     ) : (
-                        <TableEmpty config={emptyState} columnCount={table.getAllColumns().length} />
+                        <TableEmpty config={emptyState} columnCount={columns.length} />
                     )}
                 </TableBody>
             </UITable>

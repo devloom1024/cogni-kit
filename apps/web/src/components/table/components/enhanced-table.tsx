@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils'
 import type { EnhancedTableConfig } from '../types'
 import { useTableState } from '../hooks/use-table-state'
 import { useRowSelection } from '../hooks/use-row-selection'
-import { TableLoading } from './table-loading'
 import { TableContent } from './table-content'
 import { TablePagination } from './table-pagination'
 import { TableToolbar } from './table-toolbar'
@@ -117,13 +116,12 @@ export function EnhancedTable<TData>(config: EnhancedTableConfig<TData>) {
             </div>
 
             {/* 表格内容 */}
-            <TableLoading loading={config.loading}>
-                <TableContent
-                    table={table}
-                    emptyState={config.emptyState}
-                    className={config.tableClassName}
-                />
-            </TableLoading>
+            <TableContent
+                table={table}
+                emptyState={config.emptyState}
+                className={config.tableClassName}
+                loading={config.loading}
+            />
 
             {/* 分页 */}
             {config.pagination?.meta && config.pagination.meta.total > 0 && (
