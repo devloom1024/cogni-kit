@@ -198,7 +198,7 @@ export function WatchlistPage() {
                 onRefresh={loadGroups}
                 mode="select"
                 title={t('watchlist.actions.move_to_title')}
-                excludeGroupId={currentGroupId}
+                currentGroupId={currentGroupId !== 'all' ? currentGroupId : undefined}
                 onSelect={async (group) => {
                     try {
                         if (moveItemIds.length === 1) {

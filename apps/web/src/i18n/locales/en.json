@@ -82,7 +82,8 @@
             "reorder": "Reorder",
             "empty": "No groups",
             "empty_desc": "Create a group to categorize your assets",
-            "reorder_error": "Failed to update order"
+            "reorder_error": "Failed to update order",
+            "current": "Current"
         },
         "table": {
             "symbol": "Symbol",
@@ -111,7 +112,10 @@
         },
         "actions": {
             "remove": "Remove",
+            "remove_success": "Removed successfully",
+            "remove_error": "Failed to remove",
             "remove_confirm": "Confirm Remove?",
+            "remove_confirm_single": "Are you sure you want to remove [{{name}}]?",
             "move_to": "Move to...",
             "move_to_title": "Move Item to Group",
             "select_group": "Select Group",

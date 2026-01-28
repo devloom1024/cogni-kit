@@ -36,7 +36,7 @@ export interface GroupManagerDialogProps {
     mode?: 'manage' | 'select'
     title?: string // Custom title override
     onSelect?: (group: WatchlistGroup) => Promise<void> | void
-    excludeGroupId?: string
+    currentGroupId?: string
 }
 
 export function GroupManagerDialog({
@@ -49,7 +49,7 @@ export function GroupManagerDialog({
     mode = 'manage',
     title,
     onSelect,
-    excludeGroupId
+    currentGroupId
 }: GroupManagerDialogProps) {
     const { t } = useTranslation()
     const [internalOpen, setInternalOpen] = useState(false)
@@ -70,9 +70,7 @@ export function GroupManagerDialog({
     const [createLoading, setCreateLoading] = useState(false)
     const [opLoadingId, setOpLoadingId] = useState<string | null>(null)
 
-    const displayGroups = excludeGroupId
-        ? groups.filter(g => g.id !== excludeGroupId)
-        : groups
+    const displayGroups = groups
 
     const handleCreate = async () => {
         if (!newGroupName.trim()) return
@@ -191,6 +189,7 @@ export function GroupManagerDialog({
                                 groups={displayGroups}
                                 onSelect={handleSelect}
                                 loadingId={opLoadingId}
+                                selectedGroupId={currentGroupId}
                             />
                         )
                     )}

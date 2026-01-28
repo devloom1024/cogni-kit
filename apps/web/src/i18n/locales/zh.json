@@ -82,7 +82,8 @@
             "reorder": "拖拽排序",
             "empty": "暂无分组",
             "empty_desc": "创建分组以分类您的标的",
-            "reorder_error": "更新排序失败"
+            "reorder_error": "更新排序失败",
+            "current": "当前"
         },
         "table": {
             "symbol": "代码",
@@ -111,7 +112,10 @@
         },
         "actions": {
             "remove": "移除",
+            "remove_success": "移除成功",
+            "remove_error": "移除失败",
             "remove_confirm": "确定移除？",
+            "remove_confirm_single": "确定要移除标的 [{{name}}] 吗？",
             "move_to": "移动到...",
             "move_to_title": "移动标的到分组",
             "select_group": "选择分组",
