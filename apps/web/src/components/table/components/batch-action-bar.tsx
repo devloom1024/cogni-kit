@@ -58,7 +58,7 @@ export function BatchActionBar<TData>({
     }
 
     const content = (
-        <div className="flex items-center justify-between gap-4 bg-muted/50 px-4 py-2.5 rounded-md border border-border">
+        <div className="flex items-center justify-between gap-4 px-3 py-0 h-10 bg-muted/20 border border-border/60 rounded-md">
             {/* 左侧：选中信息 */}
             <motion.div
                 className="flex items-center gap-2 text-sm font-medium"
@@ -82,8 +82,8 @@ export function BatchActionBar<TData>({
                     whileHover={animated ? { scale: 1.05 } : undefined}
                     whileTap={animated ? { scale: 0.95 } : undefined}
                 >
-                    <Button variant="ghost" size="sm" onClick={onClearSelection}>
-                        <X className="mr-2 h-4 w-4" />
+                    <Button variant="ghost" size="sm" onClick={onClearSelection} className="h-7 text-xs px-2">
+                        <X className="mr-1.5 h-3.5 w-3.5" />
                         {clearLabel}
                     </Button>
                 </motion.div>
@@ -98,9 +98,10 @@ export function BatchActionBar<TData>({
                         <Button
                             variant={action.variant || 'default'}
                             size="sm"
+                            className="h-7 text-xs px-2"
                             onClick={() => handleActionClick(action)}
                         >
-                            {action.icon && <span className="mr-2">{action.icon}</span>}
+                            {action.icon && <span className="mr-1.5">{action.icon}</span>}
                             {action.label}
                         </Button>
                     </motion.div>

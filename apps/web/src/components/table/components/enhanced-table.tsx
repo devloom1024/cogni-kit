@@ -61,7 +61,7 @@ export function EnhancedTable<TData>(config: EnhancedTableConfig<TData>) {
     return (
         <div className={cn('flex flex-col space-y-4', config.className)}>
             {/* 工具栏区域 */}
-            <div className="relative">
+            <div className="relative h-10">
                 <AnimatePresence mode="wait">
                     {/* 默认工具栏 */}
                     {!selection.hasSelection && (
@@ -71,7 +71,7 @@ export function EnhancedTable<TData>(config: EnhancedTableConfig<TData>) {
                             animate={animated ? { opacity: 1, y: 0 } : undefined}
                             exit={animated ? { opacity: 0, y: -10 } : undefined}
                             transition={animated ? { duration: 0.2, ease: 'easeInOut' } : undefined}
-                            className="flex items-center gap-4"
+                            className="flex items-center gap-4 h-full"
                         >
                             <TableToolbar className="mb-0 flex-1">
                                 {/* 这里可以放置过滤器等自定义内容 */}
@@ -101,7 +101,7 @@ export function EnhancedTable<TData>(config: EnhancedTableConfig<TData>) {
                             animate={animated ? { opacity: 1, y: 0 } : undefined}
                             exit={animated ? { opacity: 0, y: 10 } : undefined}
                             transition={animated ? { duration: 0.2, ease: 'easeInOut' } : undefined}
-                            className="w-full"
+                            className="w-full h-full"
                         >
                             <BatchActionBar
                                 selectedCount={selection.selectedCount}
