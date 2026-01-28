@@ -11,10 +11,10 @@ import type { WatchlistGroup } from 'shared'
 export function GroupTabsSkeleton() {
     return (
         <div className="w-full mb-4 flex items-center gap-2">
-            <div className="flex-1 pb-2">
+            <div className="flex-1">
                 <Skeleton className="h-9 w-full rounded-md bg-muted" />
             </div>
-            <div className="shrink-0 pb-2">
+            <div className="shrink-0">
                 <Skeleton className="h-8 w-8 rounded-full" />
             </div>
         </div>
