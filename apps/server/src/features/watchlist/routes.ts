@@ -218,6 +218,37 @@ watchlist.openapi(deleteGroupRoute, async (c) => {
   return c.body(null, 204)
 })
 
+// 批量调整分组排序
+const reorderGroupsRoute = createRoute({
+  method: 'patch',
+  path: '/groups/reorder',
+  tags: ['自选分组'],
+  summary: '批量调整分组排序',
+  description: '一次更新多个分组的排序',
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: ReorderGroupsSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: '更新成功',
+    },
+  },
+})
+
+watchlist.openapi(reorderGroupsRoute, async (c) => {
+  const userId = c.get('userId')
+  const data = c.req.valid('json')
+  await watchlistService.reorderGroups(userId, data.orders)
+  return c.json({ success: true })
+})
+
 // 调整单个分组排序
 const updateGroupSortOrderRoute = createRoute({
   method: 'patch',
@@ -262,37 +293,6 @@ watchlist.openapi(updateGroupSortOrderRoute, async (c) => {
   }
 
   return c.json(group)
-})
-
-// 批量调整分组排序
-const reorderGroupsRoute = createRoute({
-  method: 'patch',
-  path: '/groups/reorder',
-  tags: ['自选分组'],
-  summary: '批量调整分组排序',
-  description: '一次更新多个分组的排序',
-  security: [{ bearerAuth: [] }],
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: ReorderGroupsSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: '更新成功',
-    },
-  },
-})
-
-watchlist.openapi(reorderGroupsRoute, async (c) => {
-  const userId = c.get('userId')
-  const data = c.req.valid('json')
-  await watchlistService.reorderGroups(userId, data.orders)
-  return c.json({ success: true })
 })
 
 // ==================== 自选标的管理 ====================

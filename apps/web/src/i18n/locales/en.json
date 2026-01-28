@@ -62,7 +62,8 @@
         "title": "Watchlist",
         "subtitle": "Manage and monitor your favorite investment assets",
         "search": {
-            "placeholder": "Search symbol/name/pinyin...",
+            "title": "Search",
+            "placeholder": "Enter symbol/name/pinyin...",
             "empty": "No assets found",
             "empty_desc": "Try searching with a different keyword",
             "add": "Add",
@@ -78,7 +79,10 @@
             "delete": "Delete",
             "delete_confirm_title": "Delete Group",
             "delete_confirm_desc": "Are you sure you want to delete group {name}? Items in this group will also be removed.",
-            "reorder": "Reorder"
+            "reorder": "Reorder",
+            "empty": "No groups",
+            "empty_desc": "Create a group to categorize your assets",
+            "reorder_error": "Failed to update order"
         },
         "table": {
             "symbol": "Symbol",
@@ -121,7 +125,11 @@
             "create_success": "Group created successfully",
             "create_error": "Failed to create group",
             "move_success": "Moved successfully",
-            "move_error": "Failed to move"
+            "move_error": "Failed to move",
+            "update_success": "Updated successfully",
+            "update_error": "Failed to update",
+            "delete_success": "Deleted successfully",
+            "delete_error": "Failed to delete"
         },
         "types": {
             "STOCK": "Stock",

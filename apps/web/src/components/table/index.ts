@@ -6,7 +6,6 @@ export { BatchActionBar } from './components/batch-action-bar'
 export { TableToolbar } from './components/table-toolbar'
 export { TablePagination } from './components/table-pagination'
 export { ColumnVisibilityMenu } from './components/column-visibility-menu'
-export { TableLoading } from './components/table-loading'
 export { TableEmpty } from './components/table-empty'
 export { TableContent } from './components/table-content'
 

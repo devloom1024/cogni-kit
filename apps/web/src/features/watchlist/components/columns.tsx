@@ -1,6 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
-import { ArrowUpDown } from 'lucide-react'
+import { ChevronsUpDown } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { WatchlistItem } from 'shared'
@@ -89,7 +89,7 @@ export const useWatchlistColumns = ({
                         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
                     >
                         {t('watchlist.table.added_at')}
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <ChevronsUpDown className="ml-2 h-4 w-4" />
                     </div>
                 )
             },

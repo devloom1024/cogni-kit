@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { MoreHorizontal, Trash2, ArrowRightLeft } from 'lucide-react'
+import { MoreVertical, Trash2, ArrowRightLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
     DropdownMenu,
@@ -46,7 +46,7 @@ export function WatchlistRowActions({ row, onRemove, onMoveClick }: WatchlistRow
                     className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
                     disabled={removing}
                 >
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreVertical className="h-4 w-4" />
                     <span className="sr-only">Open menu</span>
                 </Button>
             </DropdownMenuTrigger>

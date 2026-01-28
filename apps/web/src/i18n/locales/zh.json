@@ -62,7 +62,8 @@
         "title": "自选列表",
         "subtitle": "管理和监控您关注的投资标的",
         "search": {
-            "placeholder": "搜索代码/名称/拼音...",
+            "title": "搜索",
+            "placeholder": "请输入代码/名称/拼音...",
             "empty": "未找到相关标的",
             "empty_desc": "尝试使用其他关键词搜索",
             "add": "添加",
@@ -78,7 +79,10 @@
             "delete": "删除",
             "delete_confirm_title": "删除分组",
             "delete_confirm_desc": "确定要删除分组 {name} 吗？组内的标的也将被移除。",
-            "reorder": "拖拽排序"
+            "reorder": "拖拽排序",
+            "empty": "暂无分组",
+            "empty_desc": "创建分组以分类您的标的",
+            "reorder_error": "更新排序失败"
         },
         "table": {
             "symbol": "代码",
@@ -121,7 +125,11 @@
             "create_success": "分组创建成功",
             "create_error": "创建分组失败",
             "move_success": "移动成功",
-            "move_error": "移动失败"
+            "move_error": "移动失败",
+            "update_success": "更新成功",
+            "update_error": "更新失败",
+            "delete_success": "删除成功",
+            "delete_error": "删除失败"
         },
         "types": {
             "STOCK": "股票",

@@ -109,8 +109,8 @@ export function AssetSearchDialog({
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-[550px] p-0 gap-0 overflow-hidden top-[20%] translate-y-[0%]">
                 <div className="p-4 pb-0 border-b">
-                    <DialogHeader className="mb-2">
-                        <DialogTitle>{t('watchlist.search.placeholder')}</DialogTitle>
+                    <DialogHeader className="mb-4">
+                        <DialogTitle>{t('watchlist.search.title')}</DialogTitle>
                     </DialogHeader>
                     <div className="flex items-center border rounded-md px-3 bg-muted/50 mb-4">
                         <Search className="h-4 w-4 mr-2 opacity-50" />
@@ -176,7 +176,7 @@ export function AssetSearchDialog({
                                             </div>
                                         </div>
 
-                                         {isAdded ? (
+                                        {isAdded ? (
                                             <div className="flex flex-col items-end gap-0.5 self-end">
                                                 <Check className="h-4 w-4 text-green-600" />
                                                 <span className="text-[10px] text-muted-foreground whitespace-nowrap">

@@ -141,7 +141,7 @@ export function WatchlistPage() {
 
     return (
         <div className="flex flex-col w-full px-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-start justify-between mb-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{t('watchlist.title')}</h1>
                     <p className="text-muted-foreground mt-1">

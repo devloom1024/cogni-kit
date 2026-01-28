@@ -68,7 +68,10 @@ export const watchlistClient = {
             markets?: string[]
         }
     ) => {
-        const url = groupId && groupId !== 'all'
+        // 简单的 UUID 校验正则
+        const isUUID = (str: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i.test(str)
+
+        const url = groupId && groupId !== 'all' && isUUID(groupId)
             ? API_PATHS.WATCHLIST_GROUP_ITEMS(groupId)
             : API_PATHS.WATCHLIST_ITEMS
 
