@@ -46,6 +46,7 @@ export interface FilterDropdownProps {
     // 其他
     className?: string
     align?: 'start' | 'center' | 'end'
+    size?: "default" | "sm" | "lg" | "icon"
 }
 
 export function FilterDropdown({
@@ -65,6 +66,7 @@ export function FilterDropdown({
     maxTagsDisplay = 2,
     className,
     align = 'start',
+    size,
 }: FilterDropdownProps) {
     const [searchQuery, setSearchQuery] = useState('')
     const [isOpen, setIsOpen] = useState(false)
@@ -114,8 +116,9 @@ export function FilterDropdown({
             <DropdownMenuTrigger asChild>
                 <Button
                     variant="outline"
+                    size={size}
                     className={cn(
-                        'gap-2 h-auto py-2',
+                        'gap-2',
                         variant === 'dashed' && 'border-dashed',
                         className
                     )}

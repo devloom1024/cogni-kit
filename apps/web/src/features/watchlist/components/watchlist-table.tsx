@@ -93,6 +93,7 @@ export function WatchlistTable({
         columns,
         data,
         loading,
+        className: "!space-y-4",
 
         // 分页配置
         pagination: {

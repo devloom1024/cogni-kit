@@ -30,7 +30,7 @@ export function ColumnVisibilityMenu<TData>({
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="shrink-0">
+                <Button variant="outline" size="sm" className="shrink-0 h-8">
                     <Settings2 className="mr-2 h-4 w-4" />
                     {label}
                 </Button>

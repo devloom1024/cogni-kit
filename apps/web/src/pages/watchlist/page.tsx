@@ -37,7 +37,8 @@ export function WatchlistPage() {
 
     // Load groups
     const loadGroups = useCallback(async () => {
-        setIsGroupsLoading(true)
+        // Only show skeleton on initial load, not during refreshes
+        // setIsGroupsLoading(true) 
         try {
             const res = await watchlistClient.getGroups()
             setGroups(res)
@@ -144,7 +145,7 @@ export function WatchlistPage() {
 
 
     return (
-        <div className="flex flex-col w-full px-6">
+        <div className="flex flex-col w-full px-4">
             <div className="flex items-start justify-between mb-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{t('watchlist.title')}</h1>

@@ -66,7 +66,7 @@ export function WatchlistFiltersBar({ filters, onFiltersChange, className }: Wat
     const hasActiveFilters = filters.search || filters.types.length > 0 || filters.markets.length > 0
 
     return (
-        <div className={cn("flex items-center gap-2 mb-4", className)}>
+        <div className={cn("flex items-center gap-2", className)}>
             {/* 搜索框 */}
             <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -74,7 +74,7 @@ export function WatchlistFiltersBar({ filters, onFiltersChange, className }: Wat
                     placeholder={t('watchlist.filters.search_placeholder')}
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 h-8"
                 />
             </div>
 
@@ -89,6 +89,7 @@ export function WatchlistFiltersBar({ filters, onFiltersChange, className }: Wat
                 clearText={t('watchlist.filters.clear')}
                 emptyText={t('watchlist.filters.no_results')}
                 variant="dashed"
+                size="sm"
                 showSelectedTags
                 searchable
                 clearable
@@ -105,6 +106,7 @@ export function WatchlistFiltersBar({ filters, onFiltersChange, className }: Wat
                 clearText={t('watchlist.filters.clear')}
                 emptyText={t('watchlist.filters.no_results')}
                 variant="dashed"
+                size="sm"
                 showSelectedTags
                 searchable
                 clearable
@@ -115,7 +117,7 @@ export function WatchlistFiltersBar({ filters, onFiltersChange, className }: Wat
                 <Button
                     variant="ghost"
                     onClick={handleReset}
-                    className="gap-2"
+                    className="gap-2 h-8"
                 >
                     <X className="h-4 w-4" />
                     {t('watchlist.filters.reset')}
