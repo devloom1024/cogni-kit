@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import type { SortingState } from '@tanstack/react-table'
 import { Button } from '@/components/ui/button'
-import { GroupTabs } from '@/features/watchlist/components/group-tabs'
+import { GroupTabs, GroupTabsSkeleton } from '@/features/watchlist/components/group-tabs'
 import { WatchlistTable } from '@/features/watchlist/components/watchlist-table'
 import type { WatchlistFilters } from '@/features/watchlist/components/watchlist-filters'
 import { AssetSearchDialog } from '@/features/watchlist/components/asset-search-dialog'
@@ -24,6 +24,7 @@ export function WatchlistPage() {
     const [page, setPage] = useState(1)
     const [result, setResult] = useState<PaginatedResult | null>(null)
     const [groups, setGroups] = useState<WatchlistGroup[]>([])
+    const [isGroupsLoading, setIsGroupsLoading] = useState(true)
     const [loading, setLoading] = useState(false)
     const [sorting, setSorting] = useState<SortingState>([])
     const [filters, setFilters] = useState<WatchlistFilters>({
@@ -36,11 +37,14 @@ export function WatchlistPage() {
 
     // Load groups
     const loadGroups = useCallback(async () => {
+        setIsGroupsLoading(true)
         try {
             const res = await watchlistClient.getGroups()
             setGroups(res)
         } catch (error) {
             console.error('Failed to load groups:', error)
+        } finally {
+            setIsGroupsLoading(false)
         }
     }, [])
 
@@ -162,13 +166,17 @@ export function WatchlistPage() {
                 </AssetSearchDialog>
             </div>
 
-            <GroupTabs
-                value={currentGroupId}
-                onValueChange={handleGroupChange}
-                groups={groups}
-                onGroupsChange={setGroups}
-                onRefresh={loadGroups}
-            />
+            {isGroupsLoading ? (
+                <GroupTabsSkeleton />
+            ) : (
+                <GroupTabs
+                    value={currentGroupId}
+                    onValueChange={handleGroupChange}
+                    groups={groups}
+                    onGroupsChange={setGroups}
+                    onRefresh={loadGroups}
+                />
+            )}
 
             {/* 过滤器 & 表格 */}
             <WatchlistTable

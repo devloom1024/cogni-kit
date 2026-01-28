@@ -4,7 +4,21 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { GroupManagerDialog } from './group-manager/group-manager-dialog'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { WatchlistGroup } from 'shared'
+
+export function GroupTabsSkeleton() {
+    return (
+        <div className="w-full mb-2 flex items-center gap-2">
+            <div className="flex-1 pb-2">
+                <Skeleton className="h-10 w-full rounded-md bg-muted" />
+            </div>
+            <div className="shrink-0 pb-2">
+                <Skeleton className="h-8 w-8 rounded-full" />
+            </div>
+        </div>
+    )
+}
 
 interface GroupTabsProps {
     value: string
