@@ -3,7 +3,7 @@ import { Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import { GroupManagerDialog } from './group-manager-dialog'
+import { GroupManagerDialog } from './group-manager/group-manager-dialog'
 import type { WatchlistGroup } from 'shared'
 
 interface GroupTabsProps {

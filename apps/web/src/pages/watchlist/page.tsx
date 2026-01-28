@@ -8,7 +8,7 @@ import { GroupTabs } from '@/features/watchlist/components/group-tabs'
 import { WatchlistTable } from '@/features/watchlist/components/watchlist-table'
 import type { WatchlistFilters } from '@/features/watchlist/components/watchlist-filters'
 import { AssetSearchDialog } from '@/features/watchlist/components/asset-search-dialog'
-import { MoveToGroupDialog } from '@/features/watchlist/components/move-to-group-dialog'
+import { GroupManagerDialog } from '@/features/watchlist/components/group-manager/group-manager-dialog'
 import { watchlistClient } from '@/features/watchlist/api/client'
 import type { PaginationMeta, WatchlistGroup, WatchlistItem } from 'shared'
 
@@ -190,17 +190,30 @@ export function WatchlistPage() {
 
             {/* Move Dialog */}
 
-            <MoveToGroupDialog
-                itemIds={moveItemIds}
-                currentGroupId={currentGroupId}
+            <GroupManagerDialog
                 open={moveDialogOpen}
                 onOpenChange={setMoveDialogOpen}
                 groups={groups}
-                onSuccess={() => {
-                    loadItems()
-                    loadGroups()
+                onGroupsChange={setGroups}
+                onRefresh={loadGroups}
+                mode="select"
+                title={t('watchlist.actions.move_to_title')}
+                excludeGroupId={currentGroupId}
+                onSelect={async (group) => {
+                    try {
+                        if (moveItemIds.length === 1) {
+                            await watchlistClient.moveItem(moveItemIds[0], group.id)
+                        } else {
+                            await watchlistClient.batchMoveItems(moveItemIds, group.id)
+                        }
+                        toast.success(t('watchlist.actions.move_success'))
+                        setMoveDialogOpen(false)
+                        loadItems()
+                        loadGroups()
+                    } catch {
+                        toast.error(t('watchlist.actions.move_error'))
+                    }
                 }}
-                onGroupCreated={loadGroups}
             />
         </div>
     )
