@@ -127,7 +127,10 @@ export function EnhancedTable<TData>(config: EnhancedTableConfig<TData>) {
             {config.pagination?.meta && config.pagination.meta.total > 0 && (
                 <TablePagination
                     meta={config.pagination.meta}
-                    onPageChange={config.pagination.onPageChange || (() => { })}
+                    onPageChange={(page) => {
+                        selection.clearSelection() // Clear selection on page change
+                        config.pagination?.onPageChange?.(page)
+                    }}
                     showTotal={config.pagination.showTotal}
                     totalLabel={config.pagination.totalLabel}
                     previousLabel={config.pagination.previousLabel}
