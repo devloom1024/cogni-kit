@@ -44,6 +44,8 @@ export const API_PATHS = {
   WATCHLIST_GROUPS_REORDER: '/api/v1/watchlist/groups/reorder',
   /// 批量移除自选标的
   WATCHLIST_ITEMS_BATCH_REMOVE: '/api/v1/watchlist/items/batch-remove',
+  /// 批量移动自选标的
+  WATCHLIST_ITEMS_BATCH_MOVE: '/api/v1/watchlist/items/move',
 
 
   // ==================== Financial Data 服务 ====================

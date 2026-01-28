@@ -479,6 +479,34 @@ paths:
                       limit: 10
                       totalPages: 3
 
+    post:
+      summary: 添加标的到自选分组
+      description: 将指定标的添加到自选分组
+      tags: [自选标的]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assetId]
+              properties:
+                assetId:
+                  type: string
+                  format: uuid
+                  description: 标的 ID（从搜索结果获取）
+            example:
+              assetId: "uuid-1"
+      responses:
+        "201":
+          description: 添加成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistItem"
+
   /api/v1/watchlist/items/check-groups:
     post:
       summary: 批量查询标的所在分组
@@ -524,40 +552,7 @@ paths:
                 - assetId: "660e8400-e29b-41d4-a716-446655440001"
                   groupIds: []
 
-    post:
-      summary: 添加标的到自选分组
-      description: 将指定标的添加到自选分组
-      tags: [自选标的]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: groupId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [assetId]
-              properties:
-                assetId:
-                  type: string
-                  format: uuid
-                  description: 标的 ID（从搜索结果获取）
-            example:
-              assetId: "uuid-1"
-      responses:
-        "201":
-          description: 添加成功
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WatchlistItem"
+                  groupIds: []
 
   /api/v1/watchlist/items/{itemId}:
     parameters:
@@ -612,6 +607,35 @@ paths:
                 $ref: "#/components/schemas/WatchlistItem"
         "409":
           description: 目标分组已存在该标的
+
+  /api/v1/watchlist/items/move:
+    post:
+      summary: 批量移动标的到分组
+      description: |
+        将多个标的移动到指定分组。
+        如果标的已在目标分组中，则忽略；
+        如果标的在其他分组中，则更新其分组 ID。
+      tags: [自选标的]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchMoveWatchlistItemRequest"
+      responses:
+        "200":
+          description: 移动成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: 成功移动的数量
+                required: [count]
 
 # ==================== 组件定义 ====================
 
@@ -787,6 +811,27 @@ components:
       required:
         - targetGroupId
       properties:
+        targetGroupId:
+          type: string
+          format: uuid
+          description: 目标分组 ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+    BatchMoveWatchlistItemRequest:
+      type: object
+      required:
+        - itemIds
+        - targetGroupId
+      properties:
+        itemIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: 自选记录 ID 列表
+          minItems: 1
+          maxItems: 100
+          example: ["item-1", "item-2"]
         targetGroupId:
           type: string
           format: uuid

@@ -266,3 +266,21 @@ export const BatchRemoveItemsSchema = z.object({
 }).openapi('BatchRemoveItemsRequest')
 
 export type BatchRemoveItemsRequest = z.infer<typeof BatchRemoveItemsSchema>
+
+/**
+ * 批量移动标的请求 Schema
+ */
+export const BatchMoveWatchlistItemSchema = z.object({
+  /// 自选记录 ID 列表
+  itemIds: z.array(z.string().uuid()).min(1).max(100).openapi({
+    description: '自选记录 ID 列表 (最多 100 条)',
+    example: ['550e8400-e29b-41d4-a716-446655440000', '660e8400-e29b-41d4-a716-446655440001'],
+  }),
+  /// 目标分组 ID
+  targetGroupId: z.string().uuid().openapi({
+    description: '目标分组 ID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  }),
+}).openapi('BatchMoveWatchlistItemRequest')
+
+export type BatchMoveWatchlistItemRequest = z.infer<typeof BatchMoveWatchlistItemSchema>

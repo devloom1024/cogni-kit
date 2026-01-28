@@ -123,6 +123,14 @@ export const watchlistClient = {
         return res.data
     },
 
+    batchMoveItems: async (itemIds: string[], targetGroupId: string) => {
+        const res = await api.post<{ count: number }>(
+            API_PATHS.WATCHLIST_ITEMS_BATCH_MOVE,
+            { itemIds, targetGroupId }
+        )
+        return res.data
+    },
+
     // ==================== 批量查询 ====================
     checkAssetGroups: async (assetIds: string[]): Promise<AssetGroupCheckResult[]> => {
         const res = await api.post<AssetGroupCheckResult[]>(

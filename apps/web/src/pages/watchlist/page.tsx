@@ -89,10 +89,15 @@ export function WatchlistPage() {
 
     // For move dialog
     const [moveDialogOpen, setMoveDialogOpen] = useState(false)
-    const [moveItemId, setMoveItemId] = useState<string | null>(null)
+    const [moveItemIds, setMoveItemIds] = useState<string[]>([])
 
     const handleMoveClick = (itemId: string) => {
-        setMoveItemId(itemId)
+        setMoveItemIds([itemId])
+        setMoveDialogOpen(true)
+    }
+
+    const handleBatchMove = (itemIds: string[]) => {
+        setMoveItemIds(itemIds)
         setMoveDialogOpen(true)
     }
 
@@ -173,6 +178,7 @@ export function WatchlistPage() {
                 onMoveClick={handleMoveClick}
                 onRemove={handleRemove}
                 onBatchRemove={handleBatchRemove}
+                onBatchMove={handleBatchMove}
                 currentGroupId={currentGroupId}
                 loading={loading}
                 filters={filters}
@@ -185,12 +191,16 @@ export function WatchlistPage() {
             {/* Move Dialog */}
 
             <MoveToGroupDialog
-                itemId={moveItemId || ''}
+                itemIds={moveItemIds}
                 currentGroupId={currentGroupId}
                 open={moveDialogOpen}
                 onOpenChange={setMoveDialogOpen}
                 groups={groups}
-                onSuccess={loadItems}
+                onSuccess={() => {
+                    loadItems()
+                    loadGroups()
+                }}
+                onGroupCreated={loadGroups}
             />
         </div>
     )

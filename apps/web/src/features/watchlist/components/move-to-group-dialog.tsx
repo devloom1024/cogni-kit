@@ -17,21 +17,23 @@ import { toast } from 'sonner'
 import type { WatchlistGroup } from 'shared'
 
 interface MoveToGroupDialogProps {
-    itemId: string
+    itemIds: string[]
     currentGroupId: string
     open: boolean
     onOpenChange: (open: boolean) => void
     groups: WatchlistGroup[]
     onSuccess: () => void
+    onGroupCreated?: () => void
 }
 
 export function MoveToGroupDialog({
-    itemId,
+    itemIds,
     currentGroupId,
     open,
     onOpenChange,
     groups,
     onSuccess,
+    onGroupCreated,
 }: MoveToGroupDialogProps) {
     const { t } = useTranslation()
     const [newGroupName, setNewGroupName] = useState('')
@@ -41,8 +43,10 @@ export function MoveToGroupDialog({
         if (!newGroupName.trim()) return
         setLoading('create')
         try {
-            const newGroup = await watchlistClient.createGroup({ name: newGroupName.trim() })
-            await handleMove(newGroup.id)
+            await watchlistClient.createGroup({ name: newGroupName.trim() })
+            setNewGroupName('')
+            onGroupCreated?.()
+            toast.success(t('watchlist.actions.create_success'))
         } catch {
             toast.error(t('watchlist.actions.create_error'))
         } finally {
@@ -50,10 +54,14 @@ export function MoveToGroupDialog({
         }
     }
 
-    const handleMove = async (groupId: string) => {
-        setLoading(groupId)
+    const handleMove = async (targetGroupId: string) => {
+        setLoading(targetGroupId)
         try {
-            await watchlistClient.moveItem(itemId, groupId)
+            if (itemIds.length === 1) {
+                await watchlistClient.moveItem(itemIds[0], targetGroupId)
+            } else {
+                await watchlistClient.batchMoveItems(itemIds, targetGroupId)
+            }
             toast.success(t('watchlist.actions.move_success'))
             onOpenChange(false)
             onSuccess()

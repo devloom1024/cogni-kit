@@ -370,4 +370,51 @@ export const watchlistRepository = {
       groupIds: groupMap[assetId] || [],
     }))
   },
+
+  /**
+   * 批量获取标的详情
+   */
+  async getItemsByIds(itemIds: string[]) {
+    return prisma.watchlistItem.findMany({
+      where: {
+        id: { in: itemIds },
+      },
+      include: {
+        group: {
+          select: { id: true, userId: true },
+        },
+      },
+    })
+  },
+
+  /**
+   * 批量检查分组内是否已存在指定资产
+   * 返回已存在的 assetId 列表
+   */
+  async getExistingAssetIdsInGroup(groupId: string, assetIds: string[]) {
+    const items = await prisma.watchlistItem.findMany({
+      where: {
+        groupId,
+        assetId: { in: assetIds },
+      },
+      select: {
+        assetId: true,
+      },
+    })
+    return items.map(item => item.assetId)
+  },
+
+  /**
+   * 批量更新标的分组
+   */
+  async batchUpdateItemGroup(itemIds: string[], newGroupId: string) {
+    return prisma.watchlistItem.updateMany({
+      where: {
+        id: { in: itemIds },
+      },
+      data: {
+        groupId: newGroupId,
+      },
+    })
+  },
 }

@@ -8,6 +8,7 @@ import {
   WatchlistItemSchema,
   AddWatchlistItemSchema,
   MoveWatchlistItemSchema,
+  BatchMoveWatchlistItemSchema,
   ErrorSchema,
   PaginationMetaSchema,
   WatchlistFilterQuerySchema,
@@ -587,6 +588,48 @@ watchlist.openapi(moveItemRoute, async (c) => {
   const data = c.req.valid('json')
   const item = await watchlistService.moveItem(itemId, data.targetGroupId, userId)
   return c.json(item)
+})
+
+// 批量移动标的到分组
+const batchMoveItemsRoute = createRoute({
+  method: 'post',
+  path: '/items/move',
+  tags: ['自选标的'],
+  summary: '批量移动标的到分组',
+  description: '将多个标的移动到指定分组。如果标的已在目标分组中，则忽略；如果标的在其他分组中，则更新其分组 ID。',
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: BatchMoveWatchlistItemSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            count: z.number().int().openapi({
+              description: '成功移动的数量',
+              example: 5,
+            }),
+          }),
+        },
+      },
+      description: '移动成功',
+    },
+  },
+})
+
+// @ts-expect-error - Hono OpenAPI types don't support error responses handled by errorHandler middleware
+watchlist.openapi(batchMoveItemsRoute, async (c) => {
+  const userId = c.get('userId')
+  const data = c.req.valid('json')
+  const count = await watchlistService.batchMoveItems(userId, data)
+  return c.json({ count })
 })
 
 export { watchlist }

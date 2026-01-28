@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Trash2, Inbox } from 'lucide-react'
+import { Trash2, Inbox, FolderOpen } from 'lucide-react'
 import type { WatchlistItem } from 'shared'
 import type { SortingState } from '@tanstack/react-table'
 import { EnhancedTable } from '@/components/table'
@@ -15,6 +15,7 @@ interface WatchlistTableProps {
     onMoveClick: (itemId: string) => void
     onRemove: (itemId: string, groupId: string) => void
     onBatchRemove?: (itemIds: string[]) => void
+    onBatchMove?: (itemIds: string[]) => void
     currentGroupId: string
     loading?: boolean
     filters: WatchlistFilters
@@ -34,6 +35,7 @@ export function WatchlistTable({
     onMoveClick,
     onRemove,
     onBatchRemove,
+    onBatchMove,
     loading,
     filters,
     onFiltersChange,
@@ -47,10 +49,23 @@ export function WatchlistTable({
 
     // 批量操作配置
     const batchActions = useMemo(() => {
-        if (!onBatchRemove) return []
+        const actions = []
 
-        return [
-            {
+        if (onBatchMove) {
+            actions.push({
+                key: 'batch-move',
+                label: t('watchlist.table.batch_move'),
+                icon: <FolderOpen className="h-4 w-4" />,
+                variant: 'default' as const, // Use default or secondary variant
+                onClick: (selectedRows: WatchlistItem[]) => {
+                    const itemIds = selectedRows.map((row) => row.id)
+                    onBatchMove(itemIds)
+                },
+            })
+        }
+
+        if (onBatchRemove) {
+            actions.push({
                 key: 'batch-remove',
                 label: t('watchlist.table.batch_remove'),
                 icon: <Trash2 className="h-4 w-4" />,
@@ -67,9 +82,11 @@ export function WatchlistTable({
                     confirmText: t('watchlist.table.batch_remove'),
                     cancelText: t('common.cancel'),
                 },
-            },
-        ]
-    }, [onBatchRemove, t])
+            })
+        }
+
+        return actions
+    }, [onBatchMove, onBatchRemove, t])
 
     // 表格配置
     const tableConfig: EnhancedTableConfig<WatchlistItem> = {

@@ -117,7 +117,11 @@
             "added_all": "Added to all",
             "in_groups": "{{count}} groups",
             "added_to_name": "Added to [{{name}}]",
-            "no_group_available": "No group available"
+            "no_group_available": "No group available",
+            "create_success": "Group created successfully",
+            "create_error": "Failed to create group",
+            "move_success": "Moved successfully",
+            "move_error": "Failed to move"
         },
         "types": {
             "STOCK": "Stock",

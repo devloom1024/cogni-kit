@@ -8,6 +8,7 @@ import type {
   PaginationMeta,
   AssetGroupCheckResult,
   WatchlistFilterQuery,
+  BatchMoveWatchlistItemRequest,
 } from 'shared'
 import { logger } from '../../shared/logger.js'
 import { AppError } from '../../shared/error.js'
@@ -370,6 +371,70 @@ export const watchlistService = {
       },
       groupId: movedItem.groupId,
     }
+  },
+
+  /**
+   * 批量移动标的到分组
+   */
+  async batchMoveItems(userId: string, data: BatchMoveWatchlistItemRequest): Promise<number> {
+    const { itemIds, targetGroupId } = data
+    logger.info({ userId, count: itemIds.length, targetGroupId }, 'Batch moving items')
+
+    // 1. 验证目标分组归属
+    const isTargetOwner = await watchlistRepository.verifyGroupOwnership(targetGroupId, userId)
+    if (!isTargetOwner) {
+      throw new AppError(ErrorCode.WATCHLIST_FORBIDDEN, 403)
+    }
+
+    // 2. 获取所有标的详情
+    const items = await watchlistRepository.getItemsByIds(itemIds)
+
+    // 3. 验证所有标的归属
+    if (items.length !== itemIds.length) {
+      throw new AppError(ErrorCode.WATCHLIST_ITEM_NOT_FOUND, 404)
+    }
+
+    for (const item of items) {
+      if (item.group.userId !== userId) {
+        throw new AppError(ErrorCode.WATCHLIST_FORBIDDEN, 403)
+      }
+    }
+
+    // 4. 过滤掉已经在目标分组的标的 (无需移动)
+    const itemsToProcess = items.filter(item => item.groupId !== targetGroupId)
+    if (itemsToProcess.length === 0) {
+      return 0
+    }
+
+    // 5. 检查目标分组中已存在的 assetIds
+    const assetIds = itemsToProcess.map(item => item.assetId)
+    const existingAssetIds = await watchlistRepository.getExistingAssetIdsInGroup(targetGroupId, assetIds)
+    const existingAssetIdSet = new Set(existingAssetIds)
+
+    // 6. 分类：需要更新的和需要删除的（因为目标已存在）
+    const itemsToDelete: string[] = []
+    const itemsToUpdate: string[] = []
+
+    for (const item of itemsToProcess) {
+      if (existingAssetIdSet.has(item.assetId)) {
+        // 目标分组已存在该标的 Asset -> 删除当前 Item
+        itemsToDelete.push(item.id)
+      } else {
+        // 目标分组不存在 -> 移动当前 Item
+        itemsToUpdate.push(item.id)
+      }
+    }
+
+    // 7. 执行操作
+    await Promise.all([
+      itemsToDelete.length > 0 ? watchlistRepository.batchRemoveItems(itemsToDelete) : Promise.resolve(),
+      itemsToUpdate.length > 0 ? watchlistRepository.batchUpdateItemGroup(itemsToUpdate, targetGroupId) : Promise.resolve(),
+    ])
+
+    const totalMoved = itemsToDelete.length + itemsToUpdate.length
+    logger.info({ userId, totalMoved, deleted: itemsToDelete.length, updated: itemsToUpdate.length }, 'Batch move completed')
+
+    return totalMoved
   },
 
   /**

@@ -117,7 +117,11 @@
             "added_all": "已添加到所有分组",
             "in_groups": "{{count}} 个分组",
             "added_to_name": "已添加[{{name}}]",
-            "no_group_available": "暂无可用分组"
+            "no_group_available": "暂无可用分组",
+            "create_success": "分组创建成功",
+            "create_error": "创建分组失败",
+            "move_success": "移动成功",
+            "move_error": "移动失败"
         },
         "types": {
             "STOCK": "股票",
