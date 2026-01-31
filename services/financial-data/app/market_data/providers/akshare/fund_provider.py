@@ -7,7 +7,7 @@ import akshare as ak
 from app.market_data.fund.models import FundItem
 from app.market_data.providers.base import FundProvider
 from app.market_data.fund.utils.fund_type_map import map_fund_type
-from app.utils.pinyin import get_pinyin_full, get_pinyin_initial
+from app.utils.pinyin import get_full_pinyin, get_pinyin_initial
 
 
 class AkshareFundProvider(FundProvider):
@@ -25,7 +25,7 @@ class AkshareFundProvider(FundProvider):
         for _, row in df.iterrows():
             name = str(row.get("基金简称", ""))
             pinyin_initial = get_pinyin_initial(name)
-            pinyin_full = get_pinyin_full(name)
+            pinyin_full = get_full_pinyin(name)
 
             items.append(
                 FundItem.model_validate(

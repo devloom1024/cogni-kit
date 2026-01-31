@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query, status
 from fastapi.responses import JSONResponse
 
 from app.core.schemas import ErrorResponse
-from app.market_data.index.models.response import IndexListResponse
+from app.market_data.common import ListResponse
 from app.market_data.index.service import index_aggregator
 from app.market_data.providers.exceptions import ProviderSelectionError
 
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api/v1/market-data/index", tags=["MarketData:Index"]
 
 @router.get(
     "/list",
-    response_model=IndexListResponse,
+    response_model=ListResponse,
     summary="获取指数列表",
     responses={503: {"model": ErrorResponse, "description": "无可用数据源"}},
 )
@@ -29,4 +29,4 @@ async def get_index_list(category: Optional[str] = Query(None, description="指�
             content=error.model_dump(),
         )
 
-    return IndexListResponse(data=data, count=len(data))
+    return ListResponse(data=data, count=len(data))

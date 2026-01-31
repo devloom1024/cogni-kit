@@ -1,8 +1,8 @@
 """LOF 列表项模型"""
 
 from pydantic import BaseModel, Field
-from .market import Market
-from .exchange import Exchange
+from app.market_data.common import Market
+from app.market_data.common import Exchange
 
 
 class LOFItem(BaseModel):

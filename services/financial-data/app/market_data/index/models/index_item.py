@@ -1,7 +1,7 @@
 """指数列表项模型"""
 
 from pydantic import BaseModel, Field
-from .market import Market
+from app.market_data.common import Market
 from .index_type import IndexType
 
 
