@@ -2,5 +2,6 @@
 
 from .core import BaseProvider, MarketDataProvider
 from .stock import StockProvider
+from .etf import ETFProvider
 
-__all__ = ["BaseProvider", "MarketDataProvider", "StockProvider"]
+__all__ = ["BaseProvider", "MarketDataProvider", "StockProvider", "ETFProvider"]

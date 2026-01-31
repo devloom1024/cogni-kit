@@ -57,7 +57,7 @@ export const API_PATHS = {
   /// 指数列表
   FINANCIAL_DATA_INDEX: '/api/v1/akshare/index/list',
   /// ETF 列表
-  FINANCIAL_DATA_ETF: '/api/v1/akshare/etf/list',
+  FINANCIAL_DATA_ETF: '/api/v1/market-data/etf/list',
   /// LOF 列表
   FINANCIAL_DATA_LOF: '/api/v1/akshare/lof/list',
   /// 场外基金列表

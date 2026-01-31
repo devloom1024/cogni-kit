@@ -11,7 +11,7 @@ from akshare.utils.context import set_proxies
 import structlog
 from typing import List, Dict, Any
 
-from ..settings import proxy_settings
+from app.modules.akshare.settings import proxy_settings
 
 logger = structlog.get_logger(__name__)
 
@@ -143,5 +143,3 @@ class ServiceError(Exception):
 
     pass
 
-
-etf_client = ETFClient()
