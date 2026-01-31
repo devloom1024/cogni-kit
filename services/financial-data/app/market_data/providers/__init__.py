@@ -6,6 +6,7 @@ from app.market_data.providers.akshare import (
     AkshareStockProvider,
     AkshareETFProvider,
     AkshareFundProvider,
+    AkshareLOFProvider,
 )
 
 # 注册 akshare Provider
@@ -18,9 +19,13 @@ provider_registry.register_etf_provider(_akshare_etf_provider.name, _akshare_etf
 _akshare_fund_provider = AkshareFundProvider()
 provider_registry.register_fund_provider(_akshare_fund_provider.name, _akshare_fund_provider)
 
+_akshare_lof_provider = AkshareLOFProvider()
+provider_registry.register_lof_provider(_akshare_lof_provider.name, _akshare_lof_provider)
+
 # 设置优先级（确保至少包含 akshare）
 provider_registry.set_stock_priority(market_data_settings.stock_provider_priority)
 provider_registry.set_etf_priority(market_data_settings.etf_provider_priority)
 provider_registry.set_fund_priority(market_data_settings.fund_provider_priority)
+provider_registry.set_lof_priority(market_data_settings.lof_provider_priority)
 
 __all__ = ["provider_registry"]

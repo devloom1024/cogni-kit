@@ -10,8 +10,15 @@ class MarketDataSettings(BaseSettings):
     stock_provider_priority: list[str] = Field(default_factory=lambda: ["akshare"])
     etf_provider_priority: list[str] = Field(default_factory=lambda: ["akshare"])
     fund_provider_priority: list[str] = Field(default_factory=lambda: ["akshare"])
+    lof_provider_priority: list[str] = Field(default_factory=lambda: ["akshare"])
 
-    @field_validator("stock_provider_priority", "etf_provider_priority", "fund_provider_priority", mode="before")
+    @field_validator(
+        "stock_provider_priority",
+        "etf_provider_priority",
+        "fund_provider_priority",
+        "lof_provider_priority",
+        mode="before",
+    )
     @classmethod
     def _split_priority(cls, value):  # noqa: D401 - 简短说明
         """允许逗号分隔的字符串"""

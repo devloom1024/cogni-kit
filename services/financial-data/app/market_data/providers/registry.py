@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Dict, Iterable, Iterator, TypeVar
 
-from app.market_data.providers.base import ETFProvider, FundProvider, StockProvider
+from app.market_data.providers.base import ETFProvider, FundProvider, StockProvider, LOFProvider
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,8 @@ class ProviderRegistry:
         self._etf_priority: list[str] = []
         self._fund_providers: dict[str, FundProvider] = {}
         self._fund_priority: list[str] = []
+        self._lof_providers: dict[str, LOFProvider] = {}
+        self._lof_priority: list[str] = []
 
     def register_stock_provider(self, name: str, provider: StockProvider):
         self._stock_providers[name] = provider
@@ -37,6 +39,11 @@ class ProviderRegistry:
         self._fund_providers[name] = provider
         if name not in self._fund_priority:
             self._fund_priority.append(name)
+
+    def register_lof_provider(self, name: str, provider: LOFProvider):
+        self._lof_providers[name] = provider
+        if name not in self._lof_priority:
+            self._lof_priority.append(name)
 
     def set_stock_priority(self, names: Iterable[str]):
         self._stock_priority = [name for name in names if name in self._stock_providers]
@@ -56,6 +63,12 @@ class ProviderRegistry:
             if name not in self._fund_priority:
                 self._fund_priority.append(name)
 
+    def set_lof_priority(self, names: Iterable[str]):
+        self._lof_priority = [name for name in names if name in self._lof_providers]
+        for name in self._lof_providers:
+            if name not in self._lof_priority:
+                self._lof_priority.append(name)
+
     def iter_stock_providers(self) -> Iterator[StockProvider]:
         yield from self._iter_by_priority(self._stock_priority, self._stock_providers)
 
@@ -64,6 +77,9 @@ class ProviderRegistry:
 
     def iter_fund_providers(self) -> Iterator[FundProvider]:
         yield from self._iter_by_priority(self._fund_priority, self._fund_providers)
+
+    def iter_lof_providers(self) -> Iterator[LOFProvider]:
+        yield from self._iter_by_priority(self._lof_priority, self._lof_providers)
 
     def _iter_by_priority(self, priority: list[str], items: Dict[str, T]) -> Iterator[T]:
         yielded = set()
