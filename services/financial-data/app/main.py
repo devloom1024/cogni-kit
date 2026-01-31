@@ -14,7 +14,7 @@ from app.core.logging_config import configure_logging
 from app.core.scheduler import cache_refresh_scheduler
 from app.core.schemas import HealthResponse, ErrorResponse
 from app.modules.akshare import router as akshare_router
-from app.market_data.router import router as market_data_router
+from app.market_data.stock.router import router as market_data_stock_router
 
 # 配置日志系统(根据环境自动选择格式和输出)
 configure_logging(env=settings.node_env)
@@ -106,5 +106,5 @@ async def health_check():
 
 
 # 注册路由
-app.include_router(market_data_router)
+app.include_router(market_data_stock_router)
 app.include_router(akshare_router)
