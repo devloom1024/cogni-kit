@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Query
 from .service import index_service
 from .models import IndexListResponse
-from app.modules.akshare.common.models.error import ErrorResponse
+from app.core.schemas import ErrorResponse
 
 router = APIRouter(prefix="/index", tags=["指数"])
 

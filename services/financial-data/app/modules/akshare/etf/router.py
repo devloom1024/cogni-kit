@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 from .service import etf_service
 from .models import ETFListResponse
-from app.modules.akshare.common.models.error import ErrorResponse
+from app.core.schemas import ErrorResponse
 
 router = APIRouter(prefix="/etf", tags=["ETF"])
 

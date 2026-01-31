@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 from .service import lof_service
 from .models import LOFListResponse
-from app.modules.akshare.common.models.error import ErrorResponse
+from app.core.schemas import ErrorResponse
 
 router = APIRouter(prefix="/lof", tags=["LOF"])
 

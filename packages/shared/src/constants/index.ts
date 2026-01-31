@@ -53,7 +53,7 @@ export const API_PATHS = {
   /// Financial Data 服务基础路径
   FINANCIAL_DATA_BASE: '/api/v1/akshare',
   /// A股列表
-  FINANCIAL_DATA_STOCK: '/api/v1/akshare/stock/list',
+  FINANCIAL_DATA_STOCK: '/api/v1/market-data/stock/list',
   /// 指数列表
   FINANCIAL_DATA_INDEX: '/api/v1/akshare/index/list',
   /// ETF 列表

@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 from .service import fund_service
 from .models import FundListResponse
-from app.modules.akshare.common.models.error import ErrorResponse
+from app.core.schemas import ErrorResponse
 
 router = APIRouter(prefix="/fund", tags=["场外基金"])
 
