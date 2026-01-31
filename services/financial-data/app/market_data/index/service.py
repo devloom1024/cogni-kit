@@ -25,12 +25,17 @@ class IndexAggregator:
                 return await provider.get_index_list(category)
             except ProviderUnavailableError as exc:
                 logger.warning(
-                    "index_provider_failed", provider=provider.name, error=str(exc), category=category
+                    "index_provider_failed provider=%s category=%s error=%s",
+                    provider.name,
+                    category,
+                    exc,
                 )
                 errors.append(str(exc))
             except Exception as exc:  # pragma: no cover - 意外错误
                 logger.exception(
-                    "index_provider_unexpected_error", provider=provider.name, category=category
+                    "index_provider_unexpected_error provider=%s category=%s",
+                    provider.name,
+                    category,
                 )
                 errors.append(f"{provider.name}: {exc}")
 

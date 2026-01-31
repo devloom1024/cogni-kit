@@ -25,12 +25,12 @@ class FundAggregator:
                 return await provider.get_fund_list()
             except ProviderUnavailableError as exc:
                 logger.warning(
-                    "fund_provider_failed", provider=provider.name, error=str(exc)
+                    "fund_provider_failed provider=%s error=%s", provider.name, exc
                 )
                 errors.append(str(exc))
             except Exception as exc:  # pragma: no cover - 意外错误
                 logger.exception(
-                    "fund_provider_unexpected_error", provider=provider.name
+                    "fund_provider_unexpected_error provider=%s", provider.name
                 )
                 errors.append(f"{provider.name}: {exc}")
 

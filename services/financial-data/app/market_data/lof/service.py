@@ -25,12 +25,12 @@ class LofAggregator:
                 return await provider.get_lof_list()
             except ProviderUnavailableError as exc:
                 logger.warning(
-                    "lof_provider_failed", provider=provider.name, error=str(exc)
+                    "lof_provider_failed provider=%s error=%s", provider.name, exc
                 )
                 errors.append(str(exc))
             except Exception as exc:  # pragma: no cover
                 logger.exception(
-                    "lof_provider_unexpected_error", provider=provider.name
+                    "lof_provider_unexpected_error provider=%s", provider.name
                 )
                 errors.append(f"{provider.name}: {exc}")
 

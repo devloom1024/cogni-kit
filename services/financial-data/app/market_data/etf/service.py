@@ -25,12 +25,12 @@ class EtfAggregator:
                 return await provider.get_etf_list()
             except ProviderUnavailableError as exc:
                 logger.warning(
-                    "etf_provider_failed", provider=provider.name, error=str(exc)
+                    "etf_provider_failed provider=%s error=%s", provider.name, exc
                 )
                 errors.append(str(exc))
             except Exception as exc:  # pragma: no cover - 意外错误
                 logger.exception(
-                    "etf_provider_unexpected_error", provider=provider.name
+                    "etf_provider_unexpected_error provider=%s", provider.name
                 )
                 errors.append(f"{provider.name}: {exc}")
 

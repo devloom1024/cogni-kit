@@ -25,12 +25,12 @@ class StockAggregator:
                 return await provider.get_stock_list()
             except ProviderUnavailableError as exc:
                 logger.warning(
-                    "stock_provider_failed", provider=provider.name, error=str(exc)
+                    "stock_provider_failed provider=%s error=%s", provider.name, exc
                 )
                 errors.append(str(exc))
             except Exception as exc:
                 logger.exception(
-                    "stock_provider_unexpected_error", provider=provider.name
+                    "stock_provider_unexpected_error provider=%s", provider.name
                 )
                 errors.append(f"{provider.name}: {exc}")
 
