@@ -130,7 +130,7 @@ tail -f /var/log/sync-assets.log
 | 指数 | akshare | `/api/v1/akshare/index/list` |
 | ETF | market-data (akshare) | `/api/v1/market-data/etf/list` |
 | LOF | akshare | `/api/v1/akshare/lof/list` |
-| 场外基金 | akshare | `/api/v1/akshare/fund/list` |
+| 场外基金 | market-data (akshare) | `/api/v1/market-data/fund/list` |
 
 ---
 Monorepo powered by [Turborepo](https://turbo.build/repo).

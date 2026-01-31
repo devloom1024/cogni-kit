@@ -61,5 +61,5 @@ export const API_PATHS = {
   /// LOF 列表
   FINANCIAL_DATA_LOF: '/api/v1/akshare/lof/list',
   /// 场外基金列表
-  FINANCIAL_DATA_FUND: '/api/v1/akshare/fund/list',
+  FINANCIAL_DATA_FUND: '/api/v1/market-data/fund/list',
 } as const
