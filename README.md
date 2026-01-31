@@ -127,7 +127,7 @@ tail -f /var/log/sync-assets.log
 | 类型 | 数据源 | 接口 |
 |------|--------|------|
 | A股 | market-data (akshare) | `/api/v1/market-data/stock/list` |
-| 指数 | akshare | `/api/v1/akshare/index/list` |
+| 指数 | market-data (akshare) | `/api/v1/market-data/index/list` |
 | ETF | market-data (akshare) | `/api/v1/market-data/etf/list` |
 | LOF | market-data (akshare) | `/api/v1/market-data/lof/list` |
 | 场外基金 | market-data (akshare) | `/api/v1/market-data/fund/list` |

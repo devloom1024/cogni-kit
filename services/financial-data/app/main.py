@@ -18,6 +18,7 @@ from app.market_data.stock.router import router as market_data_stock_router
 from app.market_data.etf.router import router as market_data_etf_router
 from app.market_data.fund.router import router as market_data_fund_router
 from app.market_data.lof.router import router as market_data_lof_router
+from app.market_data.index.router import router as market_data_index_router
 
 # 配置日志系统(根据环境自动选择格式和输出)
 configure_logging(env=settings.node_env)
@@ -113,4 +114,5 @@ app.include_router(market_data_stock_router)
 app.include_router(market_data_etf_router)
 app.include_router(market_data_fund_router)
 app.include_router(market_data_lof_router)
+app.include_router(market_data_index_router)
 app.include_router(akshare_router)

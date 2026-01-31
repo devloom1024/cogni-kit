@@ -11,12 +11,14 @@ class MarketDataSettings(BaseSettings):
     etf_provider_priority: list[str] = Field(default_factory=lambda: ["akshare"])
     fund_provider_priority: list[str] = Field(default_factory=lambda: ["akshare"])
     lof_provider_priority: list[str] = Field(default_factory=lambda: ["akshare"])
+    index_provider_priority: list[str] = Field(default_factory=lambda: ["akshare"])
 
     @field_validator(
         "stock_provider_priority",
         "etf_provider_priority",
         "fund_provider_priority",
         "lof_provider_priority",
+        "index_provider_priority",
         mode="before",
     )
     @classmethod

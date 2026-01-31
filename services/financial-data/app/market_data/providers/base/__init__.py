@@ -5,6 +5,7 @@ from .stock import StockProvider
 from .etf import ETFProvider
 from .fund import FundProvider
 from .lof import LOFProvider
+from .index import IndexProvider
 
 __all__ = [
     "BaseProvider",
@@ -13,4 +14,5 @@ __all__ = [
     "ETFProvider",
     "FundProvider",
     "LOFProvider",
+    "IndexProvider",
 ]
