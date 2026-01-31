@@ -1,7 +1,7 @@
 """场外基金列表项模型"""
 
 from pydantic import BaseModel, Field
-from app.modules.akshare.common.utils.fund_type_map import FundTypeLiteral
+from app.market_data.fund.utils.fund_type_map import FundTypeLiteral
 
 
 class FundItem(BaseModel):

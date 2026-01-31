@@ -11,7 +11,7 @@ from akshare.utils.context import set_proxies
 import structlog
 from typing import List, Dict, Any
 
-from app.modules.akshare.settings import proxy_settings
+from app.market_data.providers.akshare.settings import proxy_settings
 
 logger = structlog.get_logger(__name__)
 

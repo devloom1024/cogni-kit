@@ -6,7 +6,7 @@ import akshare as ak
 
 from app.market_data.fund.models import FundItem
 from app.market_data.providers.base import FundProvider
-from app.modules.akshare.common.utils import map_fund_type
+from app.market_data.fund.utils.fund_type_map import map_fund_type
 from app.utils.pinyin import get_pinyin_full, get_pinyin_initial
 
 

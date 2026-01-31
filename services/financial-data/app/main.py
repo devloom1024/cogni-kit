@@ -13,7 +13,6 @@ from app.core.exceptions import BaseServiceError
 from app.core.logging_config import configure_logging
 from app.core.scheduler import cache_refresh_scheduler
 from app.core.schemas import HealthResponse, ErrorResponse
-from app.modules.akshare import router as akshare_router
 from app.market_data.stock.router import router as market_data_stock_router
 from app.market_data.etf.router import router as market_data_etf_router
 from app.market_data.fund.router import router as market_data_fund_router
@@ -115,4 +114,3 @@ app.include_router(market_data_etf_router)
 app.include_router(market_data_fund_router)
 app.include_router(market_data_lof_router)
 app.include_router(market_data_index_router)
-app.include_router(akshare_router)
